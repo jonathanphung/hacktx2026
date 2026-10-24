@@ -247,3 +247,24 @@ entry, animated unlock, reunion, and the victory screen.
 Textbox keyboard fix: game shortcuts ignore editable fields and modifier shortcuts.
 All 184 tests pass. Browser verification used individual H/A/C/K/T/X key presses
 with installKeyboard enabled, then Enter to unlock Claude successfully.
+
+## Continuous cinematics, live clue popups, and richer audio
+
+The current presentation replaces the opening and reunion slides with continuous
+20/21-second in-game animations. A single vector scene animates the camera, giant,
+Jon, Claude's capture, tower, escape, and walk home. Timed subtitles accompany the
+action. Esc/Skip finishes the scene; reduced-motion preferences stop decorative
+movement. The final textbox still must unlock Claude before the ending can play.
+
+Collectibles no longer pause gameplay or open dialogue scenes. A compact top
+popup reveals only the collected letter and permanent reward for 4.5 seconds.
+The HUD keeps score, current objective, hidden-letter tracker, relic count, brief
+controls, and a compact FIFO obstacle queue. Browser review confirmed the update
+clock continues during collection and the popup clears on game time.
+
+The original soundtrack is now more prominent, with melody, bass, synthesized
+kick/snare/hats, and gently increasing stage tempo. New cues cover footsteps,
+aiming, appearing treasures, clue reveals, relic magic, and expired powerups, in
+addition to jumps, hits, shields, giant attacks, and victory. Sound/M still mutes
+everything, and pause stops the music. Scheduled voices and scene listeners are
+cleaned up on restart. No audio downloads or external services are required.

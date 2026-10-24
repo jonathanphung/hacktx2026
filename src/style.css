@@ -1307,3 +1307,366 @@ body {
     opacity: 0;
   }
 }
+
+/* Compact play HUD: the center of the track stays clear. */
+.story-hud .hud-score {
+  left: 2%;
+  top: 2%;
+  transform: none;
+  padding: 0.45cqw 1cqw;
+  border: 1px solid #c8b186;
+  box-shadow: none;
+}
+.story-hud .hud-score span {
+  display: inline;
+  font-size: 0.8cqw;
+  margin-right: 0.8cqw;
+}
+.story-hud .hud-score strong {
+  font-size: 1.8cqw;
+}
+.story-hud .hud-level {
+  top: 1.5%;
+  width: 30%;
+  border: 0;
+  border-radius: 0.6cqw;
+  background: #211b36e8;
+  padding: 0.6cqw 1cqw;
+  text-align: center;
+}
+.story-hud .hud-level > span {
+  float: none;
+  display: block;
+  font-size: 0.8cqw;
+  margin-top: 0.2cqw;
+  color: #c6b4d2;
+}
+.story-hud .hud-level strong {
+  font-size: 1cqw;
+}
+.story-hud .hud-relics {
+  font-size: 0.7cqw;
+}
+.story-hud .hud-jon,
+.story-hud .hud-giant {
+  border: 1px solid #a791b5;
+  border-radius: 0.6cqw;
+  box-shadow: none;
+  padding: 0.7cqw;
+  bottom: 3%;
+  background: #211b36e8;
+}
+.story-hud .hud-jon {
+  max-width: 20%;
+}
+.story-hud .hud-giant {
+  width: 21%;
+}
+.story-hud h2 {
+  font-size: 1.1cqw;
+  margin-bottom: 0.4cqw;
+}
+.story-hud small {
+  font-size: 0.75cqw;
+}
+.story-hud .hud-card {
+  min-width: 0;
+  padding: 0.5cqw;
+  gap: 0.25cqw;
+  box-shadow: none;
+  border: 1px solid #947ba7;
+  border-radius: 0.3cqw;
+}
+.story-hud .hud-card strong {
+  font-size: 0.85cqw;
+}
+.story-hud .hud-card:not(:first-child) small {
+  display: none;
+}
+.hud-discovery {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  translate: -50% 0;
+  width: 36%;
+  padding: 0.7cqw 1cqw;
+  box-sizing: border-box;
+  border: 1px solid #f0d899;
+  border-radius: 0.6cqw;
+  background: #28213eea;
+  color: #ffe8ac;
+  text-align: center;
+  animation: tale-arrive 250ms ease-out;
+}
+.hud-discovery[hidden] {
+  display: none;
+}
+.hud-discovery strong {
+  display: block;
+  font-size: 1.05cqw;
+}
+.hud-discovery span {
+  display: block;
+  font-size: 0.85cqw;
+  margin-top: 0.3cqw;
+  color: #c9e4d8;
+}
+
+/* Continuous opening and ending cinematics, with camera and actor timelines. */
+.film-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 125;
+  background: #080911;
+  color: #fff0d2;
+  font-family: "Courier New", monospace;
+  container-type: inline-size;
+  overflow: hidden;
+}
+.film-world {
+  position: absolute;
+  inset: 9% 0 18%;
+  overflow: hidden;
+}
+.film-world > svg {
+  width: 100%;
+  height: 100%;
+}
+.film-letterbox {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  background: #080911;
+}
+.film-top {
+  top: 0;
+  height: 9%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3cqw;
+  font-size: 0.9cqw;
+  letter-spacing: 0.2em;
+}
+.film-top button {
+  background: none;
+  color: #c5bbd0;
+  border: 1px solid #796b8e;
+  padding: 0.4cqw 0.7cqw;
+  font:
+    0.85cqw "Courier New",
+    monospace;
+  cursor: pointer;
+}
+.film-top button:focus-visible {
+  outline: 2px solid #b3efda;
+  outline-offset: 3px;
+}
+.film-bottom {
+  bottom: 0;
+  height: 18%;
+  padding: 0.7cqw 7cqw;
+  box-sizing: border-box;
+  text-align: center;
+}
+.film-speaker {
+  color: #a7dfd0;
+  font-size: 0.8cqw;
+  letter-spacing: 0.2em;
+  margin: 0 0 0.5cqw;
+}
+.film-caption {
+  margin: 0;
+  font-size: 1.25cqw;
+  line-height: 1.5;
+}
+.film-bottom progress {
+  position: absolute;
+  bottom: 0.4cqw;
+  left: 7%;
+  width: 86%;
+  height: 2px;
+  accent-color: #bda1d3;
+  opacity: 0.5;
+}
+.film-camera {
+  transform-origin: 650px 260px;
+  animation: film-pan 20s ease-in-out forwards;
+}
+.film-clouds {
+  animation: film-clouds 20s linear forwards;
+}
+.film-stars {
+  animation: spark-glow 3s ease-in-out infinite alternate;
+}
+.film-opening .film-giant {
+  animation: giant-kidnap 20s ease-in-out forwards;
+}
+.film-opening .film-claude {
+  animation: claude-capture 20s ease-in-out forwards;
+}
+.film-opening .film-jon {
+  animation: jon-climb 20s ease-in-out forwards;
+}
+.film-opening .film-tower .claude-companion {
+  animation: captive-appear 20s linear forwards;
+}
+.film-magic {
+  opacity: 0;
+  animation: magic-trail 20s ease-in-out forwards;
+}
+.film-ending .film-giant {
+  display: none;
+}
+.film-ending .film-camera {
+  animation: home-pan 21s ease-in-out forwards;
+}
+.film-ending .film-claude {
+  animation: claude-return 21s ease-in-out forwards;
+}
+.film-ending .film-jon {
+  animation: jon-return 21s ease-in-out forwards;
+}
+.film-ending .film-tower .claude-companion {
+  display: none;
+}
+.film-ending .film-magic {
+  animation: magic-trail 8s ease-in-out infinite alternate;
+}
+@keyframes film-pan {
+  0%,
+  20% {
+    transform: scale(1.02);
+  }
+  65% {
+    transform: translateX(-45px) scale(1.08);
+  }
+  100% {
+    transform: translate(-95px, 45px) scale(1.18);
+  }
+}
+@keyframes film-clouds {
+  to {
+    transform: translateX(-70px);
+  }
+}
+@keyframes giant-kidnap {
+  0%,
+  17% {
+    transform: translateY(-410px);
+  }
+  25%,
+  36% {
+    transform: translateY(0);
+  }
+  47%,
+  100% {
+    transform: translate(300px, -480px);
+  }
+}
+@keyframes claude-capture {
+  0%,
+  25% {
+    transform: none;
+  }
+  36% {
+    transform: translate(230px, -80px) rotate(-12deg);
+    opacity: 1;
+  }
+  48%,
+  100% {
+    transform: translate(410px, -300px) scale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes captive-appear {
+  0%,
+  48% {
+    opacity: 0;
+  }
+  52%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes jon-climb {
+  0%,
+  40% {
+    transform: none;
+  }
+  60% {
+    transform: translateX(200px);
+  }
+  80% {
+    transform: translate(360px, -100px);
+  }
+  100% {
+    transform: translate(410px, -210px);
+  }
+}
+@keyframes magic-trail {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  75%,
+  100% {
+    opacity: 0.8;
+  }
+}
+@keyframes home-pan {
+  from {
+    transform: translate(-100px, 40px) scale(1.15);
+  }
+  to {
+    transform: translate(20px, 0) scale(1);
+  }
+}
+@keyframes claude-return {
+  0%,
+  10% {
+    transform: translate(410px, -230px) scale(0.65);
+  }
+  35% {
+    transform: translate(220px, -80px);
+  }
+  55%,
+  70% {
+    transform: translateX(20px);
+  }
+  100% {
+    transform: translate(-300px, 90px) scale(1.3);
+  }
+}
+@keyframes jon-return {
+  0%,
+  50% {
+    transform: none;
+  }
+  70% {
+    transform: translateX(60px);
+  }
+  100% {
+    transform: translate(-260px, 90px) scale(1.3);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .film-camera,
+  .film-clouds,
+  .film-stars,
+  .film-screen .film-giant,
+  .film-screen .film-claude,
+  .film-screen .film-jon,
+  .film-screen .film-magic,
+  .film-screen .claude-companion,
+  .hud-discovery {
+    animation: none;
+  }
+  .film-opening .film-giant {
+    transform: translateY(-200px);
+  }
+  .film-ending .film-magic {
+    opacity: 0.5;
+  }
+}

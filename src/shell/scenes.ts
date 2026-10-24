@@ -2,11 +2,11 @@ import Phaser from "phaser";
 import { untilShutdown } from "../shared/emitter";
 import { inputBus } from "../shared/input";
 import { installShellAudio, playCue } from "./audio";
-import { playIntro, playStory } from "./intro";
+import { playCinematic } from "./cinematic";
 import { unlockCell } from "./rescue";
 import { addBeanstalks, mountShell } from "./presentation";
 
-import { FINALE, letterMarkup, towerArt } from "./story";
+import { letterMarkup, towerArt } from "./story";
 
 let introSeen = false;
 
@@ -28,7 +28,7 @@ function installStart(scene: Phaser.Scene, button: HTMLButtonElement): void {
       else {
         const menu = button.closest<HTMLElement>(".story-screen");
         if (menu) menu.inert = true;
-        playIntro(scene, begin);
+        playCinematic(scene, false, begin);
       }
     }
   };
@@ -128,7 +128,7 @@ export class GameOverScene extends Phaser.Scene {
         installStart(this, button);
       });
     };
-    if (victory) unlockCell(this, () => playStory(this, FINALE, showResult));
+    if (victory) unlockCell(this, () => playCinematic(this, true, showResult));
     else showResult();
   }
 }

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { RUNNER } from "./config";
+import type { PowerupKind } from "../../shared/world";
+import { POWERUPS, RUNNER } from "./config";
 
 const RUN_FRAMES = 4;
 const TEX = 64;
@@ -162,6 +163,11 @@ export class RunnerView {
     this.shield.setVisible(on);
   }
 
+  /** The shield just absorbed a hit: cyan flash. */
+  shieldBlocked() {
+    this.scene.cameras.main.flash(150, 128, 222, 234);
+  }
+
   /** Knocked down: flash red, spin and fade, with a camera shake. */
   crash() {
     this.crashed = true;
@@ -178,4 +184,31 @@ export class RunnerView {
       ease: "Cubic.easeOut",
     });
   }
+}
+
+const PICKUP_STYLE: Record<PowerupKind, { color: number; label: string }> = {
+  shield: { color: 0x26c6da, label: "S" },
+  slowmo: { color: 0xffee58, label: "⏱" },
+  double: { color: 0x66bb6a, label: "x2" },
+};
+
+/** A collectible powerup: a glowing coin with a label. */
+export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind: PowerupKind) {
+  const { color, label } = PICKUP_STYLE[kind];
+  const r = POWERUPS.size / 2;
+  const glow = scene.add.circle(0, 0, r + 6, color, 0.25);
+  const coin = scene.add.circle(0, 0, r, color).setStrokeStyle(3, 0xffffff);
+  const text = scene.add
+    .text(0, 0, label, { fontFamily: "system-ui, sans-serif", fontSize: "20px", color: "#1b1b2f" })
+    .setOrigin(0.5);
+  const view = scene.add.container(x, y, [glow, coin, text]).setDepth(5);
+  scene.tweens.add({
+    targets: glow,
+    scale: 1.3,
+    alpha: 0.1,
+    duration: 500,
+    yoyo: true,
+    repeat: -1,
+  });
+  return view;
 }

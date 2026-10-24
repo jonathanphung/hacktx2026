@@ -32,3 +32,8 @@ subscribes, so the first card is invisible until the next hand update. Coordinat
 with the runner/saboteur owners to fix installation order or expose initial state.
 
 Next: HUD clarity and feedback, then live camera playtesting, audio/art, and demo polish.
+
+HUD update: added labeled distance, explicit aim lane, larger cards with selection
+labels, empty-hand messaging, and fading attack/hit feedback. Event subscriptions
+clean up on scene shutdown. Browser playtesting verified aim changes, card selection,
+and attack feedback. Formatting, typecheck, 13 tests, and build passed afterward.

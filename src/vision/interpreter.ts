@@ -3,15 +3,37 @@ import type { HandFrame } from "../shared/vision";
 import { LaneAim } from "./gestures/aim";
 import { FistTrigger, PoseTrigger } from "./gestures/fire";
 import { PalmFilter } from "./gestures/smoothing";
-import { SwipeDetector } from "./gestures/swipe";
+import { getVisionSettings, aimPosition, type VisionSettings } from "./calibration";
+import { DEFAULT_SWIPE, SwipeDetector } from "./gestures/swipe";
 
 /** Per-session state, shared by the live camera and rehearsal/recording replay. */
-export function createInterpreter(emit: (event: InputEvent) => void) {
-  const swipe = new SwipeDetector();
-  const aim = new LaneAim();
+export function createInterpreter(
+  emit: (event: InputEvent) => void,
+  getSettings: () => VisionSettings = getVisionSettings,
+) {
   const fist = new FistTrigger();
-  const filters = { runner: new PalmFilter(), saboteur: new PalmFilter() };
   const cards = ["Pointing_Up", "Victory", "Thumb_Up"].map((pose) => new PoseTrigger(pose, 180));
+  let settings = getSettings();
+  let interpret = buildInterpreter(emit, settings, fist, cards);
+  return (frame: HandFrame) => {
+    const next = getSettings();
+    if (next !== settings) {
+      settings = next;
+      // Rebuild temporal state: changing settings must not complete a buffered gesture.
+      interpret = buildInterpreter(emit, settings, fist, cards);
+    }
+    return interpret(frame);
+  };
+}
+function buildInterpreter(
+  emit: (event: InputEvent) => void,
+  settings: VisionSettings,
+  fist: FistTrigger,
+  cards: PoseTrigger[],
+) {
+  const swipe = new SwipeDetector({ ...DEFAULT_SWIPE, minDistance: settings.swipeDistance });
+  const aim = new LaneAim();
+  const filters = { runner: new PalmFilter(), saboteur: new PalmFilter() };
   return (f: HandFrame) => {
     const p = filters[f.player].push(f.t, f.landmarks?.[9] ?? null);
     if (f.player === "runner") {
@@ -21,7 +43,7 @@ export function createInterpreter(emit: (event: InputEvent) => void) {
         emit({ player: "runner", action: direction === "up" ? "jump" : direction });
       return direction;
     }
-    const lane = aim.push(p?.x ?? null);
+    const lane = aim.push(p ? aimPosition(p.x, settings.aim) : null);
     if (lane !== null) emit({ player: "saboteur", action: "aim", lane });
     const gesture = p ? f.gesture : null;
     cards.forEach((card, slot) => {

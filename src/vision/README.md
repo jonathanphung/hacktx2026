@@ -87,3 +87,34 @@ For 60 empty frames after warm-up: 29.0 processed fps; round-trip p50 24.6 ms an
 p95 34.9 ms; longest steady-state animation frame gap 17.7 ms, with zero gaps over
 50 ms. Startup's longest observed gap was 33.6 ms. These are a short local sample,
 not a two-person tracking benchmark or a guarantee for Chrome/other laptops.
+
+## Player calibration
+
+Open **Player calibration & sensitivity** in the vision lab. With the live camera
+running, choose **Calibrate aim**, then sweep an open palm across a comfortable
+horizontal range in the right half for five seconds. Pause briefly at both ends.
+The measured range maps to the three aim lanes; the overlay boundaries move with
+it. Calibration uses 5th/95th percentiles to ignore isolated outliers. It requires
+at least 30 hand frames, 70% visible-hand coverage, no frame gap over 250 ms, and
+at least 25% of the half-frame in horizontal reach. Failed or cancelled captures
+keep the previous settings. Rehearsal and recording replay cannot calibrate.
+
+**Runner gesture size** offers small (14%), standard (20%), or large (28%) stroke
+thresholds. Small strokes reduce travel but may accept more unintended motion;
+large strokes require a more deliberate movement. Direction, path-quality and
+cooldown protections still apply. Settings updates reset buffered swipes/aim
+smoothing, while preserving the fist/card pose latches so a held gesture cannot
+fire again just because sensitivity changed.
+
+Only the numeric aim range and swipe threshold are saved in browser local storage,
+with schema/range validation and a safe default for corrupt or obsolete entries.
+No calibration frames or camera images are persisted. Changes apply immediately
+to live vision and replay; replay intentionally uses the current settings for
+comparison. Another game tab on the same origin receives changes via a storage
+event. Preferences do not transfer between localhost ports, deployment hosts,
+or browsers. Storage-blocked browsers retain preferences for the current page
+session only. **Reset controls** restores the defaults.
+
+Calibrate again after moving the camera, changing seating or switching players.
+This is control-range calibration, not model training or a substitute for testing
+real gesture recordings. Issue #4 still needs real, labeled hand data.

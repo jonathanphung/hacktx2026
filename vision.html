@@ -100,6 +100,24 @@
         padding: 14px;
         border-radius: 8px;
       }
+      details {
+        border: 1px solid #52627b;
+        border-radius: 8px;
+        padding: 14px;
+        margin: 16px 0;
+      }
+      summary {
+        cursor: pointer;
+        font-weight: 600;
+      }
+      select {
+        background: #202d42;
+        color: white;
+        border: 1px solid #52627b;
+        border-radius: 6px;
+        padding: 10px;
+        font: inherit;
+      }
       .help {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -113,6 +131,24 @@
           padding: 16px;
         }
         #halves,
+        details {
+          border: 1px solid #52627b;
+          border-radius: 8px;
+          padding: 14px;
+          margin: 16px 0;
+        }
+        summary {
+          cursor: pointer;
+          font-weight: 600;
+        }
+        select {
+          background: #202d42;
+          color: white;
+          border: 1px solid #52627b;
+          border-radius: 6px;
+          padding: 10px;
+          font: inherit;
+        }
         .help {
           display: grid;
           grid-template-columns: 1fr;
@@ -143,6 +179,30 @@
       Performance measurements appear here. Benchmark uses real models with empty images; it does
       not measure hand accuracy or tracking distance.
     </p>
+    <details>
+      <summary>Player calibration &amp; sensitivity</summary>
+      <p>
+        Start the camera, then calibrate the saboteur’s comfortable horizontal reach. Keep an open
+        palm in the right half and sweep left and right, pausing briefly at each end.
+      </p>
+      <div class="controls">
+        <button id="calibrate">Calibrate aim · 5 seconds</button>
+        <label
+          >Runner gesture size
+          <select id="sensitivity">
+            <option value="0.14">Small strokes</option>
+            <option value="0.2">Standard strokes</option>
+            <option value="0.28">Large deliberate strokes</option>
+          </select>
+        </label>
+        <button id="reset-settings">Reset controls</button>
+      </div>
+      <p id="calibration-status" role="status"></p>
+      <small
+        >Preferences stay in this browser. No webcam images or landmarks are saved by calibration.
+        Recalibrate if your camera, seating or player changes.</small
+      >
+    </details>
     <div id="halves"></div>
     <div class="help">
       <p>

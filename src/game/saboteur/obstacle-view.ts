@@ -73,6 +73,19 @@ export function createObstacleView(
     g.fillStyle(0x7eaf6b);
     g.fillEllipse(-w + 13, -h + 12, 22, 10);
     g.fillEllipse(w - 15, h - 15, 22, 10);
+  } else if (kind === "fireball") {
+    g.fillStyle(0xff6935, 0.25);
+    g.fillCircle(0, 8, w);
+    g.fillStyle(0xbd3543);
+    g.fillTriangle(-w, 10, -w * 0.3, -h, w, 12);
+    g.fillStyle(0xff6d31);
+    g.fillCircle(0, 9, w * 0.82);
+    g.fillTriangle(-w * 0.7, 4, w * 0.1, -h, w * 0.7, 9);
+    g.fillStyle(0xffbd52);
+    g.fillCircle(0, 12, w * 0.6);
+    g.fillTriangle(-w * 0.4, 10, 0, -h * 0.65, w * 0.4, 10);
+    g.fillStyle(0xfff2a3);
+    g.fillCircle(0, 15, w * 0.32);
   } else {
     g.fillStyle(0x2e4560);
     g.fillTriangle(0, -h, -w, 0, 0, h);
@@ -87,6 +100,17 @@ export function createObstacleView(
   }
   // Released objects begin at the fingertips, rather than popping in above the screen.
   const view = scene.add.container(x, held ? y : 110, [g]).setDepth(6);
+  if (kind === "fireball") {
+    scene.tweens.add({
+      targets: g,
+      scaleX: 1.1,
+      alpha: 0.8,
+      duration: 120,
+      yoyo: true,
+      repeat: -1,
+    });
+    view.once("destroy", () => scene.tweens.killTweensOf(g));
+  }
   if (!held) {
     view.setScale(0.85);
     scene.tweens.add({ targets: view, scale: 1, duration: 120 });

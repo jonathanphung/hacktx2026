@@ -14,7 +14,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   addBeanstalks(hud);
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
     <div class="hud-feedback" role="status"></div>
-    <section class="hud-jack"><div class="hud-powerups"></div><h2>JACK</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: hurdles / drifters / oil<br>Dodge: walls / mud</p></section>
+    <section class="hud-jack"><div class="hud-powerups"></div><h2>JACK</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: logs / thorns / oil / sap<br>Dodge: rocks / walls / mud / fireballs</p></section>
     <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop · 4s cooldown</small></section>`;
   const score = hud.querySelector(".hud-score strong")!;
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
@@ -80,9 +80,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
         hint.textContent = "READY TO DROP";
         const counter = document.createElement("small");
         counter.className = "card-counter";
-        counter.textContent = ["hurdle", "drifter", "oil"].includes(id)
-          ? "JUMP / DODGE"
-          : "DODGE ONLY";
+        counter.textContent = ["hurdle", "oil"].includes(id) ? "JUMP / DODGE" : "DODGE ONLY";
         card.append(name, hint, counter);
         cards.append(card);
       });

@@ -67,7 +67,7 @@ describe("saboteur attack warnings", () => {
       events.emit("update", 1000 + SABOTEUR.warningMs);
       expect(world.spawnObstacle).toHaveBeenCalledOnce();
       expect(world.spawnObstacle).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: "drifter" }),
+        expect.objectContaining({ kind: "fireball" }),
       );
     } finally {
       events.emit("shutdown", undefined);

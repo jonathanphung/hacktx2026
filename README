@@ -154,3 +154,25 @@ actual obstacle before releasing it with a grip-opening motion and impact ring.
 
 The 4-second cooldown uses the paused play clock; paused inputs remain blocked.
 These requested changes affect the saboteur lane and require a `[cross-lane]` PR.
+
+## Natural hazards and fireball
+
+Wild thorns, mossy rocks, and sticky sap now grow along the beanstalk without giant
+input. The first appears after 5 seconds; later hazards appear roughly every
+4.5 seconds. If an obstacle is still near the entrance, spawning retries after
+600 ms rather than stacking another hazard there. Each natural spawn occupies
+one lane. Thorns can be jumped, rocks must be dodged, and sap slows Jack unless
+jumped or dodged. All timing follows the paused game clock and resets per run.
+
+Fireball replaces Drifter in the giant's random pool. It travels straight down the
+aimed lane, has an animated orange/yellow flame, and must be dodged. Drifting lane
+motion and its old configuration were removed. The four-second giant cooldown
+and one-obstacle-per-throw rule remain intact.
+
+Additional feature ideas were requested for discussion only; no extra features
+beyond natural hazards and the fireball replacement were implemented in this pass.
+
+Validation: all 42 tests, formatting, typecheck, and production build passed.
+An idle-giant browser run confirmed natural hazards cause collisions independently;
+visual checks covered the fireball and all three natural hazard types with no
+browser errors. No brainstormed future feature has been started.

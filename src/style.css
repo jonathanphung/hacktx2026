@@ -415,7 +415,7 @@ body {
 .hud-score strong {
   font-size: 2.8cqw;
 }
-.hud-jack,
+.hud-jon,
 .hud-giant {
   position: absolute;
   bottom: 4%;
@@ -424,7 +424,7 @@ body {
   border: 1px solid #88a87188;
   border-radius: 0.7cqw;
 }
-.hud-jack {
+.hud-jon {
   left: 1%;
 }
 .hud-giant {
@@ -590,7 +590,7 @@ body {
   filter: drop-shadow(0 0 8px #fff7a0);
 }
 .hud-score,
-.hud-jack,
+.hud-jon,
 .hud-giant {
   background: #2e2949ee;
   border-color: #e0c79f88;
@@ -655,7 +655,7 @@ body {
   background: #69468c;
 }
 .hud-score,
-.hud-jack,
+.hud-jon,
 .hud-giant,
 .hud-card,
 .hud-feedback {
@@ -701,7 +701,7 @@ body {
 }
 
 /* Keep a full hand of three cards outside the playable beanstalk lanes. */
-.hud-jack,
+.hud-jon,
 .hud-giant {
   width: 27%;
   box-sizing: border-box;

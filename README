@@ -1,4 +1,4 @@
-# Jack & the Beanstalk
+# Jon and the Beanstalk
 
 A two-player, webcam-controlled endless runner. One player dodges; the other throws
 traps at them. Both control the game with hand gestures in front of one webcam.
@@ -86,7 +86,7 @@ Production smoke check: the built game loads and starts under /hacktx2026/ when 
 
 ## Storybook presentation and pause
 
-The shell now presents Jack (runner, left) versus the Giant (saboteur, right),
+The shell now presents Jon (runner, left) versus the Giant (saboteur, right),
 with illustrated vines, clouds, parchment cards, and a woodland palette. Menus,
 results, and the HUD use native HTML text rather than scaled canvas text for
 clearer rendering. The runner and saboteur lane owners maintain gameplay mechanics.
@@ -102,7 +102,7 @@ Validation includes repeated pause/resume, unchanged score and aim while paused,
 blocked attack input, and no card catch-up after a long pause. Clock unit tests
 cover frozen time and repeated pauses. Live gesture testing remains outstanding.
 
-Fairy theme expansion (explicitly requested): Jack is now drawn as a wizard with
+Fairy theme expansion (explicitly requested): Jon is now drawn as a wizard with
 violet robes, a crescent hat, and crystal staff. Three scrolling leafy beanstalk
 stems replace the road while retaining lane centers and collision geometry.
 Pastel skies, twinkling lights, fairy silhouettes, flowers, mushrooms, and a distant
@@ -161,7 +161,7 @@ Wild thorns, mossy rocks, and sticky sap now grow along the beanstalk without gi
 input. The first appears after 5 seconds; later hazards appear roughly every
 4.5 seconds. If an obstacle is still near the entrance, spawning retries after
 600 ms rather than stacking another hazard there. Each natural spawn occupies
-one lane. Thorns can be jumped, rocks must be dodged, and sap slows Jack unless
+one lane. Thorns can be jumped, rocks must be dodged, and sap slows Jon unless
 jumped or dodged. All timing follows the paused game clock and resets per run.
 
 Fireball replaces Drifter in the giant's random pool. It travels straight down the
@@ -176,3 +176,21 @@ Validation: all 42 tests, formatting, typecheck, and production build passed.
 An idle-giant browser run confirmed natural hazards cause collisions independently;
 visual checks covered the fireball and all three natural hazard types with no
 browser errors. No brainstormed future feature has been started.
+
+## Jon and the Beanstalk: progression update
+
+All player-facing menus, HUD, camera labels, pause text, and browser title now use
+Jon. Fireballs continue to the bottom rather than being consumed on contact;
+a handled-hit flag prevents repeat hits after a shield absorbs one. During the
+short game-over transition, fireballs keep moving while other hazards freeze.
+
+Speed rises by 8 px/s per second (was 6), capped to preserve one second of reaction
+time from the giant's fingertip release point. Natural waves begin with one hazard,
+then use two distinct lanes after 45 seconds, leaving a third lane open. The spawn
+interval falls from 4.5 seconds toward a 1.8-second minimum over 90 seconds. The
+opening grace period and entrance-stacking checks remain. Pause excludes elapsed
+time from both speed and density progression.
+
+Latest validation: all 46 tests, formatting, typecheck, and production build passed.
+A browser integration check confirmed a fireball hits once and exits the bottom
+instead of disappearing at contact. Production preview confirms the Jon branding.

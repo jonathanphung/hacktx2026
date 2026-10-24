@@ -3,7 +3,7 @@ import type { VisionHandle } from "../shared/vision";
 
 const PLAYERS = ["runner", "saboteur"] as const;
 const LABELS: Record<PlayerId, string> = {
-  runner: "P1 · Jack · Left",
+  runner: "P1 · Jon · Left",
   saboteur: "P2 · Giant · Right",
 };
 
@@ -38,7 +38,7 @@ export function mountWebcamCorners(
   }
   setupCameraDock();
   if (!vision.onFrame) return;
-  showBanner("Stand side by side: Jack on the left, Giant on the right. Raise one hand each.");
+  showBanner("Stand side by side: Jon on the left, Giant on the right. Raise one hand each.");
 
   const unsubscribe = vision.onFrame((frame) => {
     const detected = !!frame.landmarks?.length;

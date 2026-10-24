@@ -11,7 +11,7 @@ const TEX = 64 * S;
 /** Height of the drawn figure inside its frame, in frame units (before the 2x). */
 const FIGURE = 48;
 
-/** Wizard Jack: starry robes, a pointed hat, boots, and a crystal staff. */
+/** Wizard Jon: starry robes, a pointed hat, boots, and a crystal staff. */
 function drawFrame(scene: Phaser.Scene, key: string, phase: number | null) {
   const g = scene.make.graphics({}, false);
   g.scaleCanvas(S, S);

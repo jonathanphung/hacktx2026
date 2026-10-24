@@ -41,7 +41,7 @@ export function installPause(scene: Phaser.Scene): void {
   heading.id = "pause-title";
   heading.textContent = "A moment among the clouds";
   const description = document.createElement("p");
-  description.textContent = "Game paused. Jack and the giant can catch their breath.";
+  description.textContent = "Game paused. Jon and the giant can catch their breath.";
   const resume = document.createElement("button");
   resume.type = "button";
   resume.textContent = "Resume · Esc";

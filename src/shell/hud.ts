@@ -14,7 +14,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   addBeanstalks(hud);
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
     <div class="hud-feedback" role="status"></div>
-    <section class="hud-jack"><div class="hud-powerups"></div><h2>JACK</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: logs / thorns / oil / sap<br>Dodge: rocks / walls / mud / fireballs</p></section>
+    <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: logs / thorns / oil / sap<br>Dodge: rocks / walls / mud / fireballs</p></section>
     <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop · 4s cooldown</small></section>`;
   const score = hud.querySelector(".hud-score strong")!;
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
@@ -112,7 +112,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
         return;
       }
       playCue(effect === "slow" ? "slow" : "end");
-      announce(effect === "slow" ? "JACK SLOWED!" : "JACK CAUGHT!");
+      announce(effect === "slow" ? "JON SLOWED!" : "JON CAUGHT!");
     }),
   );
   untilShutdown(

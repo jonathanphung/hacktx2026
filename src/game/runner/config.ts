@@ -5,14 +5,19 @@ export const RUNNER = {
   runnerSize: 60,
   /** Collision box, a bit smaller than the drawn runner so near-misses feel fair. */
   hitboxSize: 48,
-  /** Gesture input lags ~200-300 ms behind a keyboard, so start slower than Subway Surfers. */
+  /** Gesture input lags ~150-350 ms behind a keyboard (see minWarningMs), so start slow. */
   baseSpeed: 260,
   /** Speed added per second survived, up to the cap set by `minWarningMs`. */
   accel: 6,
   /**
    * Shortest time an obstacle is on screen before it reaches the runner, at top speed.
-   * Dodging by gesture needs ~0.5-0.7 s (reaction + gesture detection + lane switch), so keep a margin.
-   * This caps the speed; see speed.ts.
+   * This caps the speed; see speed.ts. Budget for a dodge (2026-10-24):
+   * - hand starts moving -> runner fully in the new lane: ~325 ms for a typical 250 ms swipe,
+   *   ~450 ms for a slow one. Measured through the real vision interpreter + game at 29 fps,
+   *   plus ~45 ms capture/inference from the vision benchmark; no live camera yet.
+   * - seeing the obstacle and choosing a direction: ~350-450 ms (typical human reaction).
+   * Total ~0.7-0.9 s, so 1.0 s leaves ~100-300 ms margin. Raise this if playtesters with
+   * slow swipes keep getting hit at top speed.
    */
   minWarningMs: 1000,
   laneSwitchMs: 110,

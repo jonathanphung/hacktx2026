@@ -65,3 +65,22 @@ it("does not bridge prolonged uncertainty or another classified pose", () => {
     expect(trigger.push(120, "Closed_Fist")).toBe(false);
   }
 });
+
+it("rejects missing, degenerate, folded, or non-finite open-hand evidence", async () => {
+  const { hasOpenFingers } = await import("./fire");
+  expect(hasOpenFingers(null)).toBe(false);
+  expect(hasOpenFingers([])).toBe(false);
+  expect(hasOpenFingers(Array.from({ length: 21 }, () => ({ x: 0.5, y: 0.5 })))).toBe(false);
+  const points = Array.from({ length: 21 }, () => ({ x: 0.5, y: 0.8 }));
+  for (const base of [5, 9, 13, 17]) {
+    points[base] = { x: 0.5, y: 0.6 };
+    points[base + 1] = { x: 0.5, y: 0.45 };
+    points[base + 3] = { x: 0.5, y: 0.15 };
+  }
+  expect(hasOpenFingers(points)).toBe(true);
+  expect(hasOpenFingers(points.map(({ x, y }) => ({ x: y, y: -x })))).toBe(true);
+  points[8] = { x: 0.5, y: 0.65 };
+  expect(hasOpenFingers(points)).toBe(false);
+  points[8] = { x: NaN, y: 0.15 };
+  expect(hasOpenFingers(points)).toBe(false);
+});

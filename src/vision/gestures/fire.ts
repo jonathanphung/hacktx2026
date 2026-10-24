@@ -1,3 +1,25 @@
+import type { Point } from "../../shared/types";
+
+/** Confirm four extended fingers without relying on the gesture classifier label. */
+export function hasOpenFingers(points: readonly Point[] | null): boolean {
+  if (!points || points.length < 21) return false;
+  const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
+  const wrist = points[0];
+  return [5, 9, 13, 17].every((base) => {
+    const mcp = points[base],
+      pip = points[base + 1],
+      tip = points[base + 3];
+    if (![wrist, mcp, pip, tip].every((p) => p && Number.isFinite(p.x) && Number.isFinite(p.y)))
+      return false;
+    const proximal = distance(mcp, pip);
+    return (
+      proximal > 0.001 &&
+      distance(mcp, tip) > proximal * 1.6 &&
+      distance(wrist, tip) > distance(wrist, pip) * 1.15
+    );
+  });
+}
+
 /** Debounced pose edge. Missing/uncertain classifications NEVER re-arm an action. */
 export class PoseTrigger {
   private since: number | null = null;

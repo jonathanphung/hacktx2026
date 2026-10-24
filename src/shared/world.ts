@@ -42,7 +42,7 @@ export type PowerupKind = "shield" | "slowmo" | "double";
 export interface GameEvents {
   "runner-action": { action: "left" | "right" | "jump" };
   score: { score: number };
-  "runner-hit": { kind: string; effect: ObstacleEffect };
+  "runner-hit": { kind: string; effect: ObstacleEffect; blocked?: boolean };
   /** `stage` = index into STAGES (src/shared/stages.ts) of the stage the run ended in. */
   "game-over": {
     score: number;

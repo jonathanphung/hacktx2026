@@ -46,6 +46,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   untilShutdown(
     scene,
     inputBus.on("input", (e) => {
+      if (scene.sys?.isPaused()) return;
       if (over || e.player !== "saboteur") return;
       if (e.action === "aim") {
         aimLane = e.lane;

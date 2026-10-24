@@ -88,6 +88,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   untilShutdown(
     scene,
     inputBus.on("input", (e) => {
+      if (scene.sys?.isPaused()) return;
       if (over || e.player !== "runner") return;
       if (e.action === "left" && lane > 0) moveTo((lane - 1) as Lane);
       if (e.action === "right" && lane < 2) moveTo((lane + 1) as Lane);

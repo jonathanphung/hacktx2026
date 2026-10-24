@@ -1,5 +1,5 @@
 import type Phaser from "phaser";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Emitter } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
 import type { GameEvents, World } from "../../shared/world";
@@ -13,7 +13,9 @@ function setup() {
   vi.spyOn(Math, "random").mockReturnValue(0);
   const events = new Emitter<{ update: number; shutdown: undefined }>();
   const warnings: { destroy: ReturnType<typeof vi.fn> }[] = [];
+  const isPaused = vi.fn(() => false);
   const scene = {
+    sys: { isPaused },
     events: {
       on: events.on.bind(events),
       off: vi.fn(),
@@ -39,10 +41,32 @@ function setup() {
   installSaboteur(scene, world);
   const fire = () =>
     inputBus.emit("input", { player: "saboteur", action: "fire", source: "keyboard" });
-  return { events, world, warnings, fire };
+  return { events, world, warnings, fire, isPaused };
 }
 
 describe("saboteur attack warnings", () => {
+  // Cooldown assertions count obstacles, so use a single-obstacle card.
+  beforeEach(() => {
+    vi.spyOn(Math, "random").mockReturnValue(0);
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+  it("ignores aim and fire while the scene is paused", () => {
+    const { events, warnings, fire, isPaused } = setup();
+    try {
+      events.emit("update", 1000);
+      isPaused.mockReturnValue(true);
+      inputBus.emit("input", { player: "saboteur", action: "aim", lane: 2, source: "vision" });
+      fire();
+      expect(warnings).toHaveLength(0);
+      isPaused.mockReturnValue(false);
+      fire();
+      expect(warnings).toHaveLength(1);
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
   it("waits 500 ms and locks the target lane at firing time", () => {
     const { events, world, warnings, fire } = setup();
     try {

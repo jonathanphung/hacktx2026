@@ -34,6 +34,9 @@ export interface World {
   spawnObstacle(spec: ObstacleSpec): void;
 }
 
+/** Runner powerups. Shield absorbs one hit; slowmo slows the track; double doubles score. */
+export type PowerupKind = "shield" | "slowmo" | "double";
+
 /** Events within one game run. A fresh emitter is created per run (see GameScene). */
 export interface GameEvents {
   score: { score: number };
@@ -41,4 +44,6 @@ export interface GameEvents {
   "game-over": { score: number; survivedMs: number };
   "hand-changed": { hand: readonly string[]; selected: number; aimLane: Lane };
   "attack-fired": { attackId: string; lane: Lane };
+  /** A powerup was picked up (active: true) or ran out / was used up (active: false). */
+  powerup: { kind: PowerupKind; active: boolean; durationMs: number };
 }

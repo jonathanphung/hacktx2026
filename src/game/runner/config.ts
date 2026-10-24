@@ -14,3 +14,14 @@ export const RUNNER = {
   slowFactor: 0.5,
   slowMs: 2000,
 };
+
+/** Powerup tuning. One random powerup spawns in a random lane every `everyMs`. */
+export const POWERUPS = {
+  everyMs: 8000,
+  size: 44,
+  /** Shield lasts until it absorbs a hit, or this long. */
+  shieldMs: 8000,
+  slowmoMs: 4000,
+  slowmoFactor: 0.6,
+  doubleMs: 6000,
+};

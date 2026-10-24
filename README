@@ -268,3 +268,25 @@ aiming, appearing treasures, clue reveals, relic magic, and expired powerups, in
 addition to jumps, hits, shields, giant attacks, and victory. Sound/M still mutes
 everything, and pause stops the music. Scheduled voices and scene listeners are
 cleaned up on restart. No audio downloads or external services are required.
+
+## Magical stage score and distinct obstacle sounds
+
+Each tale now has an original theme with celesta-like bells, harp echoes and warm
+sustained harmony. Tempo rises monotonically across stages: 100, 109, 120, 133,
+150 and 167 BPM (eighth-note scheduling). Later stages add arpeggio layers and a
+light pulse. Stage changes blend the old/new themes and tempo over 2.4 seconds;
+active notes finish instead of being cut off. Mute, pause and restart cleanup remain.
+
+Walls, double walls, hurdles, oil, mud, fireballs, thorns, rocks and sap each have a
+unique synthesized signature, played when the obstacle actually enters the world
+and again on unprotected contact. A short high-frequency glass shatter marks an
+actual shield/ward break; the brief immunity afterward does not repeat it.
+
+Cinematics reuse the existing 16-frame Jon run-left/run-right sheets and jump PNG,
+respecting the deployed base path and reduced-motion preference. Claude and the
+giant retain drawn artwork because no sprite sheets for them exist in the repo.
+The ending dialogue and result text are now shorter and more restrained.
+
+All 189 tests and full checks pass, including progressive tempo, unique obstacle
+sounds, short shatter duration, and theme changes without cutting notes or adding
+extra schedulers.

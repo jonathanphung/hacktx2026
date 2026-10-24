@@ -99,10 +99,10 @@ export class GameOverScene extends Phaser.Scene {
 
       if (victory) {
         screen.classList.add("festival-victory");
-        content.querySelector(".story-eyebrow")!.textContent = "THE CELL IS OPEN";
+        content.querySelector(".story-eyebrow")!.textContent = "RESCUE COMPLETE";
         content.querySelector("h1")!.textContent = "Claude is free!";
         content.querySelector(".story-subtitle")!.textContent =
-          "One impossible climb. Six hidden clues. Two companions, together again.";
+          "The lock is broken. Jon and Claude made it out.";
         const art = document.createElement("div");
         art.className = "victory-badge";
         art.innerHTML = towerArt(true);

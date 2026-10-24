@@ -4,6 +4,12 @@ import type { HandFrame, VisionHandle } from "../shared/vision";
 import { CircleDetector } from "./gestures/circle";
 import { createInterpreter } from "./interpreter";
 import { startVision } from "./index";
+import {
+  AimCalibration,
+  DEFAULT_SETTINGS,
+  getVisionSettings,
+  saveVisionSettings,
+} from "./calibration";
 import { benchmarkVision } from "./benchmark";
 import { VisionPerformance } from "./performance";
 import { parseRecording, rehearsalFrames } from "./rehearsal";
@@ -13,6 +19,38 @@ const log = document.getElementById("log")!;
 const status = document.getElementById("status")!;
 const metrics = document.getElementById("metrics")!;
 let performanceStats = new VisionPerformance();
+let calibration: AimCalibration | null = null;
+const calibrationStatus = document.getElementById("calibration-status")!;
+const sensitivity = document.getElementById("sensitivity") as HTMLSelectElement;
+function settingsText() {
+  const s = getVisionSettings();
+  sensitivity.value = String(s.swipeDistance);
+  calibrationStatus.textContent = `Aim range ${(s.aim.minX * 100).toFixed(0)}–${(s.aim.maxX * 100).toFixed(0)}% of the right half · runner stroke ${(s.swipeDistance * 100).toFixed(0)}%. Settings apply to live controls and are saved in this browser.`;
+}
+sensitivity.onchange = () => {
+  const persisted = saveVisionSettings({
+    ...getVisionSettings(),
+    swipeDistance: Number(sensitivity.value),
+  });
+  settingsText();
+  if (!persisted) calibrationStatus.textContent += " Storage unavailable: this session only.";
+};
+document.getElementById("reset-settings")!.onclick = () => {
+  calibration = null;
+  saveVisionSettings(DEFAULT_SETTINGS);
+  settingsText();
+};
+document.getElementById("calibrate")!.onclick = () => {
+  if (!vision) {
+    calibrationStatus.textContent =
+      "Start the live camera first. Calibration does not use rehearsal or replay data.";
+    return;
+  }
+  calibration = new AimCalibration(performance.now());
+  calibrationStatus.textContent =
+    "Sweep an open palm comfortably left and right across the RIGHT half for five seconds. Pause briefly at each end.";
+};
+settingsText();
 const controls = new Map<string, HTMLButtonElement>();
 for (const id of ["start", "stop", "rehearse", "record", "download", "benchmark"])
   controls.set(id, document.getElementById(id) as HTMLButtonElement);
@@ -75,6 +113,23 @@ function mount(sources?: Record<PlayerId, HTMLCanvasElement>) {
   }
 }
 function render(f: HandFrame) {
+  if (calibration && f.player === "saboteur") {
+    const capture = calibration;
+    if (capture.push(f)) {
+      calibration = null;
+      try {
+        const persisted = saveVisionSettings({ ...getVisionSettings(), aim: capture.result() });
+        settingsText();
+        if (!persisted) calibrationStatus.textContent += " Storage unavailable: this session only.";
+        line(
+          "Aim calibration applied. Both the live interpreter and overlay now use the captured range.",
+        );
+      } catch (error) {
+        calibrationStatus.textContent = `Calibration unchanged: ${error}`;
+      }
+    } else
+      calibrationStatus.textContent = `Sweep the RIGHT palm left and right · ${Math.max(0, (capture.durationMs - (f.t - capture.start)) / 1000).toFixed(1)} seconds remaining`;
+  }
   const direction = diagnose(f);
   if (direction) {
     motion = direction;
@@ -98,7 +153,9 @@ function render(f: HandFrame) {
   const ctx = canvas.getContext("2d")!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.strokeStyle = "#ffffff40";
-  for (const x of [1 / 3, 2 / 3]) {
+  const range = f.player === "saboteur" ? getVisionSettings().aim : DEFAULT_SETTINGS.aim;
+  for (const fraction of [1 / 3, 2 / 3]) {
+    const x = range.minX + (range.maxX - range.minX) * fraction;
     ctx.beginPath();
     ctx.moveTo(x * canvas.width, 0);
     ctx.lineTo(x * canvas.width, canvas.height);
@@ -122,6 +179,10 @@ function render(f: HandFrame) {
 }
 function stop() {
   generation++;
+  if (calibration) {
+    calibration = null;
+    calibrationStatus.textContent = "Calibration cancelled; previous settings kept.";
+  }
   startup?.abort();
   startup = null;
   cancelAnimationFrame(replayId);

@@ -2,7 +2,8 @@
 export const RUNNER = {
   laneSpacing: 170,
   runnerY: 610,
-  runnerSize: 60,
+  /** Drawn size; collisions use hitboxSize, so this is purely visual. */
+  runnerSize: 68,
   /** Collision box, a bit smaller than the drawn runner so near-misses feel fair. */
   hitboxSize: 48,
   /** Gesture input lags ~150-350 ms behind a keyboard (see minWarningMs), so start slow. */

@@ -897,6 +897,18 @@ body {
 .intro-screen[data-theme="clouds"] {
   background: linear-gradient(#b6cbea, #f7e9f3);
 }
+.story-content select {
+  display: block;
+  margin: 0 auto 14px;
+  padding: 10px 14px;
+  max-width: 100%;
+  border: 2px solid #a885bb;
+  border-radius: 8px;
+  background: #fff5df;
+  color: #49315f;
+  font: inherit;
+}
+
 .intro-screen[data-theme="castle"] {
   background: linear-gradient(#6d5c8e, #d6c1dd);
 }

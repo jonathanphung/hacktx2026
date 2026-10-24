@@ -257,3 +257,20 @@ volume/listening and live two-player webcam playtesting remain manual checks.
 
 The real Gemini key is stored only in ignored `.env`; `.env.example` is a template.
 No API key is included in the saved story, browser bundle, or committed sources.
+
+## Integrated adventure modes and music
+
+The title screen now offers Gemini Adventure (three timed generated chapters with
+a victory ending) and Storybook Challenge (the team's five collectible-driven
+fairy tales). Storybook retains stage items, palette transitions, calm periods,
+stage-specific difficulty, and the final endless stage. Both modes retain the
+latest Jon sprites, spring movement, jump buffering, giant aiming feedback, and
+buffered casts. Giant cooldown text follows the game's authoritative status.
+
+An original, quiet melody and bass loop accompanies gameplay. The existing Sound
+button or M mutes music and effects together; Esc pauses the music and gameplay.
+Music stops at game over and its scheduled voices/timers are cleaned up on replay.
+The decorative castle in the upper-right of menus and the HUD has been removed.
+
+Integration validation: formatting, typecheck, 184 game tests, three mocked
+generator tests, saved campaign validation, and the production build pass.

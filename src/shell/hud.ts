@@ -4,7 +4,6 @@ import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
 import type { GameEvents, PowerupKind } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
-import { SABOTEUR } from "../game/saboteur/config";
 import { playCue, startMusic, stopMusic } from "./audio";
 import { installPause } from "./pause";
 import { addBeanstalks, mountShell } from "./presentation";
@@ -26,15 +25,12 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
   const aim = hud.querySelector(".hud-giant h2")!;
   const cards = hud.querySelector(".hud-cards")!;
-  let lastTime = 0;
   let runStartedAt = -1;
   let lastChapter = -1;
-  let cooldownUntil = 0;
   let cooling = false;
   const cooldownLabel = document.createElement("p");
   cooldownLabel.className = "cooldown-label";
   const updateCooldown = (time: number) => {
-    lastTime = time;
     if (!campaignMode) return;
     if (runStartedAt < 0) runStartedAt = time;
     const stage = campaignLevelAt((time - runStartedAt) / 1000);
@@ -51,8 +47,6 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
       announce(stage.level.description, true);
     }
     lastChapter = stage.index;
-    if (cooling)
-      cooldownLabel.textContent = `NEXT DROP IN ${Math.max(0, (cooldownUntil - time) / 1000).toFixed(1)}s`;
   };
   scene.events.on("update", updateCooldown);
   untilShutdown(scene, () => scene.events.off("update", updateCooldown));
@@ -102,7 +96,6 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     events.on("hand-changed", ({ hand, selected, aimLane }) => {
       aim.textContent = `GIANT · AIM: ${LANES[aimLane]}`;
       cards.replaceChildren();
-      if (!hand.length && !cooling) cooldownUntil = lastTime + SABOTEUR.fireCooldownMs;
       if (cooling && hand.length) playCue("ready");
       cooling = !hand.length;
       if (!hand.length) {
@@ -128,6 +121,15 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
         card.append(name, hint, counter);
         cards.append(card);
       });
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("saboteur-status", ({ state, remainingMs }) => {
+      cooldownLabel.textContent =
+        state === "queued"
+          ? `DROPPING IN ${(remainingMs / 1000).toFixed(1)}s`
+          : `NEXT DROP IN ${(remainingMs / 1000).toFixed(1)}s`;
     }),
   );
   untilShutdown(

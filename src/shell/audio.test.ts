@@ -65,7 +65,27 @@ function audioFixture() {
 
 describe("shell sound effects", () => {
   beforeEach(() => vi.resetModules());
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+  it("loops music, stops scheduled voices on pause, resumes, and cleans up", async () => {
+    vi.useFakeTimers();
+    const fixture = audioFixture();
+    const { installShellAudio, startMusic, pauseMusic, stopMusic } = await import("./audio");
+    installShellAudio();
+    fixture.window.dispatchEvent(new Event("pointerdown"));
+    startMusic();
+    expect(fixture.tones.length).toBeGreaterThan(0);
+    const firstCount = fixture.tones.length;
+    pauseMusic(true);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(fixture.tones.every((tone) => tone.stop.mock.calls.length === 2)).toBe(true);
+    pauseMusic(false);
+    expect(fixture.tones.length).toBeGreaterThan(firstCount);
+    stopMusic();
+    expect(vi.getTimerCount()).toBe(0);
+  });
   it("unlocks from interaction and creates a short jump cue", async () => {
     const fixture = audioFixture();
     const { installShellAudio, playCue } = await import("./audio");

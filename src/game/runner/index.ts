@@ -122,6 +122,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         speed,
       },
       time,
+      dt,
     );
 
     if (time >= nextPowerupAt) {
@@ -177,7 +178,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       }
     }
 
-    track.scroll(speed * dt);
+    track.update(dt, speed);
     points += (speed * dt * powerups.scoreFactor(time)) / 10;
     events.emit("score", { score: score() });
   };

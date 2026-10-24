@@ -32,6 +32,8 @@ export const RUNNER = {
   jumpMs: 650,
   /** A jump sent this close to landing is kept and fires on landing (instead of being lost). */
   jumpBufferMs: 150,
+  /** Speed lines start fading in above this track speed (px/s). */
+  streakFromSpeed: 340,
   slowFactor: 0.5,
   slowMs: 2000,
 };

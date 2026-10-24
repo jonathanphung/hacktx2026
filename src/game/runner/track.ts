@@ -26,10 +26,27 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
     scene.add.tileSprite(x, GAME_HEIGHT / 2, 4, GAME_HEIGHT, "lane-dash").setDepth(1),
   );
 
+  // Speed lines: faint streaks that fade in as the track gets fast.
+  const left = laneX(0) - half;
+  const width = RUNNER.laneSpacing * 3;
+  const streaks = Array.from({ length: 14 }, () =>
+    scene.add
+      .rectangle(left + Math.random() * width, Math.random() * GAME_HEIGHT, 2, 60, 0xffffff)
+      .setDepth(1)
+      .setAlpha(0),
+  );
+
   return {
-    /** Move the markings down the screen by `dy` px. */
-    scroll(dy: number) {
+    /** Scrolls the markings and speed lines for one frame at `speed` px/s. */
+    update(dt: number, speed: number) {
+      const dy = speed * dt;
       for (const d of dividers) d.tilePositionY -= dy;
+      const alpha = Phaser.Math.Clamp((speed - RUNNER.streakFromSpeed) / 250, 0, 1) * 0.22;
+      for (const s of streaks) {
+        s.y += dy * 1.7;
+        if (s.y > GAME_HEIGHT + 40) s.setPosition(left + Math.random() * width, -40);
+        s.setAlpha(alpha);
+      }
     },
   };
 }

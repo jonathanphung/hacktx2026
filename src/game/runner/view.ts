@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
+import { RunnerFx } from "./fx";
 import { jumpHeight } from "./motion";
 
 const RUN_FRAMES = 8;
@@ -176,6 +177,9 @@ export class RunnerView {
   private baseScale: number;
   private wasAirborne = false;
   private landedAt = -Infinity;
+  private fx: RunnerFx;
+  private lastFrameKey = "";
+  private lastGhostAt = -Infinity;
 
   constructor(
     private scene: Phaser.Scene,
@@ -190,6 +194,7 @@ export class RunnerView {
       .setScale(this.baseScale)
       .setDepth(10);
     this.sprite.play("runner-run");
+    this.fx = new RunnerFx(scene);
     this.shield = scene.add
       .circle(x, groundY, RUNNER.runnerSize * 0.75)
       .setStrokeStyle(3, 0x80deea)
@@ -197,9 +202,10 @@ export class RunnerView {
       .setVisible(false);
   }
 
-  /** Draws the pose. `time` is the game clock in ms. */
-  render(pose: RunnerPose, time: number) {
+  /** Draws the pose. `time` is the game clock in ms; `dt` the frame time in seconds. */
+  render(pose: RunnerPose, time: number, dt: number) {
     if (this.crashed) return;
+    this.fx.update(dt);
     const { sprite, shadow, shield } = this;
     const airborne = pose.jump !== null;
     const h = airborne ? jumpHeight(pose.jump!) : 0;
@@ -211,6 +217,7 @@ export class RunnerView {
     } else if (!airborne && this.wasAirborne) {
       sprite.play("runner-run");
       this.landedAt = time;
+      this.fx.dust(pose.x, this.groundY + this.unit * 20, 8, 150, pose.speed, 1.3);
     }
     this.wasAirborne = airborne;
     sprite.anims.timeScale = pose.speed / RUNNER.baseSpeed;
@@ -240,9 +247,30 @@ export class RunnerView {
     if (pose.slowed) sprite.setTint(0xb39ddb);
     else sprite.clearTint();
 
+    // Footstep dust from the push-off foot, on the two stride frames of the run cycle.
+    const frameKey = airborne ? "" : (sprite.anims.currentFrame?.textureKey ?? "");
+    if (frameKey !== this.lastFrameKey) {
+      const side = frameKey === "runner-run-2" ? 1 : frameKey === "runner-run-6" ? -1 : 0;
+      if (side) {
+        const foot = { x: pose.x + side * 5.5 * this.unit, y: this.groundY + 27 * this.unit };
+        this.fx.dust(foot.x, foot.y, 1, 25, pose.speed);
+      }
+      this.lastFrameKey = frameKey;
+    }
+    // Afterimages while changing lanes fast.
+    if (Math.abs(pose.vx) > 900 && time - this.lastGhostAt > 30) {
+      this.fx.ghost(sprite);
+      this.lastGhostAt = time;
+    }
+
     shadow.setPosition(pose.x, this.groundY + 6);
     shadow.setScale(1 - 0.4 * h).setAlpha(0.55 - 0.3 * h);
     shield.setPosition(pose.x, sprite.y);
+  }
+
+  /** Screen px per frame unit of the drawn figure. */
+  private get unit() {
+    return this.baseScale * S;
   }
 
   setShield(on: boolean) {
@@ -259,7 +287,14 @@ export class RunnerView {
     this.crashed = true;
     this.sprite.anims.stop();
     this.sprite.setTint(0xff5252);
-    this.scene.cameras.main.shake(200, 0.01);
+    const cam = this.scene.cameras.main;
+    cam.shake(200, 0.01);
+    // Zoom punch on impact, then ease back. Chain on the complete event: starting a zoom from
+    // inside the first zoom's update callback gets cancelled when that effect finishes.
+    cam.once(Phaser.Cameras.Scene2D.Events.ZOOM_COMPLETE, () =>
+      cam.zoomTo(1, 260, "Quad.easeInOut", true),
+    );
+    cam.zoomTo(1.06, 90, "Quad.easeOut", true);
     this.scene.tweens.add({
       targets: this.sprite,
       angle: this.sprite.angle + 200,

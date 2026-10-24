@@ -5,71 +5,29 @@ import { POWERUPS, RUNNER } from "./config";
 import { RunnerFx } from "./fx";
 import { jumpHeight } from "./motion";
 
-const RUN_FRAMES = 8;
-/** Textures are drawn at 2x so the runner stays crisp when the game is scaled up. */
+const RUN_FRAMES = 16;
 const S = 2;
-const TEX = 64 * S;
-/** Height of the drawn figure inside its frame, in frame units (before the 2x). */
+const TEX = 128;
+/** Visible character height in the 128px animation frames. */
 const FIGURE = 48;
 
-/** Wizard Jon: starry robes, a pointed hat, boots, and a crystal staff. */
-function drawFrame(scene: Phaser.Scene, key: string, phase: number | null) {
-  const g = scene.make.graphics({}, false);
-  g.scaleCanvas(S, S);
-  const swing = (phase === null ? 0 : Math.sin(phase)) * 4;
-  const tuck = phase === null;
-  g.fillStyle(0x31213f);
-  g.fillEllipse(25, (tuck ? 51 : 56) + swing, 12, 7);
-  g.fillEllipse(39, (tuck ? 51 : 56) - swing, 12, 7);
-  g.fillStyle(0x392b70);
-  g.fillTriangle(32, 22, 11, 53, 53, 53);
-  g.fillStyle(0x8063b7);
-  g.fillTriangle(32, 23, 18, 50, 46, 50);
-  g.lineStyle(3, 0xf4d789);
-  g.lineBetween(15, 52, 49, 52);
-  g.lineStyle(3, 0xe7bc62);
-  g.lineBetween(22, 37, 42, 37);
-  g.fillStyle(0x9b7bce);
-  g.fillRoundedRect(9, 29 + swing, 12, 14, 4);
-  g.fillRoundedRect(43, 29 - swing, 12, 14, 4);
-  g.fillStyle(0xf2cdab);
-  g.fillCircle(13, 41 + swing, 4);
-  g.fillCircle(51, 41 - swing, 4);
-  g.fillCircle(32, 25, 9);
-  g.fillStyle(0x61432f);
-  g.fillEllipse(32, 27, 17, 8);
-  g.fillStyle(0x332257);
-  g.fillEllipse(32, 20, 39, 12);
-  g.fillStyle(0x7751a3);
-  g.fillTriangle(32, 1, 18, 20, 46, 20);
-  g.lineStyle(2, 0xe7bc62);
-  g.lineBetween(20, 18, 44, 18);
-  g.fillStyle(0xffe5a0);
-  g.fillCircle(31, 11, 3);
-  g.fillStyle(0x7751a3);
-  g.fillCircle(33, 10, 3);
-  g.lineStyle(3, 0xa17c4e);
-  g.lineBetween(55, 19 - swing, 52, 52 - swing);
-  g.fillStyle(0x8aefd5, 0.25);
-  g.fillCircle(55, 16 - swing, 9);
-  g.fillStyle(0xbdfce9);
-  g.fillTriangle(55, 8 - swing, 49, 17 - swing, 61, 17 - swing);
-  g.fillStyle(0x73c8df);
-  g.fillTriangle(55, 24 - swing, 49, 17 - swing, 61, 17 - swing);
-  g.fillStyle(0xffe5a0);
-  g.fillCircle(29, 42, 1.5);
-  g.fillCircle(37, 47, 1.5);
-  g.generateTexture(key, TEX, TEX);
-  scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
-  g.destroy();
+export function preloadRunnerAssets(scene: Phaser.Scene) {
+  const base = `${import.meta.env.BASE_URL}assets/runner/`;
+  scene.load.image("runner-sheet", `${base}jon-run.png`);
+  scene.load.image("runner-jump", `${base}jon-jump.png`);
 }
+
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
-  if (scene.textures.exists("runner-jump")) return;
+  if (scene.anims.exists("runner-run")) return;
+  const sheet = scene.textures.get("runner-sheet").getSourceImage() as HTMLImageElement;
   for (let i = 0; i < RUN_FRAMES; i++) {
-    drawFrame(scene, `runner-run-${i}`, (i / RUN_FRAMES) * Math.PI * 2);
+    const texture = scene.textures.createCanvas(`runner-run-${i}`, TEX, TEX)!;
+    texture.context.drawImage(sheet, i * TEX, 0, TEX, TEX, 0, 0, TEX, TEX);
+    texture.refresh();
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
   }
-  drawFrame(scene, "runner-jump", null);
+  scene.textures.get("runner-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
   const spark = scene.make.graphics({}, false);
   spark.fillStyle(0xffedb0);
   spark.fillRect(3, 0, 2, 8);
@@ -80,7 +38,7 @@ function ensureAssets(scene: Phaser.Scene) {
   scene.anims.create({
     key: "runner-run",
     frames: Array.from({ length: RUN_FRAMES }, (_, i) => ({ key: `runner-run-${i}` })),
-    frameRate: 16,
+    frameRate: 1000 / 60,
     repeat: -1,
   });
 }
@@ -201,7 +159,8 @@ export class RunnerView {
     // Footstep dust from the push-off foot, on the two stride frames of the run cycle.
     const frameKey = airborne ? "" : (sprite.anims.currentFrame?.textureKey ?? "");
     if (frameKey !== this.lastFrameKey) {
-      const side = frameKey === "runner-run-2" ? 1 : frameKey === "runner-run-6" ? -1 : 0;
+      const frame = Number(frameKey.replace("runner-run-", ""));
+      const side = frameKey && frame % 8 === 2 ? 1 : frameKey && frame % 8 === 6 ? -1 : 0;
       if (side) {
         const foot = { x: pose.x + side * 5.5 * this.unit, y: this.groundY + 27 * this.unit };
         this.fx.dust(foot.x, foot.y, 1, 25, pose.speed);

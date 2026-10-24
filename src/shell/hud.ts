@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
 import type { GameEvents, PowerupKind } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
+import { SABOTEUR } from "../game/saboteur/config";
 import { playCue } from "./audio";
 import { installPause } from "./pause";
 import { addBeanstalks, mountShell } from "./presentation";
@@ -14,11 +15,23 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
     <div class="hud-feedback" role="status"></div>
     <section class="hud-jack"><div class="hud-powerups"></div><h2>JACK</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: hurdles / drifters / oil<br>Dodge: walls / mud</p></section>
-    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: fire · 1–3: cards</small></section>`;
+    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop · 4s cooldown</small></section>`;
   const score = hud.querySelector(".hud-score strong")!;
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
   const aim = hud.querySelector(".hud-giant h2")!;
   const cards = hud.querySelector(".hud-cards")!;
+  let lastTime = 0;
+  let cooldownUntil = 0;
+  let cooling = false;
+  const cooldownLabel = document.createElement("p");
+  cooldownLabel.className = "cooldown-label";
+  const updateCooldown = (time: number) => {
+    lastTime = time;
+    if (cooling)
+      cooldownLabel.textContent = `NEXT DROP IN ${Math.max(0, (cooldownUntil - time) / 1000).toFixed(1)}s`;
+  };
+  scene.events.on("update", updateCooldown);
+  untilShutdown(scene, () => scene.events.off("update", updateCooldown));
   const activePowerups = new Set<PowerupKind>();
   const powerupNames: Record<PowerupKind, string> = {
     shield: "SHIELD",
@@ -46,10 +59,12 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     events.on("hand-changed", ({ hand, selected, aimLane }) => {
       aim.textContent = `GIANT · AIM: ${LANES[aimLane]}`;
       cards.replaceChildren();
+      if (!hand.length && !cooling) cooldownUntil = lastTime + SABOTEUR.fireCooldownMs;
+      cooling = !hand.length;
       if (!hand.length) {
         const empty = document.createElement("p");
-        empty.textContent = "Waiting for the next trick…";
-        cards.append(empty);
+        empty.textContent = "Recharging magic…";
+        cards.append(empty, cooldownLabel);
       }
       hand.forEach((id, i) => {
         const attack = ATTACK_BY_ID.get(id);
@@ -62,7 +77,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
         const name = document.createElement("strong");
         name.textContent = attack?.name ?? id;
         const hint = document.createElement("small");
-        hint.textContent = `${i + 1} · ${i === selected ? "SELECTED" : "SELECT"}`;
+        hint.textContent = "READY TO DROP";
         const counter = document.createElement("small");
         counter.className = "card-counter";
         counter.textContent = ["hurdle", "drifter", "oil"].includes(id)

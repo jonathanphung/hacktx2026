@@ -718,3 +718,19 @@ body {
   font-size: 1.05cqw;
   overflow-wrap: anywhere;
 }
+
+/* One random drop, rather than a selectable hand of cards. */
+.hud-cards {
+  grid-template-columns: minmax(0, 1fr);
+}
+.hud-card {
+  min-height: 5cqw;
+}
+.hud-card strong {
+  font-size: 1.35cqw;
+}
+.cooldown-label {
+  color: #ffdf9a;
+  font-weight: bold;
+  font-size: 1.3cqw;
+}

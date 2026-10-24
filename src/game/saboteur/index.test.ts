@@ -58,6 +58,21 @@ describe("saboteur attack warnings", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
+  it("chooses a single-obstacle attack even at the end of the random pool", () => {
+    vi.mocked(Math.random).mockReturnValue(0.999);
+    const { events, world, fire } = setup();
+    try {
+      events.emit("update", 1000);
+      fire();
+      events.emit("update", 1000 + SABOTEUR.warningMs);
+      expect(world.spawnObstacle).toHaveBeenCalledOnce();
+      expect(world.spawnObstacle).toHaveBeenCalledWith(
+        expect.objectContaining({ kind: "drifter" }),
+      );
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
   it("ignores aim and fire while the scene is paused", () => {
     const { events, warnings, fire, isPaused } = setup();
     try {
@@ -73,7 +88,7 @@ describe("saboteur attack warnings", () => {
       events.emit("shutdown", undefined);
     }
   });
-  it("waits 500 ms and locks the target lane at firing time", () => {
+  it("waits for the wind-up and locks the target lane at firing time", () => {
     const { events, world, warnings, fire } = setup();
     try {
       fire();
@@ -81,9 +96,9 @@ describe("saboteur attack warnings", () => {
       events.emit("update", 50_000);
       fire();
       inputBus.emit("input", { player: "saboteur", action: "aim", lane: 2, source: "keyboard" });
-      events.emit("update", 50_499);
+      events.emit("update", 50_000 + SABOTEUR.warningMs - 1);
       expect(world.spawnObstacle).not.toHaveBeenCalled();
-      events.emit("update", 50_500);
+      events.emit("update", 50_000 + SABOTEUR.warningMs);
       expect(world.spawnObstacle).toHaveBeenCalledWith(expect.objectContaining({ lane: 1 }));
       expect(warnings[0].destroy).toHaveBeenCalledOnce();
       expect(vi.mocked(createGiantHand).mock.results[0].value.release).toHaveBeenCalledOnce();

@@ -136,3 +136,21 @@ The giant starts with two cards (was one), draws every 2000 ms (was 3000), and f
 at most every 650 ms (was 750). The 500 ms warning and three-card limit stay intact.
 Tests cover opening-hand limits, cooldowns, release, cancellation, and paused input.
 This is explicitly requested cross-lane saboteur work on `prahalad/shell`.
+
+## Current giant mechanic (replaces the earlier card/deck tuning)
+
+The giant previews one random obstacle, aims with J/K/L or hand position, and drops
+it with Space or a fist. Each drop starts a fixed 4-second cooldown; the HUD counts
+down and reveals a new random obstacle when ready. Number-key card selection is
+removed. Double-wall is excluded from the random pool so one drop spawns exactly
+one obstacle. The legacy deck utility is no longer used by gameplay.
+
+The reach-to-release wind-up is 400 ms (previously 500 ms). Obstacles now appear at
+the hand's fingertips (y=110), rather than entering from above the screen, making
+the release immediate and slightly shortening the approach. Artwork replaces flat
+blocks with rune-carved mossy stones, thorn logs, bubbling hex puddles, tangled
+roots, and faceted drifting crystals. The hand holds a matching miniature of the
+actual obstacle before releasing it with a grip-opening motion and impact ring.
+
+The 4-second cooldown uses the paused play clock; paused inputs remain blocked.
+These requested changes affect the saboteur lane and require a `[cross-lane]` PR.

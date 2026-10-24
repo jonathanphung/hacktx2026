@@ -44,7 +44,7 @@ export class TitleScene extends Phaser.Scene {
       <p class="story-subtitle">A young wizard. A magical beanstalk. A giant above the clouds.</p>
       <div class="role-cards">
         <section class="role-card"><span class="role-number">PLAYER ONE · LEFT SIDE</span><h2>Jack the Wizard</h2><p>Dodge the giant’s tricks.<br>Keep your adventure alive.</p><strong>Swipe left / right to dodge<br>Swipe up to jump</strong><small>A / D / W · Jump low traps; dodge walls</small></section>
-        <section class="role-card giant"><span class="role-number">PLAYER TWO · RIGHT SIDE</span><h2>Be the Giant</h2><p>Guard your kingdom in the clouds.<br>Send obstacles into Jack’s path.</p><strong>Move your hand to aim<br>Close your fist to fire</strong><small>J / K / L: aim · Space: fire · 1–3: cards</small></section>
+        <section class="role-card giant"><span class="role-number">PLAYER TWO · RIGHT SIDE</span><h2>Be the Giant</h2><p>Guard your kingdom in the clouds.<br>Send obstacles into Jack’s path.</p><strong>Move your hand to aim<br>Close your fist to fire</strong><small>J / K / L: aim · Space: drop · 4s cooldown</small></section>
       </div>
       <button class="story-button" type="button">Enter the enchanted realm</button>
       <p class="start-hint">Click to begin, press Enter, or swipe up · Esc pauses during play</p>

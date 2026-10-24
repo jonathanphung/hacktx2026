@@ -117,3 +117,21 @@ it("dispatches a clear swipe directly at the threshold without an extra smoothin
     interpret({ ...frame(t, null, x), player: "runner" });
   expect(events).toEqual([{ player: "runner", action: "left" }]);
 });
+
+it("rearms from an uncertain but visibly extended hand between fist shots", () => {
+  const events: InputEvent[] = [];
+  const interpret = createInterpreter((event) => events.push(event));
+  const open = Array.from({ length: 21 }, () => ({ x: 0.5, y: 0.8 }));
+  for (const base of [5, 9, 13, 17]) {
+    const x = 0.3 + base / 100;
+    open[base] = { x, y: 0.6 };
+    open[base + 1] = { x, y: 0.45 };
+    open[base + 2] = { x, y: 0.3 };
+    open[base + 3] = { x, y: 0.15 };
+  }
+  for (let t = 0; t <= 160; t += 40) interpret(frame(t, "Closed_Fist"));
+  for (let t = 200; t <= 400; t += 40) interpret({ ...frame(t, null), landmarks: open });
+  expect(events.filter((event) => event.action === "fire")).toHaveLength(1);
+  for (let t = 440; t <= 640; t += 40) interpret(frame(t, "Closed_Fist"));
+  expect(events.filter((event) => event.action === "fire")).toHaveLength(2);
+});

@@ -14,6 +14,10 @@ saboteur uses the right. Landmark 9 (middle finger base) represents palm positio
 - Saboteur: palm x aims with lane hysteresis. Pointing up chooses slot 1, victory
   chooses slot 2, thumbs up chooses slot 3. Selection poses need 180 ms; a fist
   needs 100 ms to fire. Show an open palm for 120 ms to re-arm each pose.
+  Fist controls tolerate up to 80 ms of uncertain classification during holds and
+  releases; uncertain labels never fire. If the label is uncertain but all four
+  fingers are visibly extended in the landmarks, that counts as an open-palm
+  release for firing only. Missing hands never re-arm firing.
 - Circle recognition is experimental and lab-only. A circle may also contain
   directional swipes, so do not use it as a game control until there is a defined
   spell action and a motion arbitration design.

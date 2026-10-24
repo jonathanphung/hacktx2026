@@ -1,7 +1,7 @@
 import type { InputEvent } from "../shared/input";
 import type { HandFrame } from "../shared/vision";
 import { LaneAim } from "./gestures/aim";
-import { FistTrigger, PoseTrigger } from "./gestures/fire";
+import { FistTrigger, PoseTrigger, hasOpenFingers } from "./gestures/fire";
 import { PalmFilter } from "./gestures/smoothing";
 import { getVisionSettings, aimPosition, type VisionSettings } from "./calibration";
 import { DEFAULT_SWIPE, SwipeDetector } from "./gestures/swipe";
@@ -51,7 +51,11 @@ function buildInterpreter(
     cards.forEach((card, slot) => {
       if (card.push(f.t, gesture)) emit({ player: "saboteur", action: "select", slot });
     });
-    if (fist.push(f.t, gesture)) emit({ player: "saboteur", action: "fire" });
+    const fistGesture =
+      (gesture === null || gesture === "None") && hasOpenFingers(f.landmarks)
+        ? "Open_Palm"
+        : gesture;
+    if (fist.push(f.t, fistGesture)) emit({ player: "saboteur", action: "fire" });
     return null;
   };
 }

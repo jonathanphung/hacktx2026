@@ -76,6 +76,8 @@ export class RunnerView {
   private shadow: Phaser.GameObjects.Ellipse;
   private shield: Phaser.GameObjects.Arc;
   private crashed = false;
+  private baseScale: number;
+  private jumpTweens: Phaser.Tweens.Tween[] = [];
 
   constructor(
     private scene: Phaser.Scene,
@@ -83,9 +85,12 @@ export class RunnerView {
     private groundY: number,
   ) {
     ensureAssets(scene);
-    const scale = RUNNER.runnerSize / 48; // the drawn figure is ~48px tall inside its 64px frame
+    this.baseScale = RUNNER.runnerSize / 48; // the drawn figure is ~48px tall in its 64px frame
     this.shadow = scene.add.ellipse(x, groundY + 6, 44, 22, 0x000000, 0.55).setDepth(9);
-    this.sprite = scene.add.sprite(x, groundY, "runner-run-0").setScale(scale).setDepth(10);
+    this.sprite = scene.add
+      .sprite(x, groundY, "runner-run-0")
+      .setScale(this.baseScale)
+      .setDepth(10);
     this.sprite.play("runner-run");
     this.shield = scene.add
       .circle(x, groundY, RUNNER.runnerSize * 0.75)
@@ -116,12 +121,16 @@ export class RunnerView {
   }
 
   jump(durationMs: number) {
-    const base = this.sprite.scale;
+    const base = this.baseScale;
+    // A buffered jump can start the frame the last one lands: cancel leftovers and reset first.
+    this.jumpTweens.forEach((tween) => tween.stop());
+    this.sprite.setScale(base).setY(this.groundY);
+    this.shadow.setScale(1).setAlpha(0.55);
     this.sprite.setTexture("runner-jump");
     this.sprite.anims.pause();
     const half = durationMs / 2;
     // Rise toward the camera (bigger, slightly up the screen); the shadow stays on the ground.
-    this.scene.tweens.add({
+    const rise = this.scene.tweens.add({
       targets: this.sprite,
       scale: base * 1.35,
       y: this.groundY - 14,
@@ -134,7 +143,7 @@ export class RunnerView {
         this.sprite.play("runner-run");
       },
     });
-    this.scene.tweens.add({
+    const shrink = this.scene.tweens.add({
       targets: this.shadow,
       scale: 0.6,
       alpha: 0.25,
@@ -142,6 +151,7 @@ export class RunnerView {
       ease: "Sine.easeOut",
       yoyo: true,
     });
+    this.jumpTweens = [rise, shrink];
   }
 
   /** Brief purple wobble when slowed (e.g. oil). */

@@ -71,8 +71,14 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     lane = next;
   };
 
+  let jumpQueued = false;
   const jump = () => {
-    if (now < 0 || now < airborneUntil) return;
+    if (now < 0) return;
+    if (now < airborneUntil) {
+      // Still in the air: remember a jump sent just before landing (gestures arrive late-ish).
+      if (airborneUntil - now <= RUNNER.jumpBufferMs) jumpQueued = true;
+      return;
+    }
     airborneUntil = now + RUNNER.jumpMs;
     runner.jump(RUNNER.jumpMs);
   };
@@ -99,6 +105,10 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     powerups.expire(time).forEach(endPowerup);
     speed =
       speedAt(elapsed) * (time < slowUntil ? RUNNER.slowFactor : 1) * powerups.speedFactor(time);
+    if (jumpQueued && time >= airborneUntil) {
+      jumpQueued = false;
+      jump();
+    }
     const airborne = time < airborneUntil;
 
     if (time >= nextPowerupAt) {

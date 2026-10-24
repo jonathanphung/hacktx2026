@@ -1,24 +1,43 @@
-/**
- * Fires once each time the hand closes into a fist (rising edge), after the fist has been
- * held for `holdFrames` frames — filters out single-frame misclassifications.
- */
-export class FistTrigger {
-  private streak = 0;
+/** Debounced pose edge. Missing/uncertain classifications NEVER re-arm an action. */
+export class PoseTrigger {
+  private since: number | null = null;
+  private releaseSince: number | null = null;
   private armed = true;
+  private lastTime = -Infinity;
 
-  constructor(private holdFrames = 2) {}
+  constructor(
+    private pose: string,
+    private holdMs = 100,
+    private releaseMs = 120,
+  ) {}
 
-  push(gesture: string | null): boolean {
-    if (gesture !== "Closed_Fist") {
-      this.streak = 0;
-      this.armed = true;
+  push(t: number, gesture: string | null): boolean {
+    if (!Number.isFinite(t)) return false;
+    if (t <= this.lastTime || t - this.lastTime > 180) {
+      this.since = null;
+      this.releaseSince = null;
+    }
+    this.lastTime = t;
+    if (gesture === "Open_Palm") {
+      this.since = null;
+      this.releaseSince ??= t;
+      if (t - this.releaseSince >= this.releaseMs) this.armed = true;
       return false;
     }
-    this.streak++;
-    if (this.armed && this.streak >= this.holdFrames) {
-      this.armed = false;
-      return true;
+    this.releaseSince = null;
+    if (gesture !== this.pose) {
+      this.since = null;
+      return false;
     }
-    return false;
+    this.since ??= t;
+    if (!this.armed || t - this.since < this.holdMs) return false;
+    this.armed = false;
+    return true;
+  }
+}
+
+export class FistTrigger extends PoseTrigger {
+  constructor() {
+    super("Closed_Fist");
   }
 }

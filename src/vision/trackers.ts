@@ -16,6 +16,7 @@ export interface TrackResult {
 /** One tracker per player half. Separate instances: each tracks its own hand frame-to-frame. */
 export interface Tracker {
   detect(image: HTMLCanvasElement, t: number): TrackResult;
+  close(): void;
 }
 
 const toPoints = (lm: NormalizedLandmark[] | undefined) =>
@@ -47,6 +48,7 @@ export async function createHandTracker(): Promise<Tracker> {
     }),
   );
   return {
+    close: () => model.close(),
     detect(image, t) {
       const r = model.detectForVideo(image, t);
       return { landmarks: toPoints(r.landmarks[0]), gesture: null };
@@ -65,11 +67,12 @@ export async function createGestureTracker(): Promise<Tracker> {
     }),
   );
   return {
+    close: () => model.close(),
     detect(image, t) {
       const r = model.recognizeForVideo(image, t);
       return {
         landmarks: toPoints(r.landmarks[0]),
-        gesture: r.gestures[0]?.[0]?.categoryName ?? null,
+        gesture: (r.gestures[0]?.[0]?.score ?? 0) >= 0.7 ? r.gestures[0][0].categoryName : null,
       };
     },
   };

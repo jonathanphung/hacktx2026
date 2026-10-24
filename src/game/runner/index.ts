@@ -13,7 +13,8 @@ import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
 import { speedAt } from "./speed";
-import { TrailSpawner, trailHazard } from "./trail";
+import { finishFireballs } from "./projectiles";
+import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
 import { createTrack } from "./track";
 import { createPickupView, RunnerView } from "./view";
 
@@ -109,7 +110,10 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   );
 
   const update = (time: number, delta: number) => {
-    if (over) return;
+    if (over) {
+      finishFireballs(obstacles, delta, speed);
+      return;
+    }
     now = time;
     if (startedAt < 0) {
       startedAt = time;
@@ -143,7 +147,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         obstacles.some((ob) => ob.view.y < 260),
       )
     ) {
-      spawnObstacle(trailHazard(pick(LANES), Math.random()));
+      for (const target of naturalLanes(elapsed)) spawnObstacle(trailHazard(target, Math.random()));
     }
 
     if (time >= nextPowerupAt) {
@@ -192,7 +196,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         }
       }
       // Solid obstacles break on contact; surfaces (slow) stay and scroll away.
-      const smashed = hit && ob.spec.effect === "end-run";
+      const smashed = hit && ob.spec.effect === "end-run" && ob.spec.kind !== "fireball";
       if (smashed || ob.view.y > GAME_HEIGHT + ob.h) {
         ob.view.destroy();
         obstacles.splice(i, 1);

@@ -66,8 +66,9 @@ the no-camera benchmark alone.
 ## Implementation and tuning
 
 - `interpreter.ts`: pure frame → game actions, used by live tracking and replay.
-- `gestures/swipe.ts`: 250 ms window, 0.2-half-frame minimum travel, 350 ms cooldown,
-  1.5:1 axis dominance and 0.8 path efficiency. Three samples and 60 ms minimum.
+- `gestures/swipe.ts`: 300 ms window, 0.2-half-frame minimum travel, 1.35:1 axis
+  dominance and 0.75 path efficiency. Three samples spanning at least 24 ms; see
+  fast-swipe reliability below for cooldown, rest re-arming and burst checks.
 - `gestures/smoothing.ts`: 30 ms time-based aim filter; resets after tracking loss.
   Runner swipes use raw palm positions so this filter adds no swipe delay.
 - `gestures/fire.ts`: timestamp-based pose edges; unknown labels and tracking loss
@@ -139,7 +140,7 @@ Preview rendering runs independently of inference. Each worker accepts only the
 latest available camera frame when idle, with no queue. Runner results dispatch
 immediately without waiting for the saboteur. Runner swipes use raw normalized
 palm positions; aiming retains smoothing and hysteresis. Clear swipes still need
-three samples, at least 60 ms, configured travel and a dominant axis. The existing
+three samples, at least 24 ms, configured travel and a dominant axis. The existing
 cooldown prevents duplicate controls; this does not change game movement balance.
 
 Inference reads separate raw canvases, never the annotated preview. Results older
@@ -211,12 +212,15 @@ Any instinctive cue works; they all produce the same events.
 
 Swipes are judged on speed as well as distance, over every recent start point, so slow
 drift and resting jitter never fire and a swipe after a pause is caught mid-stroke. The
-hand returning after a swipe is the main false positive: within 900 ms of a swipe, the
-opposite direction must be at least as fast as the previous stroke (and ≥ 1.6 units/s), and
-a repeat in the same direction waits out the 350 ms cooldown. One-frame tracker jumps
-(> 0.35 of the frame) reset the stroke. `swipe-sim.ts` simulates human gestures (stroke,
-hold, return, jitter, variable frame timing); `swipe-sim.test.ts` pins detection rate,
-latency, return-stroke ghosts and flick-back reversals.
+hand returning after a swipe is the main false positive. Within 900 ms, reversals
+must meet the prior stroke's speed and an absolute 1.6 units/s floor. A confirmed
+burst (a three-sample span under 50 ms or a corroborated large displacement) caps
+that reference at 3 units/s, so an exceptional first flick cannot impose an
+unrealistic speed on the next one. Ordinary-stroke return filtering is unchanged.
+A new axis is independent of the prior direction's cooldown. A same-direction
+repeat needs the normal 350 ms cooldown or a 70 ms rest within a 0.035-radius zone.
+The rest clears old tail samples, preserving one command per continuous sweep.
+`swipe-sim.ts` and its tests guard detection, latency, ghost returns and reversals.
 
 ## Fast-motion dropouts
 
@@ -224,6 +228,41 @@ A fast hand blurs and the tracker briefly reports "no hand". "No hand" frames wi
 of the last real one are skipped (`DROPOUT_BRIDGE_MS` in `interpreter.ts`), so swipe
 strokes, target locks and fist holds survive the blink; a longer loss still resets
 everything. The camera overlay holds the last skeleton for the same time. The swipe
-glitch guard is speed-based (14 units/s), so a real flick across a dropped frame isn't
-mistaken for a tracker jump. Both MediaPipe models also run with 0.35 detection / presence /
+glitch guard treats >14 units/s as suspicious, not automatically impossible. It
+keeps that candidate for one observation and accepts it only with further aligned
+movement (at least max(0.025, 15% of the configured stroke distance), 0.9 path
+straightness). A teleport followed by a static/noisy endpoint, or a one-frame
+spike returning to its origin, is still rejected. Both MediaPipe models also run with 0.35 detection / presence /
 tracking confidence (default 0.5) to keep a blurred hand instead of re-detecting it.
+
+## Fast-swipe reliability investigation (2026-10-24)
+
+The previous detector rejected three consistent observations spanning less than
+50 ms, erased any step over 14 normalized units/s, and applied the horizontal
+cooldown to a following jump. A very fast first stroke could also make the next
+reversal's required speed impractical. These are deterministic software losses,
+separate from model inference speed or camera blur.
+
+Regression traces now cover a 32 ms/60-fps flick, a large corroborated motion,
+dodge-then-jump, burst-then-reversal, repeated same-direction strokes separated by
+a brief rest, and false tracking jumps. The five intended fast sequences fail on
+the pre-fix detector and pass on this branch; noise/jump rejection remains intact.
+On the existing 900 seeded ordinary-stroke simulations, before/after results are
+identical: 100% intended detections, median 116.8 ms and p90 153.9 ms detection time,
+and 0.189 extra return commands per trial. These are synthetic regression metrics,
+not live-camera accuracy estimates. Return intent is inherently ambiguous from
+positions alone; this work does not eliminate that limitation.
+
+Inference now catches up immediately to the latest presented frame when a worker
+becomes free. At 30 camera fps and a 35 ms model time, previously a frame at 33 ms
+could be skipped and the worker then waited until 66 ms. The test now verifies it
+starts that latest frame at 35 ms, with no frame queue or duplicate processing.
+The lab also separates the camera driver's reported fps from processed fps.
+
+Three real observations are still required. At 30 camera fps, a complete flick
+and return that happens between frames cannot be reconstructed safely. The code
+already requests 60 fps, but hardware/browser negotiation and low-light exposure
+can still limit capture or blur the hand. Check the reported/processed fps and
+record actual fast swipes in the lab to validate on the demo laptop. No change to
+stage speed, obstacle timing, collisions, shared contracts or other lanes is part
+of this fix. The pointing/lean alternatives remain available.

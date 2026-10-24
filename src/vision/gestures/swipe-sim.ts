@@ -32,6 +32,7 @@ export function simulateTrial(
     new SwipeDetector({ ...DEFAULT_SWIPE, ...o }),
   /** True: the player deliberately flicks back instead of drifting back. */
   reversal = false,
+  captureFps?: number,
 ): Trial {
   const r = rng(seed);
   const between = (a: number, b: number) => a + (b - a) * r();
@@ -41,7 +42,8 @@ export function simulateTrial(
   const returnMs = reversal ? strokeMs * between(0.8, 1.1) : between(220, 550);
   const drift = between(-0.2, 0.2); // stroke is never perfectly on-axis
   const jitter = between(0.002, 0.007);
-  const fps = [20, 25, 30, 30, 30][Math.floor(r() * 5)];
+  const sampledFps = [20, 25, 30, 30, 30][Math.floor(r() * 5)];
+  const fps = captureFps ?? sampledFps;
   const unit = { left: [-1, 0], right: [1, 0], up: [0, -1], down: [0, 1] }[dir];
   const origin: Point = { x: between(0.35, 0.65), y: between(0.4, 0.6) };
   const restMs = between(150, 500);
@@ -81,6 +83,7 @@ export function evaluate(
   trials = 400,
   options?: Partial<SwipeOptions>,
   make?: (o?: Partial<SwipeOptions>) => SwipeDetector,
+  captureFps?: number,
 ) {
   const dirs: Swipe[] = ["left", "right", "up"];
   let correct = 0;
@@ -88,7 +91,7 @@ export function evaluate(
   let wrongDirection = 0;
   const latencies: number[] = [];
   for (let i = 0; i < trials; i++) {
-    const trial = simulateTrial(1000 + i, dirs[i % 3], options, make);
+    const trial = simulateTrial(1000 + i, dirs[i % 3], options, make, false, captureFps);
     if (trial.correct) {
       correct++;
       latencies.push(trial.latency!);
@@ -111,13 +114,14 @@ export function evaluateReversal(
   trials = 300,
   options?: Partial<SwipeOptions>,
   make?: (o?: Partial<SwipeOptions>) => SwipeDetector,
+  captureFps?: number,
 ) {
   const dirs: Swipe[] = ["left", "right", "up"];
   const opposite = { left: "right", right: "left", up: "down", down: "up" } as const;
   let both = 0;
   for (let i = 0; i < trials; i++) {
     const dir = dirs[i % 3];
-    const trial = simulateTrial(5000 + i, dir, options, make, true);
+    const trial = simulateTrial(5000 + i, dir, options, make, true, captureFps);
     const seq = trial.detected.map((d) => d.swipe);
     if (seq[0] === dir && seq[1] === opposite[dir]) both++;
   }

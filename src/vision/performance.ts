@@ -3,6 +3,8 @@ import type { PlayerId } from "../shared/types";
 export interface VisionTiming {
   t: number;
   roundTripMs: number;
+  /** Capture rate reported by the camera driver; distinct from processed model FPS. */
+  cameraFps?: number;
   runnerMs: number;
   saboteurMs: number;
   runnerHand: boolean;
@@ -27,6 +29,7 @@ export class VisionPerformance {
     const elapsed = samples.length > 1 ? samples[samples.length - 1].t - samples[0].t : 0;
     return {
       frames: samples.length,
+      cameraFps: samples.at(-1)?.cameraFps,
       fps: elapsed > 0 ? ((samples.length - 1) * 1000) / elapsed : 0,
       p50: percentile(
         samples.map((s) => s.roundTripMs),

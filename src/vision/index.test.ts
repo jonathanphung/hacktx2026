@@ -116,3 +116,36 @@ it("drops an old worker result rather than completing a swipe from stale positio
   }
   expect(events).toEqual([]);
 });
+
+it("immediately catches up to a newer camera frame when a slow inference finishes", async () => {
+  let presented!: VideoFrameRequestCallback;
+  let finish!: (value: ReturnType<typeof tracked>) => void;
+  Object.assign(video, {
+    requestVideoFrameCallback: (fn: VideoFrameRequestCallback) => {
+      presented = fn;
+      return 1;
+    },
+    cancelVideoFrameCallback: vi.fn(),
+  });
+  models.runner.detect
+    .mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    )
+    .mockResolvedValue(tracked(0.5));
+  handle = await startVision();
+  now = 0;
+  presented(0, { presentedFrames: 1 } as VideoFrameCallbackMetadata);
+  now = 33;
+  presented(33, { presentedFrames: 2 } as VideoFrameCallbackMetadata);
+  expect(models.runner.detect).toHaveBeenCalledOnce();
+  now = 35;
+  finish(tracked(0.6));
+  await flush();
+  expect(models.runner.detect).toHaveBeenCalledTimes(2);
+  expect(models.runner.detect.mock.calls[1][1]).toBe(35);
+  await flush();
+  expect(models.runner.detect).toHaveBeenCalledTimes(2); // no duplicate frame or unbounded loop
+});

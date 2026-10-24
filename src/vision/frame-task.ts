@@ -11,6 +11,7 @@ export class FrameTask<T> {
     work: () => Promise<T>,
     accept: (result: T) => void,
     fail: (error: unknown) => void,
+    onIdle?: () => void,
   ) {
     if (!this.canRun(frame)) return;
     this.lastFrame = frame;
@@ -33,6 +34,7 @@ export class FrameTask<T> {
       })
       .finally(() => {
         this.busy = false;
+        if (this.active) onIdle?.();
       });
   }
   stop() {

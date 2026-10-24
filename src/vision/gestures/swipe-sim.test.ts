@@ -66,3 +66,12 @@ it("allows a repeat swipe in the same direction once the cooldown has passed", (
   stroke(700, 0.8, 0.45);
   expect(out).toEqual(["left", "left"]);
 });
+
+it.each([15, 30, 60])(
+  "preserves ordinary-swipe detection and return rejection at %i camera fps",
+  (fps) => {
+    const result = evaluate(300, undefined, undefined, fps);
+    expect(result.detectionRate).toBeGreaterThanOrEqual(0.97);
+    expect(result.ghostsPerTrial).toBeLessThan(0.25);
+  },
+);

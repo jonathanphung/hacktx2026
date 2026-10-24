@@ -3,6 +3,8 @@ import { untilShutdown } from "../shared/emitter";
 import { inputBus } from "../shared/input";
 import { GAME_HEIGHT, GAME_WIDTH } from "../shared/types";
 
+import { installShellAudio, playCue } from "./audio";
+
 const TEXT = { fontFamily: "system-ui, sans-serif", color: "#ffffff", align: "center" };
 const CYAN = 0x4fc3f7;
 const CORAL = 0xff7575;
@@ -31,13 +33,18 @@ function installStart(scene: Phaser.Scene, button: Phaser.GameObjects.Text) {
   const go = () => {
     if (started) return;
     started = true;
+    playCue("start");
     scene.scene.start("game");
   };
   button.setInteractive({ useHandCursor: true }).on("pointerdown", go);
   button.on("pointerover", () => button.setAlpha(0.8));
   button.on("pointerout", () => button.setAlpha(1));
-  scene.input.keyboard?.on("keydown-ENTER", go);
-  untilShutdown(scene, () => scene.input.keyboard?.off("keydown-ENTER", go));
+  const onEnter = (event: KeyboardEvent) => {
+    event.preventDefault();
+    go();
+  };
+  scene.input.keyboard?.on("keydown-ENTER", onEnter);
+  untilShutdown(scene, () => scene.input.keyboard?.off("keydown-ENTER", onEnter));
   untilShutdown(
     scene,
     inputBus.on("input", (e) => {
@@ -62,6 +69,7 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create() {
+    installShellAudio();
     backdrop(this);
     text(this, GAME_WIDTH / 2, 84, "ONE CAMERA. TWO PLAYERS.", 16, "#a8b6d3");
     text(this, GAME_WIDTH / 2, 142, "HACKTX RUNNER", 56);
@@ -126,6 +134,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create(result: { score: number; survivedMs: number }) {
+    installShellAudio();
     backdrop(this);
     text(this, GAME_WIDTH / 2, 190, "RUN ENDED", 18, "#a8b6d3");
     text(this, GAME_WIDTH / 2, 258, "SABOTEUR WINS!", 52, "#ff7575");

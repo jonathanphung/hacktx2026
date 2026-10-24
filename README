@@ -37,3 +37,10 @@ HUD update: added labeled distance, explicit aim lane, larger cards with selecti
 labels, empty-hand messaging, and fading attack/hit feedback. Event subscriptions
 clean up on scene shutdown. Browser playtesting verified aim changes, card selection,
 and attack feedback. Formatting, typecheck, 13 tests, and build passed afterward.
+
+Audio update: added locally synthesized start, attack, slowdown, and collision cues.
+Sound unlocks after a user click/key; a persistent button and M shortcut mute it.
+The mute control silences currently playing cues too. No external audio assets or
+new dependencies. Browser checks verified the button and shortcut; listening and
+live gesture testing remain manual checks. Enter-start prevents activating a
+focused sound button at the same time. All standard checks passed.

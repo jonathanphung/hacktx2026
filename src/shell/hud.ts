@@ -4,6 +4,8 @@ import { GAME_HEIGHT, GAME_WIDTH } from "../shared/types";
 import type { GameEvents } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
 
+import { playCue } from "./audio";
+
 const TEXT = { fontFamily: "system-ui, sans-serif", color: "#ffffff" };
 const LANE_NAMES = ["LEFT", "CENTER", "RIGHT"];
 
@@ -77,12 +79,14 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   untilShutdown(
     scene,
     events.on("attack-fired", ({ attackId, lane }) => {
+      playCue("attack");
       announce(`${ATTACK_BY_ID.get(attackId)?.name ?? attackId} → ${LANE_NAMES[lane]}`, "#ffce85");
     }),
   );
   untilShutdown(
     scene,
     events.on("runner-hit", ({ effect }) => {
+      playCue(effect === "slow" ? "slow" : "end");
       announce(effect === "slow" ? "RUNNER SLOWED!" : "RUNNER CAUGHT!", "#ff7575");
     }),
   );

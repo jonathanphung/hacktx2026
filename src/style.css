@@ -193,3 +193,26 @@ body {
 #banner[hidden] {
   display: none;
 }
+
+#sound-toggle {
+  position: absolute;
+  top: 12px;
+  right: 22%;
+  z-index: 4;
+  border: 1px solid #a8b6d3;
+  border-radius: 6px;
+  padding: 6px 10px;
+  background: #101426;
+  color: #e5edff;
+  font:
+    clamp(10px, 1.2vw, 14px) system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+#sound-toggle:hover,
+#sound-toggle:focus-visible {
+  border-color: #4fc3f7;
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
+}

@@ -1,6 +1,7 @@
-import { expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { InputEvent } from "../shared/input";
 import type { HandFrame } from "../shared/vision";
+import { pointingHand } from "./gestures/test-hands";
 import { createInterpreter } from "./interpreter";
 
 function frame(t: number, gesture: string | null, x = 0.5): HandFrame {
@@ -38,15 +39,15 @@ it("locks the target lane while the fist closes, then resumes aiming when the ha
     (e) => events.push(e),
     () => settings,
   );
-  for (let t = 0; t < 400; t += 40) interpret(palmAt(t, "Open_Palm", 0.5));
+  for (let t = 0; t < 400; t += 40) interpret(palmAt(t, "Open_Palm", 0.6));
   // Palm slides into lane 2 as the fingers curl; the fist is then recognized there.
-  for (let t = 400; t < 800; t += 40) interpret(palmAt(t, t < 480 ? null : "Closed_Fist", 0.9));
+  for (let t = 400; t < 800; t += 40) interpret(palmAt(t, t < 480 ? null : "Closed_Fist", 0.76));
   const aims = events.filter((e) => e.action === "aim");
   expect(aims.at(-1)).toEqual({ player: "saboteur", action: "aim", lane: 1 });
   expect(events.at(-1)).toEqual({ player: "saboteur", action: "fire" });
   expect(events.slice(events.findIndex((e) => e.action === "fire") + 1)).toEqual([]);
-  interpret(palmAt(800, "Open_Palm", 0.9));
-  interpret(palmAt(840, "Open_Palm", 0.9));
+  interpret(palmAt(800, "Open_Palm", 0.76));
+  interpret(palmAt(840, "Open_Palm", 0.76));
   expect(events.filter((e) => e.action === "aim").at(-1)).toEqual({
     player: "saboteur",
     action: "aim",
@@ -136,4 +137,85 @@ it("dispatches a clear swipe directly at the threshold without an extra smoothin
   ])
     interpret({ ...frame(t, null, x), player: "runner" });
   expect(events).toEqual([{ player: "runner", action: "left" }]);
+});
+
+describe("flexible directional input", () => {
+  const settings = { version: 1 as const, swipeDistance: 0.2, aim: { minX: 0, maxX: 1 } };
+  const make = () => {
+    const events: InputEvent[] = [];
+    const interpret = createInterpreter(
+      (e) => events.push(e),
+      () => settings,
+    );
+    return { events, interpret };
+  };
+  const hand = (player: "runner" | "saboteur", t: number, x: number, y = 0.5): HandFrame => ({
+    player,
+    t,
+    gesture: "Open_Palm",
+    landmarks: Array.from({ length: 21 }, () => ({ x, y })),
+  });
+  const pointAt = (player: "runner" | "saboteur", t: number, dir: "left" | "right" | "up") => ({
+    player,
+    t,
+    gesture: "Pointing_Up",
+    landmarks: pointingHand(dir),
+  });
+  const aims = (events: InputEvent[]) =>
+    events.flatMap((e) => (e.action === "aim" ? [e.lane] : []));
+
+  it("moves the runner by pointing, leaning the hand, or swiping", () => {
+    const point = make();
+    for (let t = 0; t <= 400; t += 33) point.interpret(pointAt("runner", t, "left"));
+    expect(point.events).toEqual([{ player: "runner", action: "left" }]);
+    const up = make();
+    for (let t = 0; t <= 400; t += 33) up.interpret(pointAt("runner", t, "up"));
+    expect(up.events).toEqual([{ player: "runner", action: "jump" }]);
+    const lean = make();
+    for (let t = 0; t <= 300; t += 33) lean.interpret(hand("runner", t, 0.5));
+    for (let t = 333; t <= 900; t += 33) lean.interpret(hand("runner", t, 0.9));
+    expect(lean.events).toEqual([{ player: "runner", action: "right" }]);
+  });
+  it("does not double-fire when a swipe leaves the hand at the edge", () => {
+    const { events, interpret } = make();
+    for (let t = 0; t <= 300; t += 33) interpret(hand("runner", t, 0.5));
+    for (let t = 333; t <= 500; t += 33)
+      interpret(hand("runner", t, 0.5 - ((t - 333) / 167) * 0.35));
+    for (let t = 533; t <= 1500; t += 33) interpret(hand("runner", t, 0.15));
+    expect(events).toEqual([{ player: "runner", action: "left" }]);
+  });
+  it("steps the saboteur's aim with a swipe and keeps it there while the hand rests", () => {
+    const { events, interpret } = make();
+    for (let t = 0; t <= 300; t += 33) interpret(hand("saboteur", t, 0.12));
+    expect(aims(events).at(-1)).toBe(0);
+    // Quick swipe right that stays inside the left zone: position alone would say lane 0.
+    for (let t = 333; t <= 500; t += 33)
+      interpret(hand("saboteur", t, 0.02 + ((t - 333) / 167) * 0.2));
+    for (let t = 533; t <= 1300; t += 33) interpret(hand("saboteur", t, 0.22));
+    expect(aims(events).at(-1)).toBe(1);
+  });
+  it("lets a fast slide across lanes land where the hand went, not one step short", () => {
+    const { events, interpret } = make();
+    for (let t = 0; t <= 300; t += 33) interpret(hand("saboteur", t, 0.15));
+    for (let t = 333; t <= 500; t += 33)
+      interpret(hand("saboteur", t, 0.15 + ((t - 333) / 167) * 0.7));
+    for (let t = 533; t <= 1000; t += 33) interpret(hand("saboteur", t, 0.85));
+    expect(aims(events).at(-1)).toBe(2);
+  });
+  it("steps the saboteur's aim by pointing left or right", () => {
+    const { events, interpret } = make();
+    for (let t = 0; t <= 300; t += 33) interpret(hand("saboteur", t, 0.5));
+    for (let t = 333; t <= 800; t += 33) interpret(pointAt("saboteur", t, "right"));
+    expect(aims(events).at(-1)).toBe(2);
+    for (let t = 833; t <= 1100; t += 33) interpret(hand("saboteur", t, 0.5));
+  });
+  it("still fires with a fist after stepping", () => {
+    const { events, interpret } = make();
+    for (let t = 0; t <= 300; t += 33) interpret(hand("saboteur", t, 0.5));
+    for (let t = 333; t <= 800; t += 33) interpret(pointAt("saboteur", t, "left"));
+    for (let t = 833; t <= 1100; t += 33)
+      interpret({ ...hand("saboteur", t, 0.5), gesture: "Closed_Fist" });
+    expect(events.filter((e) => e.action === "fire")).toHaveLength(1);
+    expect(aims(events).at(-1)).toBe(0);
+  });
 });

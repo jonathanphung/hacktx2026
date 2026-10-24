@@ -192,3 +192,17 @@ the hand opens. Vision only sends intentions (`aim`, `fire`); the game accepts o
 each cast and reports it through `cast-result` / `saboteur-status` (mirrored on
 `saboteurBus`), which the camera overlay shows as Ready / Cast queued / Cooldown /
 Rejected instead of only "SENT".
+
+## Flexible directional input
+
+Any instinctive cue works; they all produce the same events.
+
+- Runner (`left` / `right` / `jump`): swipe the hand, **point** the index finger
+  (left / right / up, held ~150 ms), or **lean** the hand into the left or right edge
+  zone for ~300 ms. Lean only arms after the hand has rested in the middle, and a swipe
+  or point disarms it, so the hand a swipe leaves at the edge never fires twice.
+- Saboteur (`aim`): palm position still aims as before. A quick **swipe** left/right, or
+  **pointing** left/right, also steps the target one lane. After a step the palm position
+  can't drag the target back until the hand has rested and moved a deliberate distance,
+  but it may still carry the target further the way the step went (a long slide).
+  Steps are ignored while the fist is locking the target.

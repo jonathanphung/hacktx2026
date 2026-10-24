@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import type { StageItemId } from "../../shared/stages";
 import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { RunnerFx } from "./fx";
@@ -227,6 +228,12 @@ export class RunnerView {
     this.shield.setVisible(on);
   }
 
+  /** A stage item was collected: a golden sparkle burst around the runner. */
+  celebrate(trackSpeed: number) {
+    this.fx.dust(this.sprite.x, this.sprite.y, 12, 220, trackSpeed * 0.3, 1.1, 0xffe08a);
+    this.scene.cameras.main.flash(120, 255, 236, 170);
+  }
+
   /** The shield just absorbed a hit: cyan flash. */
   shieldBlocked() {
     this.scene.cameras.main.flash(150, 128, 222, 234);
@@ -279,6 +286,119 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
     duration: 500,
     yoyo: true,
     repeat: -1,
+  });
+  return view;
+}
+
+/** Draws a stage's key item centered at (0, 0), about 40 px tall. */
+function drawStageItem(g: Phaser.GameObjects.Graphics, item: StageItemId) {
+  const ink = 0x14142b;
+  switch (item) {
+    case "egg": // Humpty's egg: speckled, with a crack
+      g.fillStyle(ink).fillEllipse(0, 0, 34, 44);
+      g.fillStyle(0xfff6e0).fillEllipse(0, 0, 30, 40);
+      g.fillStyle(0xffffff, 0.8).fillEllipse(-6, -8, 9, 13);
+      g.fillStyle(0xd9c79a);
+      for (const [x, y] of [
+        [6, -4],
+        [-5, 8],
+        [8, 9],
+        [-9, -1],
+      ])
+        g.fillCircle(x, y, 2);
+      g.lineStyle(2, ink).beginPath();
+      g.moveTo(-8, -1).lineTo(-3, 3).lineTo(1, -2).lineTo(5, 3).strokePath();
+      break;
+    case "potion": // "Drink Me": round bottle, cork, paper tag
+      g.fillStyle(ink).fillCircle(0, 6, 17).fillRect(-7, -20, 14, 16);
+      g.fillStyle(0xe8f4ff).fillCircle(0, 6, 15).fillRect(-5, -18, 10, 14);
+      g.fillStyle(0xb388ff).fillCircle(0, 9, 12);
+      g.fillStyle(0xffffff, 0.7).fillCircle(-6, 2, 3);
+      g.fillStyle(0xa0703c).fillRect(-6, -24, 12, 7);
+      g.fillStyle(0xfff3c4).fillRect(6, -10, 16, 9);
+      g.lineStyle(1, ink).strokeRect(6, -10, 16, 9);
+      break;
+    case "slipper": {
+      // Cinderella's glass slipper, side view: pointed toe left, high heel right.
+      const shoe = [
+        [-23, 9],
+        [-19, 3],
+        [-6, 1],
+        [4, -2],
+        [12, -11],
+        [20, -13],
+        [23, -6],
+        [21, 4],
+        [16, 9],
+        [-20, 13],
+      ].map(([x, y]) => new Phaser.Math.Vector2(x, y));
+      const grow = (k: number) => shoe.map((v) => new Phaser.Math.Vector2(v.x * k, v.y * k + 1));
+      g.fillStyle(ink).fillPoints(grow(1.12), true);
+      g.fillStyle(ink).fillTriangle(13, 7, 22, 7, 19, 22);
+      g.fillStyle(0xcfe8ff, 0.95).fillPoints(shoe, true);
+      g.fillStyle(0xa9d4ff).fillTriangle(15, 8, 20, 8, 18.5, 19);
+      g.fillStyle(0x7fb3e6).fillEllipse(9, -4, 16, 6); // the opening
+      g.fillStyle(0xffffff, 0.85).fillEllipse(-10, 5, 14, 3); // glassy shine
+      g.fillStyle(0xffffff)
+        .fillTriangle(-14, -14, -12, -6, -10, -14)
+        .fillTriangle(-16, -10, -12, -8, -8, -10);
+      break;
+    }
+    case "trident": // the sea king's trident: gold shaft, three prongs
+      g.fillStyle(ink).fillRect(-3, -14, 6, 36).fillRect(-15, -12, 30, 6);
+      g.fillStyle(0xffd54f).fillRect(-2, -13, 4, 34).fillRect(-14, -11, 28, 4);
+      for (const x of [-13, 0, 13]) {
+        g.fillStyle(ink).fillTriangle(x - 4, -10, x, -24, x + 4, -10);
+        g.fillStyle(0xffe082).fillTriangle(x - 2.5, -11, x, -21, x + 2.5, -11);
+      }
+      g.fillStyle(0x4dd0e1).fillCircle(0, -9, 3);
+      break;
+    case "hood": // Red Riding Hood's cloak: hood over a flowing cape
+      g.fillStyle(ink).fillTriangle(-20, 22, 20, 22, 0, -14).fillCircle(0, -10, 13);
+      g.fillStyle(0xd32f2f).fillTriangle(-17, 20, 17, 20, 0, -11).fillCircle(0, -10, 11);
+      g.fillStyle(0x8e1c1c).fillCircle(0, -7, 6);
+      g.fillStyle(0xffcdd2, 0.6).fillTriangle(-8, 18, -2, 18, -4, 0);
+      break;
+  }
+}
+
+/** The stage's key item on the track: halo, bobbing art, and a "GRAB" label. */
+export function createStageItemView(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  item: StageItemId,
+  name: string,
+) {
+  const halo = scene.add.circle(0, 0, 34, 0xffe08a, 0.35).setStrokeStyle(3, 0xffffff, 0.9);
+  const art = scene.add.graphics();
+  drawStageItem(art, item);
+  const label = scene.add
+    .text(0, -54, `GRAB THE ${name.toUpperCase()}!`, {
+      fontFamily: "Courier New, monospace",
+      fontSize: "16px",
+      fontStyle: "bold",
+      color: "#ffe08a",
+      backgroundColor: "#2b1f45cc",
+      padding: { x: 6, y: 3 },
+    })
+    .setOrigin(0.5);
+  const view = scene.add.container(x, y, [halo, art, label]).setDepth(6);
+  scene.tweens.add({
+    targets: halo,
+    scale: 1.25,
+    alpha: 0.15,
+    duration: 450,
+    yoyo: true,
+    repeat: -1,
+  });
+  scene.tweens.add({
+    targets: art,
+    y: -5,
+    duration: 380,
+    yoyo: true,
+    repeat: -1,
+    ease: "Sine.easeInOut",
   });
   return view;
 }

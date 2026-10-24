@@ -20,6 +20,12 @@ export class GameScene extends Phaser.Scene {
     installSaboteur(this, world);
     installHud(this, events);
 
+    // Dev-only handle so agents/devtools can drive and inspect a run, e.g.
+    // __game.world.spawnObstacle({ kind: "test", lane: 1, jumpable: false, effect: "end-run" })
+    if (import.meta.env.DEV) {
+      (window as unknown as { __game: unknown }).__game = { scene: this, world, events };
+    }
+
     events.on("game-over", (result) => {
       this.time.delayedCall(800, () => this.scene.start("game-over", result));
     });

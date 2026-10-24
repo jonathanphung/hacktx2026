@@ -1,9 +1,11 @@
 import Phaser from "phaser";
 import { type Emitter, untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
-import { GAME_HEIGHT, GAME_WIDTH, LANES, type Lane } from "../../shared/types";
+import { GAME_HEIGHT, GAME_WIDTH, type Lane } from "../../shared/types";
 import type { GameEvents, ObstacleSpec, ObstacleView, World } from "../../shared/world";
 import { RUNNER } from "./config";
+import { createTrack } from "./track";
+import { RunnerView } from "./view";
 
 interface Obstacle {
   spec: ObstacleSpec;
@@ -16,17 +18,11 @@ interface Obstacle {
 export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>): World {
   const laneX = (lane: Lane) => GAME_WIDTH / 2 + (lane - 1) * RUNNER.laneSpacing;
 
-  // Track: three lane strips.
-  const track = scene.add.graphics();
-  for (const lane of LANES) {
-    track.fillStyle(lane === 1 ? 0x2a2a48 : 0x24243e);
-    track.fillRect(laneX(lane) - RUNNER.laneSpacing / 2, 0, RUNNER.laneSpacing, GAME_HEIGHT);
-  }
+  const track = createTrack(scene, laneX);
 
   let lane: Lane = 1;
-  const size = RUNNER.runnerSize;
-  const runner = scene.add.rectangle(laneX(lane), RUNNER.runnerY, size, size, 0x4fc3f7);
-  runner.setDepth(10);
+  const runner = new RunnerView(scene, laneX(lane), RUNNER.runnerY);
+  const hitbox = RUNNER.hitboxSize;
 
   // All timing uses the `time` passed to update (one clock). Set on the first frame, because
   // scene.time.now is stale inside create() after a restart.
@@ -40,14 +36,14 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   const obstacles: Obstacle[] = [];
 
   const moveTo = (next: Lane) => {
+    runner.moveTo(laneX(next), next < lane ? -1 : 1);
     lane = next;
-    scene.tweens.add({ targets: runner, x: laneX(lane), duration: RUNNER.laneSwitchMs });
   };
 
   const jump = () => {
     if (now < 0 || now < airborneUntil) return;
     airborneUntil = now + RUNNER.jumpMs;
-    scene.tweens.add({ targets: runner, scale: 1.4, duration: RUNNER.jumpMs / 2, yoyo: true });
+    runner.jump(RUNNER.jumpMs);
   };
 
   untilShutdown(
@@ -74,21 +70,24 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       const ob = obstacles[i];
       ob.view.y += speed * dt;
       const hit =
-        Math.abs(ob.view.x - runner.x) < (ob.w + size) / 2 &&
-        Math.abs(ob.view.y - runner.y) < (ob.h + size) / 2 &&
+        Math.abs(ob.view.x - runner.x) < (ob.w + hitbox) / 2 &&
+        Math.abs(ob.view.y - RUNNER.runnerY) < (ob.h + hitbox) / 2 &&
         !(ob.spec.jumpable && airborne);
       if (hit) {
         events.emit("runner-hit", { kind: ob.spec.kind, effect: ob.spec.effect });
         if (ob.spec.effect === "end-run") {
           over = true;
-          runner.setFillStyle(0xff5252);
+          runner.crash();
           events.emit("game-over", {
             score: Math.floor(distance / 10),
             survivedMs: time - startedAt,
           });
           return;
         }
-        if (ob.spec.effect === "slow") slowUntil = time + RUNNER.slowMs;
+        if (ob.spec.effect === "slow") {
+          slowUntil = time + RUNNER.slowMs;
+          runner.slowed();
+        }
       }
       if (hit || ob.view.y > GAME_HEIGHT + ob.h) {
         ob.view.destroy();
@@ -96,6 +95,8 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       }
     }
 
+    track.scroll(speed * dt);
+    runner.setSpeed(speed);
     distance += speed * dt;
     events.emit("score", { score: Math.floor(distance / 10) });
   };

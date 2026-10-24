@@ -6,6 +6,7 @@ import { RunnerFx } from "./fx";
 import { jumpHeight } from "./motion";
 
 const RUN_FRAMES = 16;
+const RUN_VARIANTS = ["", "-left", "-right", "-slow", "-slow-left", "-slow-right"];
 const S = 2;
 const TEX = 128;
 /** Visible character height in the 128px animation frames. */
@@ -13,16 +14,16 @@ const FIGURE = 48;
 
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
-  scene.load.image("runner-sheet", `${base}jon-run.png`);
+  for (const variant of RUN_VARIANTS) {
+    scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
+  }
   scene.load.image("runner-jump", `${base}jon-jump.png`);
-  scene.load.image("runner-sheet-left", `${base}jon-run-left.png`);
-  scene.load.image("runner-sheet-right", `${base}jon-run-right.png`);
 }
 
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.anims.exists("runner-run")) return;
-  for (const direction of ["", "-left", "-right"]) {
+  for (const direction of RUN_VARIANTS) {
     const sheet = scene.textures
       .get(`runner-sheet${direction}`)
       .getSourceImage() as HTMLImageElement;
@@ -140,7 +141,8 @@ export class RunnerView {
       // Choose cape art without restarting the underlying leg animation.
       const frame = sprite.anims.currentFrame?.textureKey.replace("runner-run-", "") ?? "0";
       const direction = pose.vx < -40 ? "-left" : pose.vx > 40 ? "-right" : "";
-      sprite.setTexture(`runner-run${direction}-${frame}`);
+      const slowed = pose.slowed ? "-slow" : "";
+      sprite.setTexture(`runner-run${slowed}${direction}-${frame}`);
     }
 
     // Squash & stretch: stretch on the way up, squash briefly on landing.

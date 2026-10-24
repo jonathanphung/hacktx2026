@@ -8,8 +8,35 @@
   <body>
     <div id="stage">
       <div id="game"></div>
-      <div class="cam left" id="cam-runner"></div>
-      <div class="cam right" id="cam-saboteur"></div>
+      <aside id="facecam" aria-label="Live player cameras" hidden>
+        <header class="facecam-header">
+          <span class="facecam-title"><i aria-hidden="true"></i> PLAYER CAM</span>
+          <a href="./vision.html" target="_blank" rel="noopener" title="Open gesture lab">Lab ↗</a>
+          <button
+            id="facecam-size"
+            type="button"
+            aria-label="Enlarge player cameras"
+            aria-pressed="false"
+            title="Enlarge player cameras"
+          >
+            ↗
+          </button>
+          <button
+            id="facecam-toggle"
+            type="button"
+            aria-label="Collapse player cameras"
+            aria-controls="facecam-body"
+            aria-expanded="true"
+            title="Collapse player cameras"
+          >
+            −
+          </button>
+        </header>
+        <div id="facecam-body">
+          <div class="cam left" id="cam-runner" aria-label="Runner, left camera half"></div>
+          <div class="cam right" id="cam-saboteur" aria-label="Saboteur, right camera half"></div>
+        </div>
+      </aside>
       <div id="banner" hidden></div>
     </div>
     <script type="module" src="/src/main.ts"></script>

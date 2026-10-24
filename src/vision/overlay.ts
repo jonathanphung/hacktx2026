@@ -66,33 +66,42 @@ export function drawFeedback(
       ctx.fill();
     }
   }
-  const font = Math.max(14, w / 12);
-  ctx.fillStyle = "#080d15df";
-  ctx.fillRect(0, 0, w, font * 5.3);
+  // Thin role/header and command/footer strips keep the players' faces visible.
+  const font = Math.max(14, w / 14);
+  const pad = font / 2;
   ctx.textBaseline = "top";
+  ctx.fillStyle = "#080d15cc";
+  ctx.fillRect(0, 0, w, font * 1.5);
   ctx.font = `bold ${font}px system-ui`;
   ctx.fillStyle = color;
-  ctx.fillText(`${player === "runner" ? "LEFT · RUNNER" : "RIGHT · SABOTEUR"}`, font / 2, font / 3);
-  ctx.fillStyle = "white";
-  ctx.font = `${font * 0.8}px system-ui`;
-  ctx.fillText(view.status, font / 2, font * 1.65, w - font);
   ctx.fillText(
-    view.pose ? `Pose: ${view.pose}` : `${view.latency.toFixed(0)} ms capture → result`,
-    font / 2,
-    font * 2.7,
-    w - font,
+    player === "runner" ? "LEFT · RUNNER" : "RIGHT · SABOTEUR",
+    pad,
+    font / 4,
+    w - 2 * pad,
   );
+  const footer = h - font * 3.1;
+  ctx.fillStyle = "#080d15cc";
+  ctx.fillRect(0, footer, w, h - footer);
   ctx.fillStyle = color;
-  ctx.font = `bold ${font}px system-ui`;
+  ctx.font = `bold ${font * 1.15}px system-ui`;
   ctx.fillText(
     view.action
       ? `SENT: ${view.action}`
       : player === "runner"
-        ? "SWIPE ←  →  ↑"
-        : "PALM: AIM · FIST: FIRE",
-    font / 2,
-    font * 3.8,
-    w - font,
+        ? "SWIPE ← → ↑"
+        : "AIM · FIST TO FIRE",
+    pad,
+    footer + font / 4,
+    w - 2 * pad,
+  );
+  ctx.font = `${font * 0.8}px system-ui`;
+  ctx.fillStyle = "white";
+  ctx.fillText(
+    view.landmarks ? `${view.pose ?? "Tracking"} · ${view.latency.toFixed(0)} ms` : view.status,
+    pad,
+    footer + font * 1.9,
+    w - 2 * pad,
   );
   ctx.restore();
 }

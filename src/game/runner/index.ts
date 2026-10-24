@@ -11,6 +11,7 @@ import type {
 } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
+import { speedAt } from "./speed";
 import { createTrack } from "./track";
 import { createPickupView, RunnerView } from "./view";
 
@@ -95,9 +96,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     const elapsed = (time - startedAt) / 1000;
     powerups.expire(time).forEach(endPowerup);
     speed =
-      (RUNNER.baseSpeed + elapsed * RUNNER.accel) *
-      (time < slowUntil ? RUNNER.slowFactor : 1) *
-      powerups.speedFactor(time);
+      speedAt(elapsed) * (time < slowUntil ? RUNNER.slowFactor : 1) * powerups.speedFactor(time);
     const airborne = time < airborneUntil;
 
     if (time >= nextPowerupAt) {

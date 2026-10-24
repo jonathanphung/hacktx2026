@@ -17,8 +17,9 @@ export class GameScene extends Phaser.Scene {
   create() {
     const events = new Emitter<GameEvents>();
     const world = installRunner(this, events);
-    installSaboteur(this, world);
+    // HUD before saboteur: it must be listening when the saboteur announces its starting hand.
     installHud(this, events);
+    installSaboteur(this, world);
 
     // Dev-only handle so agents/devtools can drive and inspect a run, e.g.
     // __game.world.spawnObstacle({ kind: "test", lane: 1, jumpable: false, effect: "end-run" })

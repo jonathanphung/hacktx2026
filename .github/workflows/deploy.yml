@@ -1,6 +1,6 @@
 name: Deploy
 
-# Publishes main to https://jonathanphung.github.io/hacktx2026/
+# Publishes main to https://jonathanphung.github.io/jonandthebeanstalk/
 # One-time setup (repo admin): Settings → Pages → Source: "GitHub Actions".
 on:
   push:

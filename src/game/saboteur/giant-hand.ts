@@ -1,7 +1,14 @@
+import { createObstacleView } from "./obstacle-view";
 import type Phaser from "phaser";
 
 /** One reaching hand per attack, so rapid throws can overlap without snapping. */
-export function createGiantHand(scene: Phaser.Scene, x: number, color: number, warningMs: number) {
+export function createGiantHand(
+  scene: Phaser.Scene,
+  x: number,
+  color: number,
+  warningMs: number,
+  kind = "barrier",
+) {
   const hand = scene.add.container(x, -230).setDepth(25);
   const g = scene.add.graphics();
   // Pixel-edged purple sleeve, gold cuff, palm, curled fingers, and thumb.
@@ -29,7 +36,15 @@ export function createGiantHand(scene: Phaser.Scene, x: number, color: number, w
   g.fillRoundedRect(37, 69, 35, 61, 12);
   g.fillStyle(0xc9956b);
   g.fillRoundedRect(38, 71, 27, 51, 10);
-  const spell = scene.add.rectangle(0, 143, 28, 28, color).setAngle(45).setStrokeStyle(3, 0xffefbc);
+  const spell = createObstacleView(
+    scene,
+    0,
+    143,
+    kind,
+    105,
+    kind === "mud" ? 70 : 40,
+    true,
+  ).setScale(0.55);
   hand.add([g, spell]);
   scene.tweens.add({ targets: hand, y: -27, duration: warningMs * 0.7, ease: "Back.easeOut" });
   let finished = false;
@@ -45,7 +60,9 @@ export function createGiantHand(scene: Phaser.Scene, x: number, color: number, w
     release() {
       if (finished) return;
       scene.tweens.killTweensOf(hand);
+      // Open the grip and let the held obstacle visibly fall before the arm retracts.
       spell.setVisible(false);
+      scene.tweens.add({ targets: g, scaleX: 1.15, duration: 90, yoyo: true });
       // A short impact ring marks the throw; the real obstacle handles gameplay.
       const ring = scene.add.circle(x, 115, 20).setStrokeStyle(4, color).setDepth(24);
       scene.tweens.add({

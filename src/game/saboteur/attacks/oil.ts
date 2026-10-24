@@ -1,3 +1,4 @@
+import { createObstacleView } from "../obstacle-view";
 import type { AttackDef } from "../../../shared/attacks";
 
 /** An oil slick: doesn't end the run, but slows the runner for a moment. */
@@ -7,6 +8,7 @@ export const oil: AttackDef = {
   color: 0x9575cd,
   fire(world, lane) {
     world.spawnObstacle({
+      createView: (scene, x, y) => createObstacleView(scene, x, y, "oil", 140, 70),
       kind: "oil",
       lane,
       jumpable: true,

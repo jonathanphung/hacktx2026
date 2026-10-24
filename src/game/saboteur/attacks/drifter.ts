@@ -1,3 +1,4 @@
+import { createObstacleView } from "../obstacle-view";
 import type { AttackDef } from "../../../shared/attacks";
 import { SABOTEUR } from "../config";
 import type { Lane } from "../../../shared/types";
@@ -18,7 +19,7 @@ export const drifter: AttackDef = {
       height: 30,
       color: 0x26c6da,
       createView(scene, x, y) {
-        const view = scene.add.rectangle(x, y, 60, 30, 0x26c6da);
+        const view = createObstacleView(scene, x, y, "drifter", 60, 30);
         let startedAt: number | undefined;
         const update = (time: number) => {
           startedAt ??= time;

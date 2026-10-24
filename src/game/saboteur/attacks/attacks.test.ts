@@ -8,6 +8,11 @@ import { doubleWall } from "./double-wall";
 import { drifter } from "./drifter";
 import { mud } from "./mud";
 
+vi.mock("../obstacle-view", () => ({
+  createObstacleView: (scene: Phaser.Scene, x: number, y: number) =>
+    scene.add.rectangle(x, y, 60, 30, 0),
+}));
+
 function setup() {
   const obstacles: ObstacleSpec[] = [];
   const world: World = {

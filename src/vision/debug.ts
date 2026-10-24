@@ -1,6 +1,7 @@
 import { inputBus, type InputEvent } from "../shared/input";
 import type { PlayerId } from "../shared/types";
 import type { HandFrame, VisionHandle } from "../shared/vision";
+import { VisionFeedback } from "./feedback";
 import { CircleDetector } from "./gestures/circle";
 import { createInterpreter } from "./interpreter";
 import { startVision } from "./index";
@@ -70,6 +71,30 @@ let lastFrame = 0;
 let fps = 0;
 let motion = "waiting";
 let mode = "idle";
+let replayTime = 0;
+let feedback = new VisionFeedback();
+const signalNodes = {
+  runner: document.getElementById("signal-runner")!,
+  saboteur: document.getElementById("signal-saboteur")!,
+};
+function feedbackTime() {
+  return mode === "LIVE CAMERA" ? performance.now() : replayTime;
+}
+function paintSignals() {
+  for (const player of ["runner", "saboteur"] as const) {
+    const view = feedback.view(player, feedbackTime());
+    if (mode === "idle") {
+      signalNodes[player].querySelector("strong")!.textContent = "Camera off";
+      signalNodes[player].querySelector("span")!.textContent =
+        "Start the camera or run rehearsal to see inferred controls.";
+      continue;
+    }
+    const node = signalNodes[player];
+    node.querySelector("strong")!.textContent = view.action ? `SENT: ${view.action}` : view.status;
+    node.querySelector("span")!.textContent =
+      `${view.status} · ${view.pose ? `Pose: ${view.pose} · ` : ""}${view.latency.toFixed(0)} ms capture → result`;
+  }
+}
 
 function line(text: string) {
   const row = document.createElement("div");
@@ -78,6 +103,8 @@ function line(text: string) {
   while (log.children.length > 100) log.lastElementChild?.remove();
 }
 function event(e: InputEvent) {
+  feedback.input(e, feedbackTime());
+  paintSignals();
   line(JSON.stringify(e));
 }
 inputBus.on("input", event);
@@ -86,6 +113,8 @@ let diagnose = createInterpreter(() => {});
 
 function mount(sources?: Record<PlayerId, HTMLCanvasElement>) {
   halves.replaceChildren();
+  feedback = new VisionFeedback();
+  paintSignals();
   circle = new CircleDetector();
   diagnose = createInterpreter(() => {});
   lastFrame = 0;
@@ -113,6 +142,8 @@ function mount(sources?: Record<PlayerId, HTMLCanvasElement>) {
   }
 }
 function render(f: HandFrame) {
+  feedback.frame(f, feedbackTime());
+  paintSignals();
   if (calibration && f.player === "saboteur") {
     const capture = calibration;
     if (capture.push(f)) {
@@ -193,6 +224,13 @@ function stop() {
   recording = false;
   controls.get("record")!.textContent = "Record landmarks";
   mode = "idle";
+  feedback = new VisionFeedback();
+  paintSignals();
+  for (const { source, canvas, label } of Object.values(overlays)) {
+    source.getContext("2d")?.clearRect(0, 0, source.width, source.height);
+    canvas.getContext("2d")?.clearRect(0, 0, canvas.width, canvas.height);
+    label.textContent = "Camera stopped";
+  }
   status.textContent = "Stopped. Camera released.";
 }
 controls.get("stop")!.onclick = stop;
@@ -200,14 +238,22 @@ controls.get("start")!.onclick = async () => {
   stop();
   const current = generation;
   startup = new AbortController();
-  status.textContent = "Opening camera and loading local models…";
+  mode = "loading";
+  paintSignals();
+  status.textContent = "Waiting for camera permission…";
   try {
     performanceStats = new VisionPerformance();
-    const handle = await startVision(startup.signal, (timing) => {
-      performanceStats.push(timing);
-      const s = performanceStats.summary();
-      metrics.textContent = `LIVE · ${s.fps.toFixed(1)} processed fps · inference round trip p50/p95 ${s.p50.toFixed(0)}/${s.p95.toFixed(0)} ms · runner/saboteur model ${s.runnerMs.toFixed(0)}/${s.saboteurMs.toFixed(0)} ms · hands visible ${(s.runnerCoverage * 100).toFixed(0)}% / ${(s.saboteurCoverage * 100).toFixed(0)}% · ${timing.backends.runner} + ${timing.backends.saboteur}`;
-    });
+    const handle = await startVision(
+      startup.signal,
+      (timing) => {
+        performanceStats.push(timing);
+        const s = performanceStats.summary();
+        metrics.textContent = `LIVE · ${s.fps.toFixed(1)} processed fps · runner capture → control p50/p95 ${s.p50.toFixed(0)}/${s.p95.toFixed(0)} ms · runner/saboteur model ${s.runnerMs.toFixed(0)}/${s.saboteurMs.toFixed(0)} ms · hands visible ${(s.runnerCoverage * 100).toFixed(0)}% / ${(s.saboteurCoverage * 100).toFixed(0)}% · ${timing.backends.runner} + ${timing.backends.saboteur}`;
+      },
+      (message) => {
+        if (current === generation) status.textContent = message;
+      },
+    );
     if (current !== generation) {
       handle.stop();
       return;
@@ -236,6 +282,7 @@ function replay(frames: HandFrame[], name: string) {
     const elapsed = performance.now() - start;
     while (index < frames.length && frames[index].t - offset <= elapsed) {
       const f = frames[index++];
+      replayTime = f.t;
       interpret(f);
       render(f);
     }
@@ -264,7 +311,9 @@ controls.get("download")!.onclick = () => {
     return;
   }
   const url = URL.createObjectURL(
-    new Blob([JSON.stringify(recorded)], { type: "application/json" }),
+    new Blob([JSON.stringify([...recorded].sort((a, b) => a.t - b.t))], {
+      type: "application/json",
+    }),
   );
   const link = document.createElement("a");
   link.href = url;
@@ -282,7 +331,13 @@ controls.get("download")!.onclick = () => {
     line(`Cannot replay: ${error}`);
   }
 };
-window.addEventListener("pagehide", stop);
+const feedbackTimer = window.setInterval(() => {
+  if (mode === "LIVE CAMERA") paintSignals();
+}, 100);
+window.addEventListener("pagehide", () => {
+  clearInterval(feedbackTimer);
+  stop();
+});
 mount();
 
 controls.get("benchmark")!.onclick = async () => {

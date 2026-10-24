@@ -105,3 +105,15 @@ it("keeps a held fist disarmed when sensitivity changes", () => {
   for (let t = 240; t <= 500; t += 40) interpret(frame(t, "Closed_Fist"));
   expect(events.filter((e) => e.action === "fire")).toHaveLength(1);
 });
+
+it("dispatches a clear swipe directly at the threshold without an extra smoothing frame", () => {
+  const events: InputEvent[] = [];
+  const interpret = createInterpreter((event) => events.push(event));
+  for (const [t, x] of [
+    [0, 0.8],
+    [35, 0.69],
+    [70, 0.58],
+  ])
+    interpret({ ...frame(t, null, x), player: "runner" });
+  expect(events).toEqual([{ player: "runner", action: "left" }]);
+});

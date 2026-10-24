@@ -35,7 +35,9 @@ function buildInterpreter(
   const aim = new LaneAim();
   const filters = { runner: new PalmFilter(), saboteur: new PalmFilter() };
   return (f: HandFrame) => {
-    const p = filters[f.player].push(f.t, f.landmarks?.[9] ?? null);
+    const raw = f.landmarks?.[9] ?? null;
+    // Swipes use actual positions; low-pass smoothing is reserved for continuous aiming.
+    const p = f.player === "runner" ? raw : filters.saboteur.push(f.t, raw);
     if (f.player === "runner") {
       const direction = swipe.push(f.t, p);
       // Down is recognized in the lab; the shared game contract has no duck action yet.

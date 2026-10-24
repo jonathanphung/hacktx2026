@@ -3,51 +3,132 @@ import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { jumpHeight } from "./motion";
 
-const RUN_FRAMES = 4;
-const TEX = 64;
+const RUN_FRAMES = 8;
+/** Textures are drawn at 2x so the runner stays crisp when the game is scaled up. */
+const S = 2;
+const TEX = 64 * S;
+/** Height of the drawn figure inside its frame, in frame units (before the 2x). */
+const FIGURE = 48;
 
-const COLORS = {
+const C = {
+  outline: 0x14142b,
   skin: 0xf1c27d,
+  skinShade: 0xd9a066,
   hair: 0x3b2a1a,
-  shirt: 0x4fc3f7,
-  stripe: 0xffffff,
-  pants: 0x283593,
-  shoes: 0x212121,
+  hairLight: 0x6d4c33,
+  shirt: 0x29b6f6,
+  shirtShade: 0x0288d1,
+  shirtLight: 0x81d4fa,
+  accent: 0xff7043,
+  pants: 0x3949ab,
+  shoe: 0xfafafa,
+  sole: 0xff7043,
 };
 
+/** Draws in 64-unit frame coordinates, each shape with a dark outline (cel look). */
+class Pen {
+  constructor(private g: Phaser.GameObjects.Graphics) {}
+  private o = 1.4; // outline width in frame units
+  rr(x: number, y: number, w: number, h: number, r: number, color: number, outline = true) {
+    const o = this.o;
+    if (outline) {
+      this.g.fillStyle(C.outline);
+      this.g.fillRoundedRect(
+        (x - o) * S,
+        (y - o) * S,
+        (w + 2 * o) * S,
+        (h + 2 * o) * S,
+        (r + o) * S,
+      );
+    }
+    this.g.fillStyle(color);
+    this.g.fillRoundedRect(x * S, y * S, w * S, h * S, Math.min(r, w / 2, h / 2) * S);
+  }
+  circle(x: number, y: number, r: number, color: number, outline = true) {
+    if (outline) {
+      this.g.fillStyle(C.outline);
+      this.g.fillCircle(x * S, y * S, (r + this.o) * S);
+    }
+    this.g.fillStyle(color);
+    this.g.fillCircle(x * S, y * S, r * S);
+  }
+  ellipse(x: number, y: number, w: number, h: number, color: number, outline = true) {
+    if (outline) {
+      this.g.fillStyle(C.outline);
+      this.g.fillEllipse(x * S, y * S, (w + 2 * this.o) * S, (h + 2 * this.o) * S);
+    }
+    this.g.fillStyle(color);
+    this.g.fillEllipse(x * S, y * S, w * S, h * S);
+  }
+}
+
 /**
- * Draws one top-down frame of the runner (facing up the track) into a texture.
- * `phase` in [-1, 1] swings legs and arms in opposition; null = tucked jump pose.
+ * Draws one top-down frame of the runner (seen from above and behind, running up the track).
+ * `phase` is the run-cycle angle in radians; null draws the airborne pose.
  */
 function drawFrame(scene: Phaser.Scene, key: string, phase: number | null) {
   const g = scene.make.graphics({}, false);
-  const swing = (phase ?? 0) * 9;
-  const tuck = phase === null;
+  const pen = new Pen(g);
+  const air = phase === null;
+  const s = air ? 0 : Math.sin(phase); // >0: left leg forward, right arm forward
 
-  // Legs (behind the torso), then shoes at the ends.
-  g.fillStyle(COLORS.pants);
-  g.fillRoundedRect(23, 34 - (tuck ? 4 : swing), 8, tuck ? 12 : 18, 4);
-  g.fillRoundedRect(33, 34 + (tuck ? -4 : swing), 8, tuck ? 12 : 18, 4);
-  g.fillStyle(COLORS.shoes);
-  g.fillEllipse(27, (tuck ? 42 : 50) - (tuck ? 0 : swing), 9, 6);
-  g.fillEllipse(37, (tuck ? 42 : 50) + (tuck ? 0 : swing), 9, 6);
+  // Legs and shoes (behind the torso). A forward foot tucks under the body; a back foot
+  // trails lower on screen and shows its sole.
+  for (const [x, dir] of [
+    [26.5, 1],
+    [37.5, -1],
+  ] as const) {
+    // Forward foot peeks out just below the shirt hem (y 47); back foot trails to y 59.
+    const footY = air ? 46 : 53 - dir * s * 6;
+    pen.rr(x - 3.5, 37, 7, footY - 37, 3.5, C.pants);
+    pen.ellipse(x, footY, 8, 8.5, C.shoe);
+    if (!air && dir * s < -0.3) pen.rr(x - 3, footY + 2, 6, 2.2, 1, C.sole, false);
+  }
 
-  // Arms swing opposite to the legs; raised when jumping.
-  g.fillStyle(COLORS.skin);
-  g.fillRoundedRect(12, (tuck ? 14 : 24) + swing * 0.8, 7, 15, 3.5);
-  g.fillRoundedRect(45, (tuck ? 14 : 24) - swing * 0.8, 7, 15, 3.5);
+  // Upper body counter-rotates against the legs, as in real running.
+  g.save();
+  g.translateCanvas(32 * S, 30 * S);
+  g.rotateCanvas(-s * 0.12);
+  g.translateCanvas(-32 * S, -30 * S);
 
-  // Torso with a racing stripe.
-  g.fillStyle(COLORS.shirt);
-  g.fillRoundedRect(17, 22, 30, 20, 8);
-  g.fillStyle(COLORS.stripe);
-  g.fillRect(30, 22, 4, 20);
+  // Arms swing opposite to the legs; flung up and out in the air.
+  for (const [x, dir] of [
+    [15.5, 1],
+    [48.5, -1],
+  ] as const) {
+    const handX = air ? x - dir * 4 : x;
+    const handY = air ? 13 : 37 + dir * s * 7;
+    const elbowY = air ? 19 : (25 + handY) / 2;
+    pen.rr(x - 3.5, 23, 7, elbowY - 21, 3.5, C.shirt); // sleeve
+    pen.rr(
+      Math.min(x, handX) - 3,
+      Math.min(elbowY, handY) - 1,
+      6 + Math.abs(handX - x),
+      Math.abs(handY - elbowY) + 2,
+      3,
+      C.skin,
+    );
+    pen.circle(handX, handY, 3.4, C.skin);
+  }
 
-  // Head: mostly hair from above, a bit of face toward the top of the frame.
-  g.fillStyle(COLORS.skin);
-  g.fillCircle(32, 18, 9);
-  g.fillStyle(COLORS.hair);
-  g.fillCircle(32, 20, 8);
+  // Torso: shaded shirt with a light band across the shoulders and a racing stripe.
+  pen.rr(17.5, 21, 29, 22, 9, C.shirt);
+  g.fillStyle(C.shirtShade);
+  g.fillRoundedRect(19 * S, 34 * S, 26 * S, 8 * S, 6 * S);
+  g.fillStyle(C.shirtLight);
+  g.fillRoundedRect(21 * S, 22.5 * S, 22 * S, 4 * S, 2 * S);
+  g.fillStyle(C.accent);
+  g.fillRect(30.5 * S, 21.5 * S, 3 * S, 21 * S);
+  g.restore();
+
+  // Head: ears, hair with a highlight, and a headband.
+  pen.circle(23.3, 19, 2.4, C.skinShade);
+  pen.circle(40.7, 19, 2.4, C.skinShade);
+  pen.circle(32, 18.5, 9, C.hair);
+  g.fillStyle(C.hairLight);
+  g.fillEllipse(29 * S, 15.5 * S, 8 * S, 5 * S);
+  g.fillStyle(C.accent);
+  g.fillRect(23.2 * S, 18 * S, 17.6 * S, 3 * S);
 
   g.generateTexture(key, TEX, TEX);
   g.destroy();
@@ -57,13 +138,13 @@ function drawFrame(scene: Phaser.Scene, key: string, phase: number | null) {
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.textures.exists("runner-jump")) return;
   for (let i = 0; i < RUN_FRAMES; i++) {
-    drawFrame(scene, `runner-run-${i}`, Math.sin((i / RUN_FRAMES) * Math.PI * 2));
+    drawFrame(scene, `runner-run-${i}`, (i / RUN_FRAMES) * Math.PI * 2);
   }
   drawFrame(scene, "runner-jump", null);
   scene.anims.create({
     key: "runner-run",
     frames: Array.from({ length: RUN_FRAMES }, (_, i) => ({ key: `runner-run-${i}` })),
-    frameRate: 10,
+    frameRate: 16,
     repeat: -1,
   });
 }
@@ -102,7 +183,7 @@ export class RunnerView {
     private groundY: number,
   ) {
     ensureAssets(scene);
-    this.baseScale = RUNNER.runnerSize / 48; // the drawn figure is ~48px tall in its 64px frame
+    this.baseScale = RUNNER.runnerSize / (FIGURE * S);
     this.shadow = scene.add.ellipse(x, groundY + 6, 44, 22, 0x000000, 0.55).setDepth(9);
     this.sprite = scene.add
       .sprite(x, groundY, "runner-run-0")

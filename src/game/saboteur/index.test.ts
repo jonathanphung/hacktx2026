@@ -74,6 +74,30 @@ describe("saboteur attack warnings", () => {
       events.emit("shutdown", undefined);
     }
   });
+  it("acknowledges accepted and blocked casts for feedback", () => {
+    const { events, world, fire } = setup();
+    const feedback = vi.fn();
+    world.events.on("cast-result", feedback);
+    try {
+      events.emit("update", 0);
+      fire();
+      fire();
+      expect(feedback).toHaveBeenNthCalledWith(
+        1,
+        expect.objectContaining({ accepted: true, attackId: "barrier" }),
+      );
+      expect(feedback).toHaveBeenNthCalledWith(
+        2,
+        expect.objectContaining({
+          accepted: false,
+          reason: "cooldown",
+          remainingMs: SABOTEUR.fireCooldownMs,
+        }),
+      );
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
   it("ignores aim and fire while the scene is paused", () => {
     const { events, warnings, fire, isPaused } = setup();
     try {

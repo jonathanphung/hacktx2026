@@ -1,3 +1,4 @@
+import { playCue, pauseMusic } from "./audio";
 import type Phaser from "phaser";
 import { untilShutdown } from "../shared/emitter";
 
@@ -59,6 +60,8 @@ export function installPause(scene: Phaser.Scene): void {
   const toggle = () => {
     if (ended) return;
     paused = !paused;
+    pauseMusic(paused);
+    playCue(paused ? "pause" : "resume");
     overlay.hidden = !paused;
     trigger.hidden = paused;
     if (paused) {

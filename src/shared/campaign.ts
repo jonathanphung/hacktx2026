@@ -1,4 +1,10 @@
 export type ChapterTheme = "grove" | "clouds" | "castle";
+export type GameplayMode = "campaign" | "storybook";
+let gameplayMode: GameplayMode = "campaign";
+export const getGameplayMode = (): GameplayMode => gameplayMode;
+export const setGameplayMode = (mode: GameplayMode): void => {
+  gameplayMode = mode;
+};
 export type NaturalHazard = "wild-thorns" | "moss-rock" | "sticky-sap";
 export interface StoryBeat {
   speaker: "Jon" | "Giant";

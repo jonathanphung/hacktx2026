@@ -201,3 +201,59 @@ updates, and the collapsible camera dock while retaining the wizard/beanstalk
 art and local game mechanics. Combined the duplicate deterministic RNG test setup.
 The complete scripts/check.sh passed with 110 tests; browser checks covered the
 camera dock, wizard rendering, movement, and jump with no console warnings/errors.
+
+## Gemini-generated story and chapters
+
+Generate an adventure ahead of the demo; no backend or browser API key is needed.
+The current `public/campaign.json` was generated successfully with Gemini and
+validated locally. It contains three short prologue beats and three playable
+chapters: The Whispering Grove (20s), The Cloud Sea (35s), and The Celestial Citadel (50s). The authored fallback remains available if a saved file cannot load.
+
+1. Keep `GEMINI_API_KEY` and optional `GEMINI_MODEL` in ignored `.env` (see
+   `.env.example` for variable names). Never put a real key in `.env.example`,
+   `public/`, or a `VITE_` variable.
+2. Run `npm run generate:campaign` using Node 22.18+ (or Node 24). This sends only
+   the game premise and JSON schema to Google's Gemini API. The default model is
+   `gemini-3.5-flash-lite`; set `GEMINI_MODEL` to another compatible model if needed.
+3. Review the saved JSON, then run `npm run build`. GitHub Pages serves the saved
+   story and levels; players never call Gemini. `--dry-run` checks the setup without
+   calling the API, and `--check` validates an existing saved campaign.
+
+The first start plays a roughly 10–15 second illustrated prologue. Enter advances,
+Esc or Skip story skips it, and replay goes straight to gameplay. Chapters change
+the biome, hazard pool, spawn interval, wave size, and bounded speed multiplier.
+The HUD shows chapter progress. Survive all three to reclaim the starlight and see
+the generated ending. Pause freezes chapter time as well as gameplay.
+
+Both Gemini's JSON schema and local validation constrain the generated content.
+Unknown hazards, invalid text lengths, out-of-range settings, and difficulty
+reversals are rejected. A failed API request leaves the existing campaign file
+intact. Generated text is inserted as text, never executed as HTML or game code.
+`./scripts/check.sh` also runs the generator's mocked API tests and validates the
+saved adventure; it never calls Gemini or requires an API key.
+
+References: [structured JSON output](https://ai.google.dev/gemini-api/docs/generate-content/structured-output),
+[API keys](https://ai.google.dev/gemini-api/docs/generate-content/api-key),
+[model details](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash-lite).
+
+The prologue is a Gemini-written Jon–Giant–Jon conversation, not narration alone.
+Both characters appear before chapter one, the active speaker is highlighted,
+and the story can advance automatically, with Enter/Next, or be skipped. Replays
+start directly in gameplay. The current generated chapters are The Whispering
+Grove (20s), The Cloud Sea (35s), and The Celestial Citadel (50s).
+
+Expanded local chiptune effects cover accepted jumps and lane changes, pickups,
+shield blocks, giant wind-up, fireballs, cooldown readiness/rejected casts,
+chapter transitions, pause/resume, character dialogue accents, and victory.
+They use the existing sound toggle and M shortcut. Identical rapid cues are
+rate-limited; muted audio also silences already-playing notes. Movement cues
+follow accepted game actions rather than raw gesture detections.
+
+Validation: 125 game/validation tests plus 3 mocked generator tests pass; the saved
+Gemini campaign validates and production builds. Browser checks covered both
+speakers, Next/Skip, chapter transitions/completion, and pause after skipping.
+A skip-handler cleanup issue found in browser testing was corrected. Final sound
+volume/listening and live two-player webcam playtesting remain manual checks.
+
+The real Gemini key is stored only in ignored `.env`; `.env.example` is a template.
+No API key is included in the saved story, browser bundle, or committed sources.

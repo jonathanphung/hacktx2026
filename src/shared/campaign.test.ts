@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { DEFAULT_CAMPAIGN, parseCampaign, campaignLevelAt } from "./campaign";
 describe("campaign contract", () => {
+  it("requires an actual Jon-Giant-Jon dialogue", () => {
+    const campaign = structuredClone(DEFAULT_CAMPAIGN);
+    campaign.intro[1].speaker = "Jon";
+    expect(() => parseCampaign(campaign)).toThrow(/dialogue/);
+  });
   it("validates the authored fallback", () =>
     expect(parseCampaign(DEFAULT_CAMPAIGN)).toEqual(DEFAULT_CAMPAIGN));
   it("rejects unsafe difficulty or unknown content", () => {

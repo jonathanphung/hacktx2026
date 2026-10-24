@@ -5,7 +5,7 @@ import { CAMPAIGN_SCHEMA, DEFAULT_CAMPAIGN, parseCampaign } from "../src/shared/
 export const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 const PROMPT = `Create a short three-chapter retro fairy-tale adventure for "Jon and the Beanstalk".
 Jon is a young wizard climbing living vines to recover stolen starlight. A second human plays the Giant.
-Write exactly three opening story beats, each under 200 characters, for a 10-second illustrated cutscene.
+Write exactly three opening dialogue beats, each under 200 characters, for a short illustrated face-off between Jon and the Giant before gameplay. Speaker order must be Jon, Giant, Jon. Jon challenges the Giant about the stolen starlight, the Giant taunts him about the climb, and Jon gives a brave reply. Use direct spoken dialogue, not narrator summaries.
 Then design three chapters of 20-60 seconds each. Use grove, clouds, then castle themes.
 Use existing natural hazards only: wild-thorns (jumpable lethal), moss-rock (dodge-only lethal), sticky-sap (jumpable slow).
 The first chapter uses one natural hazard per wave. Later chapters may use two, never three. Each wave leaves an escape lane.

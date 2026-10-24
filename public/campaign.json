@@ -1,57 +1,58 @@
 {
   "version": 1,
-  "title": "The Stolen Starlight",
+  "title": "Jon and the Beanstalk",
   "intro": [
     {
-      "title": "A wish in the woods",
-      "text": "Jon found a fallen star beneath an ancient oak. Its fading light whispered of a kingdom hidden above the clouds.",
+      "speaker": "Jon",
+      "title": "The Young Wizard",
+      "text": "Give back the stolen starlight, giant! The realm needs its glow tonight.",
       "scene": "grove"
     },
     {
-      "title": "One enchanted seed",
-      "text": "With a flick of his crystal staff, Jon planted a silver bean. A living staircase of leaves unfurled into the sky.",
+      "speaker": "Giant",
+      "title": "Keeper of the Vault",
+      "text": "You want the light? Then climb the living vines and reach my fortress first!",
       "scene": "clouds"
     },
     {
-      "title": "The Giant awakens",
-      "text": "High above, the Giant clutched the stolen starlight. Jon must cross three enchanted realms before the last spark fades.",
+      "speaker": "Jon",
+      "title": "The Young Wizard",
+      "text": "No thorny branch or rolling stone will stop me from reclaiming our skies!",
       "scene": "castle"
     }
   ],
   "levels": [
     {
-      "name": "Whispering Grove",
-      "description": "Learn the rhythm of the living vines.",
+      "name": "The Whispering Grove",
+      "description": "Ascend the magical lower stalk while dodging forest obstacles.",
       "theme": "grove",
-      "durationSec": 30,
+      "durationSec": 20,
       "speedMultiplier": 0.9,
       "spawnIntervalMs": 4500,
       "naturalHazards": 1,
       "hazards": [
-        "wild-thorns",
-        "sticky-sap"
+        "wild-thorns"
       ]
     },
     {
-      "name": "Cloudbound Crossing",
-      "description": "Mossy stones guard the path above the clouds.",
+      "name": "The Cloud Sea",
+      "description": "Navigate high-altitude gusts past slippery sap and heavy boulders.",
       "theme": "clouds",
       "durationSec": 35,
       "speedMultiplier": 1,
-      "spawnIntervalMs": 3100,
-      "naturalHazards": 1,
+      "spawnIntervalMs": 3200,
+      "naturalHazards": 2,
       "hazards": [
-        "wild-thorns",
         "moss-rock",
         "sticky-sap"
       ]
     },
     {
-      "name": "The Starkeeper's Gate",
-      "description": "Find the open vine and reclaim the starlight.",
+      "name": "The Celestial Citadel",
+      "description": "Break into the giant's high castle court and restore the starlight.",
       "theme": "castle",
-      "durationSec": 40,
-      "speedMultiplier": 1.1,
+      "durationSec": 50,
+      "speedMultiplier": 1.15,
       "spawnIntervalMs": 2200,
       "naturalHazards": 2,
       "hazards": [
@@ -60,5 +61,5 @@
       ]
     }
   ],
-  "outro": "Jon raised his staff. The stolen stars returned to the night, and the beanstalk bloomed with a thousand tiny lights."
+  "outro": "Jon outsmarted the giant's defenses and shattered the vault, sending bright showers of starlight back down to fill the evening sky with timeless magic."
 }

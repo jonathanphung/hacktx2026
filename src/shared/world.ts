@@ -40,6 +40,7 @@ export type PowerupKind = "shield" | "slowmo" | "double";
 
 /** Events within one game run. A fresh emitter is created per run (see GameScene). */
 export interface GameEvents {
+  "runner-action": { action: "left" | "right" | "jump" };
   score: { score: number };
   "runner-hit": { kind: string; effect: ObstacleEffect };
   /** `stage` = index into STAGES (src/shared/stages.ts) of the stage the run ended in. */

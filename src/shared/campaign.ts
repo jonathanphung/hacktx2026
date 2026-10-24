@@ -1,6 +1,7 @@
 export type ChapterTheme = "grove" | "clouds" | "castle";
 export type NaturalHazard = "wild-thorns" | "moss-rock" | "sticky-sap";
 export interface StoryBeat {
+  speaker: "Jon" | "Giant";
   title: string;
   text: string;
   scene: ChapterTheme;
@@ -40,6 +41,7 @@ export const CAMPAIGN_SCHEMA = objectSchema({
     minItems: 3,
     maxItems: 3,
     items: objectSchema({
+      speaker: { type: "string", enum: ["Jon", "Giant"] },
       title: textSchema(55),
       text: textSchema(200),
       scene: { type: "string", enum: themes },
@@ -105,9 +107,17 @@ export function parseCampaign(value: unknown): Campaign {
     input.levels.length !== 3
   )
     throw new Error("Expected version 1 with three story beats and three chapters");
-  const intro = input.intro.map((raw) => {
+  const intro = input.intro.map((raw, index) => {
     const beat = record(raw);
-    return { title: text(beat.title, 55), text: text(beat.text, 200), scene: theme(beat.scene) };
+    const speaker: StoryBeat["speaker"] = index === 1 ? "Giant" : "Jon";
+    if (beat.speaker !== speaker)
+      throw new Error("Opening dialogue must alternate Jon, Giant, Jon");
+    return {
+      speaker,
+      title: text(beat.title, 55),
+      text: text(beat.text, 200),
+      scene: theme(beat.scene),
+    };
   });
   const levels = input.levels.map((raw) => {
     const level = record(raw);
@@ -149,18 +159,21 @@ export const DEFAULT_CAMPAIGN: Campaign = {
   title: "The Stolen Starlight",
   intro: [
     {
+      speaker: "Jon",
       title: "A wish in the woods",
-      text: "Jon found a fallen star beneath an ancient oak. Its fading light whispered of a kingdom hidden above the clouds.",
+      text: "Giant! The valley has gone dark. I have come to return the starlight to everyone below.",
       scene: "grove",
     },
     {
+      speaker: "Giant",
       title: "One enchanted seed",
-      text: "With a flick of his crystal staff, Jon planted a silver bean. A living staircase of leaves unfurled into the sky.",
+      text: "Then climb, little wizard! My vines are wild, my stones are heavy, and my fire will send you tumbling home.",
       scene: "clouds",
     },
     {
+      speaker: "Jon",
       title: "The Giant awakens",
-      text: "High above, the Giant clutched the stolen starlight. Jon must cross three enchanted realms before the last spark fades.",
+      text: "I have my staff, my courage, and a very good pair of boots. Keep your eyes on the beanstalk!",
       scene: "castle",
     },
   ],

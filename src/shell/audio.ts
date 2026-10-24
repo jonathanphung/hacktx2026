@@ -1,15 +1,129 @@
-/** Small synthesized cues: no downloads or venue Wi-Fi required. */
-type Cue = "start" | "attack" | "slow" | "end";
-const NOTES: Record<Cue, number[]> = {
-  start: [440, 660, 880],
-  attack: [330, 165],
-  slow: [220, 180],
-  end: [330, 247, 165],
+/** Short local chiptune cues; no audio downloads or external services. */
+export type Cue =
+  | "start"
+  | "attack"
+  | "fireball"
+  | "slow"
+  | "end"
+  | "jump"
+  | "dodge"
+  | "pickup"
+  | "shield"
+  | "chapter"
+  | "victory"
+  | "jon"
+  | "giant"
+  | "ready"
+  | "blocked"
+  | "pause"
+  | "resume";
+interface Sound {
+  notes: number[];
+  wave?: OscillatorType;
+  step?: number;
+  duration?: number;
+  volume?: number;
+  glide?: number;
+}
+const SOUNDS: Record<Cue, Sound> = {
+  start: { notes: [440, 660, 880] },
+  attack: { notes: [330, 165], glide: 0.7 },
+  fireball: { notes: [180, 120, 75], wave: "sawtooth", volume: 0.04, duration: 0.18, glide: 0.45 },
+  slow: { notes: [220, 180], glide: 0.7 },
+  end: { notes: [330, 247, 165], duration: 0.18 },
+  jump: {
+    notes: [300, 480, 720],
+    wave: "square",
+    step: 0.035,
+    duration: 0.08,
+    volume: 0.04,
+    glide: 1.2,
+  },
+  dodge: { notes: [420, 580], wave: "sine", step: 0.025, duration: 0.05, volume: 0.04 },
+  pickup: { notes: [659, 988, 1318], volume: 0.07 },
+  shield: { notes: [1100, 825, 1650], wave: "sine", volume: 0.07 },
+  chapter: { notes: [392, 523, 659, 784], duration: 0.16 },
+  victory: { notes: [523, 659, 784, 1046, 784, 1046], step: 0.11, duration: 0.2 },
+  jon: { notes: [660, 880], wave: "sine", volume: 0.05 },
+  giant: { notes: [98, 73], volume: 0.08, duration: 0.18 },
+  ready: { notes: [880, 1320], wave: "sine", volume: 0.05 },
+  blocked: { notes: [150, 120], wave: "square", volume: 0.025, duration: 0.05, step: 0.035 },
+  pause: { notes: [392, 294], wave: "sine", volume: 0.05 },
+  resume: { notes: [294, 392], wave: "sine", volume: 0.05 },
 };
 let context: AudioContext | undefined;
 let output: GainNode | undefined;
-let muted = false;
-let installed = false;
+let muted = false,
+  installed = false;
+const lastPlayed = new Map<Cue, number>();
+
+let musicTimer: ReturnType<typeof setInterval> | undefined;
+let musicWanted = false;
+let musicPaused = false;
+let nextBeat = 0;
+let beat = 0;
+const musicVoices = new Set<OscillatorNode>();
+// Original looping melody in A minor, with a soft root-note accompaniment.
+const melody = [
+  69, 72, 76, 72, 74, 71, 67, 71, 69, 72, 77, 76, 74, 72, 71, 67, 69, 76, 79, 76, 77, 74, 71, 74,
+  72, 71, 69, 67, 64, 67, 71, 72,
+];
+function scheduleMusic(): void {
+  if (!musicWanted || musicPaused || !context || !output || context.state !== "running") return;
+  nextBeat = Math.max(nextBeat, context.currentTime + 0.04);
+  while (nextBeat < context.currentTime + 0.6) {
+    const notes = [melody[beat % melody.length]];
+    if (beat % 4 === 0) notes.push([45, 43, 41, 40][Math.floor(beat / 8) % 4]);
+    for (const note of notes) {
+      const voice = context.createOscillator();
+      const gain = context.createGain();
+      voice.type = note < 60 ? "triangle" : "sine";
+      voice.frequency.setValueAtTime(440 * 2 ** ((note - 69) / 12), nextBeat);
+      gain.gain.setValueAtTime(0, nextBeat);
+      gain.gain.linearRampToValueAtTime(note < 60 ? 0.025 : 0.018, nextBeat + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.001, nextBeat + 0.3);
+      voice.connect(gain);
+      gain.connect(output);
+      musicVoices.add(voice);
+      voice.onended = () => {
+        musicVoices.delete(voice);
+        voice.disconnect();
+        gain.disconnect();
+      };
+      voice.start(nextBeat);
+      voice.stop(nextBeat + 0.32);
+    }
+    nextBeat += 0.34;
+    beat++;
+  }
+}
+function clearMusic(): void {
+  if (musicTimer !== undefined) clearInterval(musicTimer);
+  musicTimer = undefined;
+  for (const voice of musicVoices) {
+    voice.stop();
+    voice.disconnect();
+  }
+  musicVoices.clear();
+  nextBeat = 0;
+}
+export function startMusic(): void {
+  musicWanted = true;
+  musicPaused = false;
+  if (musicTimer === undefined) musicTimer = setInterval(scheduleMusic, 200);
+  scheduleMusic();
+}
+export function stopMusic(): void {
+  musicWanted = false;
+  musicPaused = false;
+  clearMusic();
+  beat = 0;
+}
+export function pauseMusic(paused: boolean): void {
+  musicPaused = paused;
+  clearMusic();
+  if (!paused && musicWanted) startMusic();
+}
 
 export function playCue(cue: Cue): void {
   if (muted || !context || !output) return;
@@ -24,15 +138,21 @@ export function playCue(cue: Cue): void {
   }
   if (context.state !== "running") return;
   const now = context.currentTime;
-  NOTES[cue].forEach((frequency, i) => {
-    const oscillator = context!.createOscillator();
-    const envelope = context!.createGain();
-    const start = now + i * 0.08;
-    oscillator.type = "triangle";
-    oscillator.frequency.value = frequency;
+  if (now - (lastPlayed.get(cue) ?? -Infinity) < 0.07) return;
+  lastPlayed.set(cue, now);
+  const sound = SOUNDS[cue];
+  sound.notes.forEach((frequency, i) => {
+    const oscillator = context!.createOscillator(),
+      envelope = context!.createGain();
+    const start = now + i * (sound.step ?? 0.075),
+      duration = sound.duration ?? 0.13;
+    oscillator.type = sound.wave ?? "triangle";
+    oscillator.frequency.setValueAtTime(frequency, start);
+    if (sound.glide)
+      oscillator.frequency.exponentialRampToValueAtTime(frequency * sound.glide, start + duration);
     envelope.gain.setValueAtTime(0, start);
-    envelope.gain.linearRampToValueAtTime(0.12, start + 0.008);
-    envelope.gain.exponentialRampToValueAtTime(0.001, start + 0.12);
+    envelope.gain.linearRampToValueAtTime(sound.volume ?? 0.075, start + 0.008);
+    envelope.gain.exponentialRampToValueAtTime(0.001, start + duration);
     oscillator.connect(envelope);
     envelope.connect(output!);
     oscillator.onended = () => {
@@ -40,11 +160,11 @@ export function playCue(cue: Cue): void {
       envelope.disconnect();
     };
     oscillator.start(start);
-    oscillator.stop(start + 0.13);
+    oscillator.stop(start + duration + 0.01);
   });
 }
 
-/** Installed once; browser audio is unlocked only after a click or keypress. */
+/** One persistent mute control; audio unlocks only following a user interaction. */
 export function installShellAudio(): void {
   if (installed) return;
   installed = true;
@@ -68,7 +188,7 @@ export function installShellAudio(): void {
       }
       if (context.state === "suspended") void context.resume().catch(() => {});
     } catch {
-      // Audio is optional; unsupported browsers can still play the game.
+      /* Audio remains optional on unsupported browsers. */
     }
   };
   button.addEventListener("click", () => {
@@ -77,18 +197,22 @@ export function installShellAudio(): void {
     unlock();
   });
   window.addEventListener("pointerdown", unlock, { capture: true });
-  window.addEventListener("keydown", (event) => {
-    unlock();
-    if (event.code !== "KeyM" || event.repeat || event.ctrlKey || event.metaKey || event.altKey)
-      return;
-    if (
-      event.target instanceof HTMLElement &&
-      event.target.closest("input, textarea, [contenteditable]")
-    )
-      return;
-    muted = !muted;
-    render();
-  });
+  window.addEventListener(
+    "keydown",
+    (event) => {
+      unlock();
+      if (event.code !== "KeyM" || event.repeat || event.ctrlKey || event.metaKey || event.altKey)
+        return;
+      if (
+        event.target instanceof HTMLElement &&
+        event.target.closest("input, textarea, [contenteditable]")
+      )
+        return;
+      muted = !muted;
+      render();
+    },
+    { capture: true },
+  );
   render();
   document.getElementById("stage")?.append(button);
 }

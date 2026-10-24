@@ -11,3 +11,4 @@ echo "==> tests";     npm run --silent test
 echo "==> build";     npm run --silent build
 
 echo "check.sh: OK"
+

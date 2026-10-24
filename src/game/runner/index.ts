@@ -152,6 +152,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   };
 
   const moveTo = (next: Lane) => {
+    events.emit("runner-action", { action: next < lane ? "left" : "right" });
     lane = next;
     lateral.target = laneX(lane);
   };
@@ -165,6 +166,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       return;
     }
     airborneUntil = now + RUNNER.jumpMs;
+    events.emit("runner-action", { action: "jump" });
   };
 
   untilShutdown(

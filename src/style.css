@@ -813,3 +813,200 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
+
+/* Authored story prologue: illustrated locally, with crisp browser text. */
+.intro-screen {
+  z-index: 5;
+}
+.intro-content {
+  position: relative;
+  width: 75%;
+  text-align: center;
+}
+.intro-illustration {
+  height: 19cqw;
+}
+.intro-illustration svg {
+  height: 100%;
+  width: 100%;
+  overflow: visible;
+}
+.intro-content h1 {
+  font:
+    bold 3cqw "Courier New",
+    monospace;
+  color: #3f3556;
+  margin: 0.5cqw 0;
+}
+.intro-adventure {
+  color: #76517d;
+  font-size: 1.1cqw;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+.intro-narration {
+  max-width: 65cqw;
+  min-height: 4.2cqw;
+  margin: 0.9cqw auto;
+  font-size: 1.55cqw;
+  line-height: 1.6;
+  color: #3c3b42;
+}
+.intro-actions {
+  display: flex;
+  gap: 2cqw;
+  justify-content: center;
+  align-items: center;
+}
+.intro-skip {
+  background: none;
+  border: 0;
+  color: #553a6c;
+  text-decoration: underline;
+  cursor: pointer;
+  font:
+    bold 1.15cqw "Courier New",
+    monospace;
+  padding: 1cqw;
+}
+.intro-skip:focus-visible {
+  outline: 2px solid #69468c;
+}
+.intro-dots {
+  display: flex;
+  gap: 0.8cqw;
+  justify-content: center;
+  margin: 1cqw;
+}
+.intro-dots span {
+  width: 0.6cqw;
+  height: 0.6cqw;
+  background: #bba4ca;
+}
+.intro-dots .active {
+  background: #62417d;
+  box-shadow: 0 0 8px #fff2aa;
+}
+.intro-wizard {
+  animation: intro-float 3s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+.intro-stars {
+  animation: intro-glimmer 1.5s ease-in-out infinite alternate;
+}
+.intro-screen[data-theme="clouds"] {
+  background: linear-gradient(#b6cbea, #f7e9f3);
+}
+.intro-screen[data-theme="castle"] {
+  background: linear-gradient(#6d5c8e, #d6c1dd);
+}
+.intro-screen[data-theme="castle"] .intro-content h1,
+.intro-screen[data-theme="castle"] .intro-narration {
+  color: #fff7e9;
+}
+.intro-screen[data-theme="castle"] .story-eyebrow,
+.intro-screen[data-theme="castle"] .intro-adventure {
+  color: #f4dea8;
+}
+.intro-screen[data-theme="grove"] .intro-castle {
+  opacity: 0.2;
+}
+.intro-screen[data-theme="castle"] .intro-castle {
+  filter: drop-shadow(0 0 8px #fff4a4);
+}
+@keyframes intro-float {
+  from {
+    translate: 0 0;
+  }
+  to {
+    translate: 0 -8px;
+  }
+}
+@keyframes intro-glimmer {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro-wizard,
+  .intro-stars {
+    animation: none;
+  }
+}
+.hud-level {
+  position: absolute;
+  top: 12%;
+  left: 50%;
+  translate: -50% 0;
+  width: 37%;
+  background: #2e2949ee;
+  border: 1px solid #d4bc8a;
+  padding: 0.5cqw 0.8cqw;
+  box-sizing: border-box;
+  font-size: 1cqw;
+  color: #f6e5ba;
+}
+.hud-level strong {
+  font-size: 1cqw;
+}
+.hud-level span {
+  float: right;
+}
+.hud-level progress {
+  display: block;
+  width: 100%;
+  height: 0.5cqw;
+  margin-top: 0.5cqw;
+  accent-color: #c1e3a6;
+}
+.hud-feedback {
+  top: 23%;
+  max-width: 60%;
+  white-space: normal;
+  text-align: center;
+}
+
+.intro-illustration svg {
+  overflow: hidden;
+}
+
+.intro-wizard,
+.intro-giant {
+  opacity: 0.55;
+  transition:
+    opacity 0.25s,
+    filter 0.25s;
+}
+.intro-screen[data-speaker="Jon"] .intro-wizard,
+.intro-screen[data-speaker="Giant"] .intro-giant {
+  opacity: 1;
+  filter: drop-shadow(0 0 8px #ffeeb0);
+}
+.intro-castle {
+  opacity: 0.18 !important;
+}
+.intro-speaker {
+  display: inline-block;
+  padding: 0.35cqw 1cqw;
+  background: #49355f;
+  color: #ffeab7;
+  border: 1px solid #cfb77f;
+  font-size: 1cqw;
+  margin: 0.2cqw 0;
+}
+.intro-content h1 {
+  font-size: 2.5cqw;
+}
+.intro-narration {
+  background: #fff7e8e8;
+  padding: 0.7cqw 1.3cqw;
+  border: 2px solid #b19ac1;
+  box-sizing: border-box;
+  font-size: 1.35cqw;
+}
+.intro-screen[data-theme="castle"] .intro-narration {
+  color: #3c3b42;
+}

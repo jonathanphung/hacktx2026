@@ -201,3 +201,20 @@ updates, and the collapsible camera dock while retaining the wizard/beanstalk
 art and local game mechanics. Combined the duplicate deterministic RNG test setup.
 The complete scripts/check.sh passed with 110 tests; browser checks covered the
 camera dock, wizard rendering, movement, and jump with no console warnings/errors.
+
+## Five tales, intro, and music
+
+The game follows the five collectible-driven fairy tales. Find the current
+stage’s treasure to advance; the last tale continues as an endless challenge.
+The opening Jon–Giant conversation is authored locally, with Next/Enter and
+Skip/Esc controls. Replays start directly in gameplay.
+
+An original quiet melody and bass loop accompanies gameplay. Sound/M mutes music
+and effects together; Esc pauses both. Music stops at game over, and scheduled
+voices and timers are cleaned up on replay. Accepted movement, pickups, shield
+blocks, giant casts, and stage transitions have sound effects.
+
+The latest team runner artwork, five-stage progression, collectible safety gaps,
+vision changes, giant aiming, buffered casts, and authoritative cooldown feedback
+are integrated. The upper-right decorative castle has been removed. Gemini
+integration and the separate timed chapter mode were removed by request.

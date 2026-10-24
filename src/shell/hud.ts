@@ -1,18 +1,21 @@
+import { STAGES } from "../shared/stages";
 import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
 import type { GameEvents, PowerupKind } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
-import { SABOTEUR } from "../game/saboteur/config";
-import { playCue } from "./audio";
+import { playCue, startMusic, stopMusic } from "./audio";
 import { installPause } from "./pause";
 import { addBeanstalks, mountShell } from "./presentation";
 
 const LANES = ["LEFT", "CENTER", "RIGHT"];
 export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): void {
   installPause(scene);
+  startMusic();
+  untilShutdown(scene, stopMusic);
   const hud = mountShell(scene, "story-hud");
   addBeanstalks(hud);
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
+    <div class="hud-level"><strong></strong><span></span></div>
     <div class="hud-feedback" role="status"></div>
     <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: logs / thorns / oil / sap<br>Dodge: rocks / walls / mud / fireballs</p></section>
     <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop · 4s cooldown</small></section>`;
@@ -20,18 +23,25 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
   const aim = hud.querySelector(".hud-giant h2")!;
   const cards = hud.querySelector(".hud-cards")!;
-  let lastTime = 0;
-  let cooldownUntil = 0;
   let cooling = false;
   const cooldownLabel = document.createElement("p");
   cooldownLabel.className = "cooldown-label";
-  const updateCooldown = (time: number) => {
-    lastTime = time;
-    if (cooling)
-      cooldownLabel.textContent = `NEXT DROP IN ${Math.max(0, (cooldownUntil - time) / 1000).toFixed(1)}s`;
-  };
-  scene.events.on("update", updateCooldown);
-  untilShutdown(scene, () => scene.events.off("update", updateCooldown));
+  hud.querySelector(".hud-level strong")!.textContent = STAGES[0].name;
+  hud.querySelector(".hud-level span")!.textContent = `Find ${STAGES[0].item.name}`;
+  untilShutdown(
+    scene,
+    events.on("stage-changed", ({ index, name }) => {
+      hud.querySelector(".hud-level strong")!.textContent = name;
+      hud.querySelector(".hud-level span")!.textContent = `Find ${STAGES[index].item.name}`;
+      playCue("chapter");
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("stage-item", ({ state }) => {
+      if (state === "collected") playCue("pickup");
+    }),
+  );
   const activePowerups = new Set<PowerupKind>();
   const powerupNames: Record<PowerupKind, string> = {
     shield: "SHIELD",
@@ -59,7 +69,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     events.on("hand-changed", ({ hand, selected, aimLane }) => {
       aim.textContent = `GIANT · AIM: ${LANES[aimLane]}`;
       cards.replaceChildren();
-      if (!hand.length && !cooling) cooldownUntil = lastTime + SABOTEUR.fireCooldownMs;
+      if (cooling && hand.length) playCue("ready");
       cooling = !hand.length;
       if (!hand.length) {
         const empty = document.createElement("p");
@@ -88,13 +98,25 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   );
   untilShutdown(
     scene,
+    events.on("saboteur-status", ({ state, remainingMs }) => {
+      cooldownLabel.textContent =
+        state === "queued"
+          ? `DROPPING IN ${(remainingMs / 1000).toFixed(1)}s`
+          : `NEXT DROP IN ${(remainingMs / 1000).toFixed(1)}s`;
+    }),
+  );
+  untilShutdown(
+    scene,
     events.on("powerup", ({ kind, active }) => {
       if (active) activePowerups.add(kind);
       else activePowerups.delete(kind);
       hud.querySelector(".hud-powerups")!.textContent = [...activePowerups]
         .map((p) => powerupNames[p])
         .join(" · ");
-      if (active) announce(`${powerupNames[kind]} ACTIVE`, true);
+      if (active) {
+        playCue("pickup");
+        announce(`${powerupNames[kind]} ACTIVE`, true);
+      }
     }),
   );
   untilShutdown(
@@ -108,7 +130,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   untilShutdown(
     scene,
     events.on("attack-fired", ({ attackId, lane }) => {
-      playCue("attack");
+      playCue(attackId === "fireball" ? "fireball" : "attack");
       announce(`${ATTACK_BY_ID.get(attackId)?.name ?? attackId} → ${LANES[lane]}`);
     }),
   );
@@ -116,6 +138,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     scene,
     events.on("runner-hit", ({ effect }) => {
       if (activePowerups.has("shield")) {
+        playCue("shield");
         announce("SHIELD BLOCKED THE HIT!", true);
         return;
       }
@@ -125,6 +148,17 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   );
   untilShutdown(
     scene,
-    events.on("game-over", () => scene.events.emit("shell-run-ended")),
+    events.on("runner-action", ({ action }) => playCue(action === "jump" ? "jump" : "dodge")),
+  );
+  untilShutdown(
+    scene,
+    events.on("cast-result", (result) => playCue(result.accepted ? "giant" : "blocked")),
+  );
+  untilShutdown(
+    scene,
+    events.on("game-over", () => {
+      stopMusic();
+      scene.events.emit("shell-run-ended");
+    }),
   );
 }

@@ -2,15 +2,32 @@ import Phaser from "phaser";
 import { untilShutdown } from "../shared/emitter";
 import { inputBus } from "../shared/input";
 import { installShellAudio, playCue } from "./audio";
+import { playIntro } from "./intro";
 import { addBeanstalks, mountShell } from "./presentation";
+
+let introSeen = false;
 
 function installStart(scene: Phaser.Scene, button: HTMLButtonElement): void {
   let started = false;
   const go = () => {
     if (started) return;
     started = true;
-    playCue("start");
-    scene.scene.start("game");
+    button.disabled = true;
+    button.textContent = "Opening the story…";
+    {
+      if (!scene.sys.isActive()) return;
+      const begin = () => {
+        introSeen = true;
+        playCue("start");
+        scene.scene.start("game");
+      };
+      if (introSeen) begin();
+      else {
+        const menu = button.closest<HTMLElement>(".story-screen");
+        if (menu) menu.inert = true;
+        playIntro(scene, begin);
+      }
+    }
   };
   const onEnter = (event: KeyboardEvent) => {
     if (event.code !== "Enter" || event.repeat) return;
@@ -58,7 +75,7 @@ export class GameOverScene extends Phaser.Scene {
   constructor() {
     super("game-over");
   }
-  create(result: { score: number; survivedMs: number }) {
+  create(result: { score: number; survivedMs: number; stage?: number }) {
     installShellAudio();
     const screen = mountShell(this, "story-screen game-over-screen");
     addBeanstalks(screen);
@@ -69,6 +86,7 @@ export class GameOverScene extends Phaser.Scene {
       <div class="story-results"><div><strong id="result-score"></strong><span>SCORE</span></div><div><strong id="result-time"></strong><span>SURVIVED</span></div></div>
       <button class="story-button" type="button" disabled>Catch your breath…</button>
       <p class="start-hint">Click replay, press Enter, or swipe up for another adventure</p>`;
+
     content.querySelector("#result-score")!.textContent = String(result.score);
     content.querySelector("#result-time")!.textContent =
       `${(result.survivedMs / 1000).toFixed(1)}s`;

@@ -7,10 +7,10 @@ export class Deck {
 
   constructor(
     private pool: readonly string[],
-    private opts: { dealMs: number; handSize: number },
+    private opts: { dealMs: number; handSize: number; startingCards?: number },
     private rng: () => number = Math.random,
   ) {
-    this.deal();
+    for (let i = 0; i < (opts.startingCards ?? 1); i++) this.deal();
   }
 
   /** Call every frame. Returns true if the hand changed. */

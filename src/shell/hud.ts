@@ -1,46 +1,122 @@
-import Phaser from "phaser";
-import type { Emitter } from "../shared/emitter";
-import { GAME_HEIGHT, GAME_WIDTH } from "../shared/types";
-import type { GameEvents } from "../shared/world";
+import type Phaser from "phaser";
+import { untilShutdown, type Emitter } from "../shared/emitter";
+import type { GameEvents, PowerupKind } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
+import { SABOTEUR } from "../game/saboteur/config";
+import { playCue } from "./audio";
+import { installPause } from "./pause";
+import { addBeanstalks, mountShell } from "./presentation";
 
-const TEXT = { fontFamily: "system-ui, sans-serif", color: "#ffffff" };
-
-/** Score and the saboteur's hand of cards. Reads game events only; never changes game state. */
+const LANES = ["LEFT", "CENTER", "RIGHT"];
 export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): void {
-  const score = scene.add
-    .text(GAME_WIDTH / 2, 16, "0", { ...TEXT, fontSize: "36px" })
-    .setOrigin(0.5, 0)
-    .setDepth(100);
-  events.on("score", (e) => score.setText(String(e.score)));
-
-  scene.add
-    .text(16, GAME_HEIGHT - 16, "P1 runner — swipe (A / D / W)", { ...TEXT, fontSize: "16px" })
-    .setOrigin(0, 1)
-    .setDepth(100);
-
-  const cards = scene.add.container(GAME_WIDTH - 16, GAME_HEIGHT - 16).setDepth(100);
-  events.on("hand-changed", ({ hand, selected }) => {
-    cards.removeAll(true);
-    hand.forEach((id, i) => {
-      const attack = ATTACK_BY_ID.get(id);
-      const x = -(hand.length - i) * 110;
-      const card = scene.add
-        .rectangle(x, 0, 100, 60, attack?.color ?? 0x888888)
-        .setOrigin(0, 1)
-        .setStrokeStyle(i === selected ? 4 : 0, 0xffffff);
-      const label = scene.add
-        .text(x + 50, -30, `${i + 1}. ${attack?.name ?? id}`, { ...TEXT, fontSize: "13px" })
-        .setOrigin(0.5);
-      cards.add([card, label]);
+  installPause(scene);
+  const hud = mountShell(scene, "story-hud");
+  addBeanstalks(hud);
+  hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
+    <div class="hud-feedback" role="status"></div>
+    <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: logs / thorns / oil / sap<br>Dodge: rocks / walls / mud / fireballs</p></section>
+    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop · 4s cooldown</small></section>`;
+  const score = hud.querySelector(".hud-score strong")!;
+  const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
+  const aim = hud.querySelector(".hud-giant h2")!;
+  const cards = hud.querySelector(".hud-cards")!;
+  let lastTime = 0;
+  let cooldownUntil = 0;
+  let cooling = false;
+  const cooldownLabel = document.createElement("p");
+  cooldownLabel.className = "cooldown-label";
+  const updateCooldown = (time: number) => {
+    lastTime = time;
+    if (cooling)
+      cooldownLabel.textContent = `NEXT DROP IN ${Math.max(0, (cooldownUntil - time) / 1000).toFixed(1)}s`;
+  };
+  scene.events.on("update", updateCooldown);
+  untilShutdown(scene, () => scene.events.off("update", updateCooldown));
+  const activePowerups = new Set<PowerupKind>();
+  const powerupNames: Record<PowerupKind, string> = {
+    shield: "SHIELD",
+    slowmo: "SLOW MOTION",
+    double: "2× SCORE",
+  };
+  let feedbackTimer: Phaser.Time.TimerEvent | undefined;
+  const announce = (message: string, positive = false) => {
+    feedbackTimer?.remove();
+    feedback.textContent = message;
+    feedback.classList.toggle("positive", positive);
+    feedback.hidden = false;
+    feedbackTimer = scene.time.delayedCall(1400, () => {
+      feedback.hidden = true;
     });
-  });
-
-  scene.add
-    .text(GAME_WIDTH - 16, GAME_HEIGHT - 84, "P2 saboteur — aim J/K/L, fire Space, pick 1-3", {
-      ...TEXT,
-      fontSize: "16px",
-    })
-    .setOrigin(1, 1)
-    .setDepth(100);
+  };
+  untilShutdown(
+    scene,
+    events.on("score", (e) => {
+      score.textContent = String(e.score);
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("hand-changed", ({ hand, selected, aimLane }) => {
+      aim.textContent = `GIANT · AIM: ${LANES[aimLane]}`;
+      cards.replaceChildren();
+      if (!hand.length && !cooling) cooldownUntil = lastTime + SABOTEUR.fireCooldownMs;
+      cooling = !hand.length;
+      if (!hand.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "Recharging magic…";
+        cards.append(empty, cooldownLabel);
+      }
+      hand.forEach((id, i) => {
+        const attack = ATTACK_BY_ID.get(id);
+        const card = document.createElement("div");
+        card.className = `hud-card${i === selected ? " selected" : ""}`;
+        card.style.setProperty(
+          "--card-color",
+          `#${(attack?.color ?? 0x888888).toString(16).padStart(6, "0")}`,
+        );
+        const name = document.createElement("strong");
+        name.textContent = attack?.name ?? id;
+        const hint = document.createElement("small");
+        hint.textContent = "READY TO DROP";
+        const counter = document.createElement("small");
+        counter.className = "card-counter";
+        counter.textContent = ["hurdle", "oil"].includes(id) ? "JUMP / DODGE" : "DODGE ONLY";
+        card.append(name, hint, counter);
+        cards.append(card);
+      });
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("powerup", ({ kind, active }) => {
+      if (active) activePowerups.add(kind);
+      else activePowerups.delete(kind);
+      hud.querySelector(".hud-powerups")!.textContent = [...activePowerups]
+        .map((p) => powerupNames[p])
+        .join(" · ");
+      if (active) announce(`${powerupNames[kind]} ACTIVE`, true);
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("attack-fired", ({ attackId, lane }) => {
+      playCue("attack");
+      announce(`${ATTACK_BY_ID.get(attackId)?.name ?? attackId} → ${LANES[lane]}`);
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("runner-hit", ({ effect }) => {
+      if (activePowerups.has("shield")) {
+        announce("SHIELD BLOCKED THE HIT!", true);
+        return;
+      }
+      playCue(effect === "slow" ? "slow" : "end");
+      announce(effect === "slow" ? "JON SLOWED!" : "JON CAUGHT!");
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("game-over", () => scene.events.emit("shell-run-ended")),
+  );
 }

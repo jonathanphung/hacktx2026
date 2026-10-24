@@ -11,130 +11,57 @@ const TEX = 64 * S;
 /** Height of the drawn figure inside its frame, in frame units (before the 2x). */
 const FIGURE = 48;
 
-const C = {
-  outline: 0x14142b,
-  skin: 0xf1c27d,
-  skinShade: 0xd9a066,
-  hair: 0x3b2a1a,
-  hairLight: 0x6d4c33,
-  shirt: 0x29b6f6,
-  shirtShade: 0x0288d1,
-  shirtLight: 0x81d4fa,
-  accent: 0xff7043,
-  pants: 0x3949ab,
-  shoe: 0xfafafa,
-  sole: 0xff7043,
-};
-
-/** Draws in 64-unit frame coordinates, each shape with a dark outline (cel look). */
-class Pen {
-  constructor(private g: Phaser.GameObjects.Graphics) {}
-  private o = 1.4; // outline width in frame units
-  rr(x: number, y: number, w: number, h: number, r: number, color: number, outline = true) {
-    const o = this.o;
-    if (outline) {
-      this.g.fillStyle(C.outline);
-      this.g.fillRoundedRect(
-        (x - o) * S,
-        (y - o) * S,
-        (w + 2 * o) * S,
-        (h + 2 * o) * S,
-        (r + o) * S,
-      );
-    }
-    this.g.fillStyle(color);
-    this.g.fillRoundedRect(x * S, y * S, w * S, h * S, Math.min(r, w / 2, h / 2) * S);
-  }
-  circle(x: number, y: number, r: number, color: number, outline = true) {
-    if (outline) {
-      this.g.fillStyle(C.outline);
-      this.g.fillCircle(x * S, y * S, (r + this.o) * S);
-    }
-    this.g.fillStyle(color);
-    this.g.fillCircle(x * S, y * S, r * S);
-  }
-  ellipse(x: number, y: number, w: number, h: number, color: number, outline = true) {
-    if (outline) {
-      this.g.fillStyle(C.outline);
-      this.g.fillEllipse(x * S, y * S, (w + 2 * this.o) * S, (h + 2 * this.o) * S);
-    }
-    this.g.fillStyle(color);
-    this.g.fillEllipse(x * S, y * S, w * S, h * S);
-  }
-}
-
-/**
- * Draws one top-down frame of the runner (seen from above and behind, running up the track).
- * `phase` is the run-cycle angle in radians; null draws the airborne pose.
- */
+/** Wizard Jon: starry robes, a pointed hat, boots, and a crystal staff. */
 function drawFrame(scene: Phaser.Scene, key: string, phase: number | null) {
   const g = scene.make.graphics({}, false);
-  const pen = new Pen(g);
-  const air = phase === null;
-  const s = air ? 0 : Math.sin(phase); // >0: left leg forward, right arm forward
-
-  // Legs and shoes (behind the torso). A forward foot tucks under the body; a back foot
-  // trails lower on screen and shows its sole.
-  for (const [x, dir] of [
-    [26.5, 1],
-    [37.5, -1],
-  ] as const) {
-    // Forward foot peeks out just below the shirt hem (y 47); back foot trails to y 59.
-    const footY = air ? 46 : 53 - dir * s * 6;
-    pen.rr(x - 3.5, 37, 7, footY - 37, 3.5, C.pants);
-    pen.ellipse(x, footY, 8, 8.5, C.shoe);
-    if (!air && dir * s < -0.3) pen.rr(x - 3, footY + 2, 6, 2.2, 1, C.sole, false);
-  }
-
-  // Upper body counter-rotates against the legs, as in real running.
-  g.save();
-  g.translateCanvas(32 * S, 30 * S);
-  g.rotateCanvas(-s * 0.12);
-  g.translateCanvas(-32 * S, -30 * S);
-
-  // Arms swing opposite to the legs; flung up and out in the air.
-  for (const [x, dir] of [
-    [15.5, 1],
-    [48.5, -1],
-  ] as const) {
-    const handX = air ? x - dir * 4 : x;
-    const handY = air ? 13 : 37 + dir * s * 7;
-    const elbowY = air ? 19 : (25 + handY) / 2;
-    pen.rr(x - 3.5, 23, 7, elbowY - 21, 3.5, C.shirt); // sleeve
-    pen.rr(
-      Math.min(x, handX) - 3,
-      Math.min(elbowY, handY) - 1,
-      6 + Math.abs(handX - x),
-      Math.abs(handY - elbowY) + 2,
-      3,
-      C.skin,
-    );
-    pen.circle(handX, handY, 3.4, C.skin);
-  }
-
-  // Torso: shaded shirt with a light band across the shoulders and a racing stripe.
-  pen.rr(17.5, 21, 29, 22, 9, C.shirt);
-  g.fillStyle(C.shirtShade);
-  g.fillRoundedRect(19 * S, 34 * S, 26 * S, 8 * S, 6 * S);
-  g.fillStyle(C.shirtLight);
-  g.fillRoundedRect(21 * S, 22.5 * S, 22 * S, 4 * S, 2 * S);
-  g.fillStyle(C.accent);
-  g.fillRect(30.5 * S, 21.5 * S, 3 * S, 21 * S);
-  g.restore();
-
-  // Head: ears, hair with a highlight, and a headband.
-  pen.circle(23.3, 19, 2.4, C.skinShade);
-  pen.circle(40.7, 19, 2.4, C.skinShade);
-  pen.circle(32, 18.5, 9, C.hair);
-  g.fillStyle(C.hairLight);
-  g.fillEllipse(29 * S, 15.5 * S, 8 * S, 5 * S);
-  g.fillStyle(C.accent);
-  g.fillRect(23.2 * S, 18 * S, 17.6 * S, 3 * S);
-
+  g.scaleCanvas(S, S);
+  const swing = (phase === null ? 0 : Math.sin(phase)) * 4;
+  const tuck = phase === null;
+  g.fillStyle(0x31213f);
+  g.fillEllipse(25, (tuck ? 51 : 56) + swing, 12, 7);
+  g.fillEllipse(39, (tuck ? 51 : 56) - swing, 12, 7);
+  g.fillStyle(0x392b70);
+  g.fillTriangle(32, 22, 11, 53, 53, 53);
+  g.fillStyle(0x8063b7);
+  g.fillTriangle(32, 23, 18, 50, 46, 50);
+  g.lineStyle(3, 0xf4d789);
+  g.lineBetween(15, 52, 49, 52);
+  g.lineStyle(3, 0xe7bc62);
+  g.lineBetween(22, 37, 42, 37);
+  g.fillStyle(0x9b7bce);
+  g.fillRoundedRect(9, 29 + swing, 12, 14, 4);
+  g.fillRoundedRect(43, 29 - swing, 12, 14, 4);
+  g.fillStyle(0xf2cdab);
+  g.fillCircle(13, 41 + swing, 4);
+  g.fillCircle(51, 41 - swing, 4);
+  g.fillCircle(32, 25, 9);
+  g.fillStyle(0x61432f);
+  g.fillEllipse(32, 27, 17, 8);
+  g.fillStyle(0x332257);
+  g.fillEllipse(32, 20, 39, 12);
+  g.fillStyle(0x7751a3);
+  g.fillTriangle(32, 1, 18, 20, 46, 20);
+  g.lineStyle(2, 0xe7bc62);
+  g.lineBetween(20, 18, 44, 18);
+  g.fillStyle(0xffe5a0);
+  g.fillCircle(31, 11, 3);
+  g.fillStyle(0x7751a3);
+  g.fillCircle(33, 10, 3);
+  g.lineStyle(3, 0xa17c4e);
+  g.lineBetween(55, 19 - swing, 52, 52 - swing);
+  g.fillStyle(0x8aefd5, 0.25);
+  g.fillCircle(55, 16 - swing, 9);
+  g.fillStyle(0xbdfce9);
+  g.fillTriangle(55, 8 - swing, 49, 17 - swing, 61, 17 - swing);
+  g.fillStyle(0x73c8df);
+  g.fillTriangle(55, 24 - swing, 49, 17 - swing, 61, 17 - swing);
+  g.fillStyle(0xffe5a0);
+  g.fillCircle(29, 42, 1.5);
+  g.fillCircle(37, 47, 1.5);
   g.generateTexture(key, TEX, TEX);
+  scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
   g.destroy();
 }
-
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.textures.exists("runner-jump")) return;
@@ -142,6 +69,13 @@ function ensureAssets(scene: Phaser.Scene) {
     drawFrame(scene, `runner-run-${i}`, (i / RUN_FRAMES) * Math.PI * 2);
   }
   drawFrame(scene, "runner-jump", null);
+  const spark = scene.make.graphics({}, false);
+  spark.fillStyle(0xffedb0);
+  spark.fillRect(3, 0, 2, 8);
+  spark.fillRect(0, 3, 8, 2);
+  spark.generateTexture("wizard-spark", 8, 8);
+  spark.destroy();
+  scene.textures.get("wizard-spark").setFilter(Phaser.Textures.FilterMode.NEAREST);
   scene.anims.create({
     key: "runner-run",
     frames: Array.from({ length: RUN_FRAMES }, (_, i) => ({ key: `runner-run-${i}` })),
@@ -180,6 +114,7 @@ export class RunnerView {
   private fx: RunnerFx;
   private lastFrameKey = "";
   private lastGhostAt = -Infinity;
+  private magic: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private scene: Phaser.Scene,
@@ -195,6 +130,20 @@ export class RunnerView {
       .setDepth(10);
     this.sprite.play("runner-run");
     this.fx = new RunnerFx(scene);
+    this.magic = scene.add
+      .particles(0, 0, "wizard-spark", {
+        follow: this.sprite,
+        followOffset: { x: 0, y: 18 },
+        frequency: 100,
+        lifespan: 450,
+        speed: { min: 8, max: 25 },
+        angle: { min: 60, max: 120 },
+        scale: { start: 0.7, end: 0 },
+        alpha: { start: 0.8, end: 0 },
+        blendMode: "ADD",
+        quantity: 1,
+      })
+      .setDepth(9);
     this.shield = scene.add
       .circle(x, groundY, RUNNER.runnerSize * 0.75)
       .setStrokeStyle(3, 0x80deea)
@@ -212,6 +161,7 @@ export class RunnerView {
 
     // Takeoff / landing: swap between the run cycle and the tucked jump pose.
     if (airborne && !this.wasAirborne) {
+      this.magic.emitParticleAt(pose.x, this.groundY, 14);
       sprite.anims.pause();
       sprite.setTexture("runner-jump");
     } else if (!airborne && this.wasAirborne) {
@@ -239,7 +189,7 @@ export class RunnerView {
     // Jumping = rising toward the camera: bigger and slightly up the screen.
     const grow = 1 + 0.35 * h;
     sprite.setScale(this.baseScale * grow * sx, this.baseScale * grow * sy);
-    sprite.setPosition(pose.x, this.groundY - 14 * h);
+    sprite.setPosition(pose.x, this.groundY - 32 * h);
 
     const lean = Phaser.Math.Clamp(pose.vx * RUNNER.leanPerSpeed, -18, 18);
     const wobble = pose.slowed ? Math.sin(time / 45) * 7 : 0;

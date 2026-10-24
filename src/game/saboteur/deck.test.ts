@@ -5,6 +5,10 @@ const opts = { dealMs: 1000, handSize: 3 };
 const first = () => 0; // rng that always picks pool[0]
 
 describe("Deck", () => {
+  it("supports a stronger opening hand while respecting capacity", () => {
+    expect(new Deck(["a"], { ...opts, startingCards: 2 }, first).hand).toEqual(["a", "a"]);
+    expect(new Deck(["a"], { ...opts, startingCards: 5 }, first).hand).toHaveLength(3);
+  });
   it("starts with one card and deals one per interval from the first update", () => {
     const deck = new Deck(["a", "b"], opts, first);
     expect(deck.hand).toEqual(["a"]);

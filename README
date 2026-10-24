@@ -1,4 +1,4 @@
-# HackTX Runner
+# Jon and the Beanstalk
 
 A two-player, webcam-controlled endless runner. One player dodges; the other throws
 traps at them. Both control the game with hand gestures in front of one webcam.
@@ -11,3 +11,193 @@ npm run dev
 Open http://localhost:5173 (add `?novision` to play with the keyboard only).
 
 Contributors and coding agents: read [AGENTS.md](AGENTS.md) first.
+
+## Shell progress
+
+Prahalad owns the shell and presentation (`prahalad/` branches).
+
+- Title screen explains both player roles, positions, gestures, and keyboard controls.
+- Start and replay support clicks, Enter, and runner jump input. Restart listeners are cleaned up.
+- Game-over screen shows score and survival time, with an 800 ms replay guard.
+- Camera UI shows startup guidance, player labels, hand readiness, and positioning guidance.
+- `?novision` shows keyboard instructions; camera startup failure falls back to keyboard controls.
+
+Validation: formatting, TypeScript, 13 unit tests, and production build passed.
+Browser checks covered an 800 × 600 layout, click/Enter/jump-input start, game-over,
+and replay. Camera readiness transitions were checked with simulated vision frames.
+Live two-player webcam and gesture playtesting remains outstanding.
+
+Initial-card integration issue resolved upstream: GameScene now installs the HUD before the saboteur announces its starting hand. Verified after rebase.
+
+Next: live camera playtesting, audio listening, and deployed-site verification.
+
+HUD update: added labeled distance, explicit aim lane, larger cards with selection
+labels, empty-hand messaging, and fading attack/hit feedback. Event subscriptions
+clean up on scene shutdown. Browser playtesting verified aim changes, card selection,
+and attack feedback. Formatting, typecheck, 13 tests, and build passed afterward.
+
+Audio update: added locally synthesized start, attack, slowdown, and collision cues.
+Sound unlocks after a user click/key; a persistent button and M shortcut mute it.
+The mute control silences currently playing cues too. No external audio assets or
+new dependencies. Browser checks verified the button and shortcut; listening and
+live gesture testing remain manual checks. Enter-start prevents activating a
+focused sound button at the same time. All standard checks passed.
+
+Post-rebase playtest: checked the new runner artwork, lane movement/jump, attack
+warnings, aim display, and card readability. Changed the HUD label from DISTANCE
+to SCORE because the double-score powerup changes points independently of distance.
+Added active powerup labels and corrected shield-block feedback using existing
+contracts. Simulated events verified activation, shield consumption, and expiration.
+The upstream saboteur cooldown test has a random-card assumption: double-wall
+spawns two obstacles while the test expects one. That lane's code is unchanged.
+
+Verified game-over and Enter replay with the combined game; no browser warnings or errors. All 33 tests passed on this run; the random-card test issue above remains intermittent.
+
+## Demo checklist
+
+1. Start with `npm install` and `npm run dev`. Use localhost or HTTPS for the webcam.
+2. Place the laptop at hand height with both players in good light. Runner stands
+   on the left of the mirrored preview; saboteur stands on the right.
+3. Allow camera access. Wait for both previews to say **Hand detected · Ready**.
+4. Click Start once to enable audio. Check volume and mute with the sound button or M.
+5. Show runner swipes/jump, then saboteur aim/fist. Explain that a warning precedes
+   each attack and cards replenish automatically.
+6. Demonstrate one collision, the score/survival screen, and a replay.
+7. Keep `?novision` ready as a keyboard fallback. If camera setup fails, the banner
+   offers Retry camera and Keyboard mode. A browser permission denial may need
+   to be changed in the browser's site settings before retrying.
+8. Before presenting, record a short successful two-player run as a backup.
+
+### Production preview
+
+Run `npm run build`, then `npm run preview -- --base /hacktx2026/`. Open
+`http://localhost:4173/hacktx2026/` (or add `?novision`). Check that the title screen,
+initial cards, runner, sound toggle, and replay work under this deployment prefix.
+The vision debug page is `/hacktx2026/vision.html`.
+
+Merging to main triggers the GitHub Pages deployment workflow. A repo admin must
+have selected **GitHub Actions** as the Pages source. Local production preview
+checks do not confirm that the remote deployment is live.
+
+Remaining manual checks: live two-player gestures, camera denial/retry on the demo
+browser, audio volume/listening, and a successful run on the deployed HTTPS site.
+
+Production smoke check: the built game loads and starts under /hacktx2026/ when preview uses the explicit base above. Default preview currently uses / and cannot serve the prefixed assets correctly. Camera failure now offers retry and keyboard-mode links.
+
+## Storybook presentation and pause
+
+The shell now presents Jon (runner, left) versus the Giant (saboteur, right),
+with illustrated vines, clouds, parchment cards, and a woodland palette. Menus,
+results, and the HUD use native HTML text rather than scaled canvas text for
+clearer rendering. The runner and saboteur lane owners maintain gameplay mechanics.
+
+During a run, press **Esc** or click **Pause**. Resume with Esc or the Resume
+button. Pausing freezes the scene, physics, animations, and feedback timers.
+A shared adjusted update clock excludes pause time from score, attack cooldowns,
+and powerup expiry. Camera previews continue; both players' gameplay inputs are
+ignored while paused. Two minimal cross-lane input guards implement this in the
+runner and saboteur handlers; mark the PR `[cross-lane]`.
+
+Validation includes repeated pause/resume, unchanged score and aim while paused,
+blocked attack input, and no card catch-up after a long pause. Clock unit tests
+cover frozen time and repeated pauses. Live gesture testing remains outstanding.
+
+Fairy theme expansion (explicitly requested): Jon is now drawn as a wizard with
+violet robes, a crescent hat, and crystal staff. Three scrolling leafy beanstalk
+stems replace the road while retaining lane centers and collision geometry.
+Pastel skies, twinkling lights, fairy silhouettes, flowers, mushrooms, and a distant
+cloud castle carry the theme through menus and gameplay. Art is generated locally;
+there are no new dependencies or external asset requests. These runner visual
+changes are also cross-lane and must be called out in the PR.
+
+The previously intermittent saboteur test now fixes its random draw to a barrier,
+so it consistently measures cooldown behavior rather than double-wall multiplicity.
+An additional test checks that paused scenes ignore saboteur input.
+
+Latest validation: all 36 tests, formatting, typecheck, and production build passed.
+Production browser checks at 800 × 600 verified the HTML menu/HUD, wizard and
+beanstalk artwork, pause input blocking, replay, and pause after replay. Survival
+time excluded a long pause; no browser warnings/errors were recorded. Both theme
+and pause are committed. Live two-player webcam and audio listening remain manual.
+
+Retro magic pass: stepped spellbook frames, arcade-style native HTML typography,
+nearest-filtered wizard/stalk textures, luminous stalk runes, a pixel-spark trail,
+and a jump sparkle burst. Jump animation rises more visibly without changing its
+collision duration. The HUD and cards explain counters: jump or dodge hurdles,
+drifters, and oil; dodge walls and mud. Card panels stay outside the playable lanes
+with a full three-card hand. Browser checks covered jumping, movement, full hands,
+and Esc pause/resume; all 36 tests, typecheck, formatting, and build passed.
+
+Giant attack pass: each pending attack now summons an oversized reaching hand with
+a purple sleeve, gold cuff, curled fingers, and an attack-colored spell. It releases
+with an impact ring when the warning completes, then retracts. Animations use scene
+tweens, so Esc freezes them; pending hands are removed on game over/shutdown.
+The giant starts with two cards (was one), draws every 2000 ms (was 3000), and fires
+at most every 650 ms (was 750). The 500 ms warning and three-card limit stay intact.
+Tests cover opening-hand limits, cooldowns, release, cancellation, and paused input.
+This is explicitly requested cross-lane saboteur work on `prahalad/shell`.
+
+## Current giant mechanic (replaces the earlier card/deck tuning)
+
+The giant previews one random obstacle, aims with J/K/L or hand position, and drops
+it with Space or a fist. Each drop starts a fixed 4-second cooldown; the HUD counts
+down and reveals a new random obstacle when ready. Number-key card selection is
+removed. Double-wall is excluded from the random pool so one drop spawns exactly
+one obstacle. The legacy deck utility is no longer used by gameplay.
+
+The reach-to-release wind-up is 400 ms (previously 500 ms). Obstacles now appear at
+the hand's fingertips (y=110), rather than entering from above the screen, making
+the release immediate and slightly shortening the approach. Artwork replaces flat
+blocks with rune-carved mossy stones, thorn logs, bubbling hex puddles, tangled
+roots, and faceted drifting crystals. The hand holds a matching miniature of the
+actual obstacle before releasing it with a grip-opening motion and impact ring.
+
+The 4-second cooldown uses the paused play clock; paused inputs remain blocked.
+These requested changes affect the saboteur lane and require a `[cross-lane]` PR.
+
+## Natural hazards and fireball
+
+Wild thorns, mossy rocks, and sticky sap now grow along the beanstalk without giant
+input. The first appears after 5 seconds; later hazards appear roughly every
+4.5 seconds. If an obstacle is still near the entrance, spawning retries after
+600 ms rather than stacking another hazard there. Each natural spawn occupies
+one lane. Thorns can be jumped, rocks must be dodged, and sap slows Jon unless
+jumped or dodged. All timing follows the paused game clock and resets per run.
+
+Fireball replaces Drifter in the giant's random pool. It travels straight down the
+aimed lane, has an animated orange/yellow flame, and must be dodged. Drifting lane
+motion and its old configuration were removed. The four-second giant cooldown
+and one-obstacle-per-throw rule remain intact.
+
+Additional feature ideas were requested for discussion only; no extra features
+beyond natural hazards and the fireball replacement were implemented in this pass.
+
+Validation: all 42 tests, formatting, typecheck, and production build passed.
+An idle-giant browser run confirmed natural hazards cause collisions independently;
+visual checks covered the fireball and all three natural hazard types with no
+browser errors. No brainstormed future feature has been started.
+
+## Jon and the Beanstalk: progression update
+
+All player-facing menus, HUD, camera labels, pause text, and browser title now use
+Jon. Fireballs continue to the bottom rather than being consumed on contact;
+a handled-hit flag prevents repeat hits after a shield absorbs one. During the
+short game-over transition, fireballs keep moving while other hazards freeze.
+
+Speed rises by 8 px/s per second (was 6), capped to preserve one second of reaction
+time from the giant's fingertip release point. Natural waves begin with one hazard,
+then use two distinct lanes after 45 seconds, leaving a third lane open. The spawn
+interval falls from 4.5 seconds toward a 1.8-second minimum over 90 seconds. The
+opening grace period and entrance-stacking checks remain. Pause excludes elapsed
+time from both speed and density progression.
+
+Latest validation: all 46 tests, formatting, typecheck, and production build passed.
+A browser integration check confirmed a fireball hits once and exits the bottom
+instead of disappearing at contact. Production preview confirms the Jon branding.
+
+Pre-push integration: rebased onto the latest team main. Preserved spring-based
+movement, jump buffering, collision surface behavior, runner effects, vision
+updates, and the collapsible camera dock while retaining the wizard/beanstalk
+art and local game mechanics. Combined the duplicate deterministic RNG test setup.
+The complete scripts/check.sh passed with 110 tests; browser checks covered the
+camera dock, wizard rendering, movement, and jump with no console warnings/errors.

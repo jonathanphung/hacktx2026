@@ -9,7 +9,7 @@ export const RUNNER = {
   /** Gesture input lags ~150-350 ms behind a keyboard (see minWarningMs), so start slow. */
   baseSpeed: 260,
   /** Speed added per second survived, up to the cap set by `minWarningMs`. */
-  accel: 6,
+  accel: 8,
   /**
    * Shortest time an obstacle is on screen before it reaches the runner, at top speed.
    * This caps the speed; see speed.ts. Budget for a dodge (2026-10-24):

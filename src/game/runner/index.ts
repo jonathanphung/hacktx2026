@@ -13,6 +13,8 @@ import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
 import { speedAt } from "./speed";
+import { finishFireballs } from "./projectiles";
+import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
 import { createTrack } from "./track";
 import { createPickupView, RunnerView } from "./view";
 
@@ -55,6 +57,17 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let over = false;
   let nextPowerupAt = -1;
   const obstacles: Obstacle[] = [];
+  const trail = new TrailSpawner();
+  const spawnObstacle = (spec: ObstacleSpec) => {
+    const w = spec.width ?? RUNNER.laneSpacing - 30;
+    const h = spec.height ?? 40;
+    const x = laneX(spec.lane),
+      y = -h;
+    const view =
+      spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
+    (view as { setDepth?: (depth: number) => unknown }).setDepth?.(spec.effect === "slow" ? 2 : 3);
+    obstacles.push({ spec, view, w, h, touched: false });
+  };
   const pickups: Pickup[] = [];
   const powerups = new PowerupState();
   const score = () => Math.floor(points);
@@ -88,6 +101,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   untilShutdown(
     scene,
     inputBus.on("input", (e) => {
+      if (scene.sys?.isPaused()) return;
       if (over || e.player !== "runner") return;
       if (e.action === "left" && lane > 0) moveTo((lane - 1) as Lane);
       if (e.action === "right" && lane < 2) moveTo((lane + 1) as Lane);
@@ -96,7 +110,10 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   );
 
   const update = (time: number, delta: number) => {
-    if (over) return;
+    if (over) {
+      finishFireballs(obstacles, delta, speed);
+      return;
+    }
     now = time;
     if (startedAt < 0) {
       startedAt = time;
@@ -124,6 +141,14 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       time,
       dt,
     );
+    if (
+      trail.due(
+        time,
+        obstacles.some((ob) => ob.view.y < 260),
+      )
+    ) {
+      for (const target of naturalLanes(elapsed)) spawnObstacle(trailHazard(target, Math.random()));
+    }
 
     if (time >= nextPowerupAt) {
       nextPowerupAt = time + POWERUPS.everyMs;
@@ -171,7 +196,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         }
       }
       // Solid obstacles break on contact; surfaces (slow) stay and scroll away.
-      const smashed = hit && ob.spec.effect === "end-run";
+      const smashed = hit && ob.spec.effect === "end-run" && ob.spec.kind !== "fireball";
       if (smashed || ob.view.y > GAME_HEIGHT + ob.h) {
         ob.view.destroy();
         obstacles.splice(i, 1);
@@ -192,18 +217,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     get speed() {
       return speed;
     },
-    spawnObstacle(spec) {
-      const w = spec.width ?? RUNNER.laneSpacing - 30;
-      const h = spec.height ?? 40;
-      const x = laneX(spec.lane);
-      const y = -h;
-      const view =
-        spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
-      // Surfaces under solid obstacles, both above the lane markings (depth 1).
-      (view as { setDepth?: (depth: number) => unknown }).setDepth?.(
-        spec.effect === "slow" ? 2 : 3,
-      );
-      obstacles.push({ spec, view, w, h, touched: false });
-    },
+    spawnObstacle,
   };
 }

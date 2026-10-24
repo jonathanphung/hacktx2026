@@ -118,6 +118,37 @@
         padding: 10px;
         font: inherit;
       }
+      .signals {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 20px 0;
+      }
+      .signals section {
+        padding: 16px;
+        background: #182130;
+        border-radius: 8px;
+        border-top: 4px solid #61edc4;
+      }
+      .signals section:last-child {
+        border-color: #c5a1ff;
+      }
+      .signals h2 {
+        font-size: 13px;
+        color: #b8c3d6;
+        margin: 0 0 12px;
+      }
+      .signals strong {
+        display: block;
+        font-size: 24px;
+        min-height: 60px;
+      }
+      .signals span {
+        display: block;
+        font-size: 13px;
+        color: #b8c3d6;
+        margin-top: 8px;
+      }
       .help {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -148,6 +179,37 @@
           border-radius: 6px;
           padding: 10px;
           font: inherit;
+        }
+        .signals {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 16px;
+          margin: 20px 0;
+        }
+        .signals section {
+          padding: 16px;
+          background: #182130;
+          border-radius: 8px;
+          border-top: 4px solid #61edc4;
+        }
+        .signals section:last-child {
+          border-color: #c5a1ff;
+        }
+        .signals h2 {
+          font-size: 13px;
+          color: #b8c3d6;
+          margin: 0 0 12px;
+        }
+        .signals strong {
+          display: block;
+          font-size: 24px;
+          min-height: 60px;
+        }
+        .signals span {
+          display: block;
+          font-size: 13px;
+          color: #b8c3d6;
+          margin-top: 8px;
         }
         .help {
           display: grid;
@@ -203,6 +265,17 @@
         Recalibrate if your camera, seating or player changes.</small
       >
     </details>
+    <div class="signals" aria-label="Live inferred controls">
+      <section id="signal-runner">
+        <h2>LEFT · RUNNER</h2>
+        <strong>Waiting for camera</strong
+        ><span>Swipe left / right / up → lane left / lane right / jump</span>
+      </section>
+      <section id="signal-saboteur">
+        <h2>RIGHT · SABOTEUR</h2>
+        <strong>Waiting for camera</strong><span>Palm position → aim · fist → fire</span>
+      </section>
+    </div>
     <div id="halves"></div>
     <div class="help">
       <p>

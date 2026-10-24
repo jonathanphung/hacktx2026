@@ -45,8 +45,8 @@ main thread. GPU is attempted first, then CPU. Browsers where worker startup fai
 use the visible **main-thread fallback**. Worker scripts, model files, WASM and the
 vendor runtime are all local assets. The vendor IIFE is loaded as raw source in a
 Blob to prevent the dev server from inserting module imports into a classic worker.
-Only one frame per tracker can be in flight; the next shared camera frame waits
-until both results arrive. Stop/abort terminates workers and rejects pending work.
+Only one frame per tracker can be in flight. Each player independently processes
+the latest available camera frame; runner input never waits for the saboteur. Stop/abort terminates workers and rejects pending work.
 Cold inference has a 20-second timeout for shader compilation; later frames have
 5 seconds. This keeps failures bounded without accumulating stale frames.
 
@@ -68,7 +68,8 @@ the no-camera benchmark alone.
 - `interpreter.ts`: pure frame → game actions, used by live tracking and replay.
 - `gestures/swipe.ts`: 250 ms window, 0.2-half-frame minimum travel, 350 ms cooldown,
   1.5:1 axis dominance and 0.8 path efficiency. Three samples and 60 ms minimum.
-- `gestures/smoothing.ts`: 30 ms time-based palm filter; resets after tracking loss.
+- `gestures/smoothing.ts`: 30 ms time-based aim filter; resets after tracking loss.
+  Runner swipes use raw palm positions so this filter adds no swipe delay.
 - `gestures/fire.ts`: timestamp-based pose edges; unknown labels and tracking loss
   cannot re-arm a held fist. Static labels below 0.7 confidence are ignored.
 - `gestures/circle.ts`: bounded 1600 ms path, signed angular travel, closure,
@@ -118,3 +119,46 @@ session only. **Reset controls** restores the defaults.
 Calibrate again after moving the camera, changing seating or switching players.
 This is control-range calibration, not model training or a substitute for testing
 real gesture recordings. Issue #4 still needs real, labeled hand data.
+
+## Live inference state and direct controls
+
+Current game state, checked against `AGENTS.md`: the left-half runner sends
+`left`, `right`, or `jump` through `inputBus`; the right-half saboteur sends `aim`,
+`select`, or `fire`. The title and game-over screens also listen for a runner jump
+to start/restart. Vision does not own the runner’s world/lane state, attack deck,
+or scene transitions. A **SENT** label acknowledges the actual input event, not
+whether the world could act on it (for example, left at the leftmost lane).
+
+The game’s webcam canvases now include the tracked hand skeleton, a correct-half
+hint when no hand is visible, the static pose when available, capture-to-result
+age, and a short **SENT** control badge. The lab also has large control cards;
+its event log remains the full history. Badges expire and landmarks older than
+250 ms are hidden so a frozen inference cannot masquerade as live tracking.
+
+Preview rendering runs independently of inference. Each worker accepts only the
+latest available camera frame when idle, with no queue. Runner results dispatch
+immediately without waiting for the saboteur. Runner swipes use raw normalized
+palm positions; aiming retains smoothing and hysteresis. Clear swipes still need
+three samples, at least 60 ms, configured travel and a dominant axis. The existing
+cooldown prevents duplicate controls; this does not change game movement balance.
+
+Inference reads separate raw canvases, never the annotated preview. Results older
+than 180 ms are delivered as a missing hand, resetting motion/dwell rather than
+replaying stale commands. Individual worker failures show an error in that half
+and leave the other player running. Live latency stats use runner cadence and
+runner capture-to-control time; this is not a measured physical gesture latency.
+Recorded frames are sorted by capture timestamp on export because the independent
+workers can finish out of order.
+
+Actual webcam accuracy and physical movement-to-screen latency still need testing
+with the players. Synthetic trace tests verify direct bus dispatch at 70 ms for a
+clear 22%-width swipe and verify that an unresolved saboteur does not delay it.
+
+### Live verification of feedback (2026-10-24)
+
+The running local production-path lab reported both trackers on worker/GPU,
+approximately 29 processed fps and runner capture-to-control p50/p95 of 24/30 ms.
+The live log contained `source: vision` jump and right events while hand tracking
+was active. This verifies live model → interpreter → input-bus feedback, not a
+physical movement-to-screen latency measurement or a two-person distance test.
+No webcam images or landmark recording were saved for this check.

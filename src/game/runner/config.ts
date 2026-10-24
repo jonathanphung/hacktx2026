@@ -17,6 +17,8 @@ export const RUNNER = {
   minWarningMs: 1000,
   laneSwitchMs: 110,
   jumpMs: 650,
+  /** A jump sent this close to landing is kept and fires on landing (instead of being lost). */
+  jumpBufferMs: 150,
   slowFactor: 0.5,
   slowMs: 2000,
 };

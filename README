@@ -70,10 +70,10 @@ Verified game-over and Enter replay with the combined game; no browser warnings 
 
 ### Production preview
 
-Run `npm run build`, then `npm run preview -- --base /hacktx2026/`. Open
-`http://localhost:4173/hacktx2026/` (or add `?novision`). Check that the title screen,
+Run `npm run build`, then `npm run preview -- --base /jonandthebeanstalk/`. Open
+`http://localhost:4173/jonandthebeanstalk/` (or add `?novision`). Check that the title screen,
 initial cards, runner, sound toggle, and replay work under this deployment prefix.
-The vision debug page is `/hacktx2026/vision.html`.
+The vision debug page is `/jonandthebeanstalk/vision.html`.
 
 Merging to main triggers the GitHub Pages deployment workflow. A repo admin must
 have selected **GitHub Actions** as the Pages source. Local production preview
@@ -82,7 +82,7 @@ checks do not confirm that the remote deployment is live.
 Remaining manual checks: live two-player gestures, camera denial/retry on the demo
 browser, audio volume/listening, and a successful run on the deployed HTTPS site.
 
-Production smoke check: the built game loads and starts under /hacktx2026/ when preview uses the explicit base above. Default preview currently uses / and cannot serve the prefixed assets correctly. Camera failure now offers retry and keyboard-mode links.
+Production smoke check: the built game loads and starts under /jonandthebeanstalk/ when preview uses the explicit base above. Default preview currently uses / and cannot serve the prefixed assets correctly. Camera failure now offers retry and keyboard-mode links.
 
 ## Storybook presentation and pause
 

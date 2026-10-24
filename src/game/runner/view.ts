@@ -18,6 +18,10 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
     scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
   }
   scene.load.image("runner-jump", `${base}jon-jump.png`);
+  scene.load.spritesheet("runner-forcefield", `${base}forcefield.png`, {
+    frameWidth: 192,
+    frameHeight: 192,
+  });
 }
 
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
@@ -35,6 +39,13 @@ function ensureAssets(scene: Phaser.Scene) {
     }
   }
   scene.textures.get("runner-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
+  scene.textures.get("runner-forcefield").setFilter(Phaser.Textures.FilterMode.NEAREST);
+  scene.anims.create({
+    key: "runner-forcefield-pulse",
+    frames: scene.anims.generateFrameNumbers("runner-forcefield", { start: 0, end: 11 }),
+    frameRate: 1000 / 80,
+    repeat: -1,
+  });
   const spark = scene.make.graphics({}, false);
   spark.fillStyle(0xffedb0);
   spark.fillRect(3, 0, 2, 8);
@@ -72,7 +83,7 @@ const LAND_MS = 110;
 export class RunnerView {
   readonly sprite: Phaser.GameObjects.Sprite;
   private shadow: Phaser.GameObjects.Ellipse;
-  private shield: Phaser.GameObjects.Arc;
+  private shield: Phaser.GameObjects.Sprite;
   private crashed = false;
   private baseScale: number;
   private wasAirborne = false;
@@ -111,8 +122,9 @@ export class RunnerView {
       })
       .setDepth(9);
     this.shield = scene.add
-      .circle(x, groundY, RUNNER.runnerSize * 0.75)
-      .setStrokeStyle(3, 0x80deea)
+      .sprite(x, groundY, "runner-forcefield")
+      .setDisplaySize(RUNNER.runnerSize * 1.65, RUNNER.runnerSize * 1.65)
+      .play("runner-forcefield-pulse")
       .setDepth(11)
       .setVisible(false);
   }
@@ -190,6 +202,8 @@ export class RunnerView {
     shadow.setPosition(pose.x, this.groundY + 6);
     shadow.setScale(1 - 0.4 * h).setAlpha(0.55 - 0.3 * h);
     shield.setPosition(pose.x, sprite.y);
+    const shieldSize = RUNNER.runnerSize * 1.65 * grow;
+    shield.setDisplaySize(shieldSize, shieldSize);
   }
 
   /** Screen px per frame unit of the drawn figure. */
@@ -215,6 +229,7 @@ export class RunnerView {
   /** Knocked down: flash red, spin and fade, with a camera shake. */
   crash() {
     this.crashed = true;
+    this.shield.setVisible(false);
     this.sprite.anims.stop();
     this.sprite.setTint(0xff5252);
     const cam = this.scene.cameras.main;

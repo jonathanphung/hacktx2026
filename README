@@ -113,3 +113,9 @@ changes are also cross-lane and must be called out in the PR.
 The previously intermittent saboteur test now fixes its random draw to a barrier,
 so it consistently measures cooldown behavior rather than double-wall multiplicity.
 An additional test checks that paused scenes ignore saboteur input.
+
+Latest validation: all 36 tests, formatting, typecheck, and production build passed.
+Production browser checks at 800 × 600 verified the HTML menu/HUD, wizard and
+beanstalk artwork, pause input blocking, replay, and pause after replay. Survival
+time excluded a long pause; no browser warnings/errors were recorded. Both theme
+and pause are committed. Live two-player webcam and audio listening remain manual.

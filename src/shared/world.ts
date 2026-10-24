@@ -1,5 +1,6 @@
 import type Phaser from "phaser";
 import type { Emitter } from "./emitter";
+import type { StageId } from "./stages";
 import type { Lane } from "./types";
 
 /** Any positioned game object (Rectangle, Sprite, Container, ...). */
@@ -41,7 +42,10 @@ export type PowerupKind = "shield" | "slowmo" | "double";
 export interface GameEvents {
   score: { score: number };
   "runner-hit": { kind: string; effect: ObstacleEffect };
-  "game-over": { score: number; survivedMs: number };
+  /** `stage` = index into STAGES (src/shared/stages.ts) of the stage the run ended in. */
+  "game-over": { score: number; survivedMs: number; stage?: number };
+  /** The run entered a new stage (see src/shared/stages.ts). Not emitted for the first stage. */
+  "stage-changed": { index: number; id: StageId; name: string };
   "hand-changed": { hand: readonly string[]; selected: number; aimLane: Lane };
   "attack-fired": { attackId: string; lane: Lane };
   /** Authoritative game state, separate from vision's acknowledgement of sent input. */

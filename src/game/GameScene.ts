@@ -3,6 +3,7 @@ import { Emitter } from "../shared/emitter";
 import type { GameEvents } from "../shared/world";
 import { installHud } from "../shell/hud";
 import { installRunner } from "./runner";
+import { preloadRunnerAssets } from "./runner/view";
 import { installSaboteur } from "./saboteur";
 
 /**
@@ -12,6 +13,10 @@ import { installSaboteur } from "./saboteur";
 export class GameScene extends Phaser.Scene {
   constructor() {
     super("game");
+  }
+
+  preload() {
+    preloadRunnerAssets(this);
   }
 
   create() {

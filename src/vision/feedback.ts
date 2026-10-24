@@ -2,6 +2,7 @@ import type { GameEvents } from "../shared/world";
 import type { InputEvent } from "../shared/input";
 import type { PlayerId } from "../shared/types";
 import type { HandFrame } from "../shared/vision";
+import { DROPOUT_BRIDGE_MS } from "./interpreter";
 
 const names = { left: "← LEFT", right: "RIGHT →", jump: "↑ JUMP", fire: "FIRE" };
 /** The displayed control is acknowledged only from the same event sent to the game. */
@@ -15,6 +16,7 @@ export class VisionFeedback {
       action: string;
       actionAt: number;
       error: string | null;
+      lastHand?: { frame: HandFrame; at: number };
     }
   > = {
     runner: {
@@ -61,6 +63,12 @@ export class VisionFeedback {
   }
   frame(frame: HandFrame, received: number) {
     const state = this.states[frame.player];
+    // A fast hand blinks out for a frame or two; keep showing the last hand so the skeleton
+    // and "Hand tracked" don't flash (the interpreter bridges the same gaps for controls).
+    const held = state.lastHand;
+    if (frame.landmarks) state.lastHand = { frame, at: frame.t };
+    else if (held && frame.t - held.at <= DROPOUT_BRIDGE_MS)
+      frame = { ...frame, landmarks: held.frame.landmarks, gesture: held.frame.gesture };
     state.frame = frame;
     state.received = received;
     state.latency = Math.max(0, received - frame.t);

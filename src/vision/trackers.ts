@@ -19,6 +19,13 @@ export interface Tracker {
   close(): void;
 }
 
+/** Looser than the 0.5 defaults so a fast, blurred hand is kept instead of re-detected. */
+const LOOSE_TRACKING = {
+  minHandDetectionConfidence: 0.35,
+  minHandPresenceConfidence: 0.35,
+  minTrackingConfidence: 0.35,
+};
+
 const toPoints = (lm: NormalizedLandmark[] | undefined) =>
   lm ? lm.map(({ x, y }) => ({ x, y })) : null;
 
@@ -45,6 +52,7 @@ export async function createHandTracker(): Promise<Tracker> {
       baseOptions: { modelAssetPath: `${base}models/hand_landmarker.task`, delegate },
       runningMode: "VIDEO",
       numHands: 1,
+      ...LOOSE_TRACKING,
     }),
   );
   return {
@@ -64,6 +72,7 @@ export async function createGestureTracker(): Promise<Tracker> {
       baseOptions: { modelAssetPath: `${base}models/gesture_recognizer.task`, delegate },
       runningMode: "VIDEO",
       numHands: 1,
+      ...LOOSE_TRACKING,
     }),
   );
   return {

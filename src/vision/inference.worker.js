@@ -22,6 +22,10 @@ self.onmessage = async ({ data }) => {
           baseOptions: { modelAssetPath: data.modelUrl, delegate },
           runningMode: "VIDEO",
           numHands: 1,
+          // Looser than the 0.5 defaults so a fast, blurred hand is kept instead of re-detected.
+          minHandDetectionConfidence: 0.35,
+          minHandPresenceConfidence: 0.35,
+          minTrackingConfidence: 0.35,
         });
       let delegate = "GPU";
       try {

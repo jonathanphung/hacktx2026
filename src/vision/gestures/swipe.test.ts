@@ -86,3 +86,20 @@ it("still ignores the return stroke after a swipe", () => {
   ];
   expect(out).toEqual(["left"]);
 });
+
+it("recognizes a fast flick even when a dropped frame makes one step large", () => {
+  const detector = new SwipeDetector();
+  const out = [];
+  for (const [t, x] of [
+    [0, 0.7],
+    [33, 0.7],
+    [66, 0.68],
+    [99, 0.62],
+    [198, 0.3], // two frames lost in between
+    [231, 0.28],
+  ] as const) {
+    const swipe = detector.push(t, { x, y: 0.5 });
+    if (swipe) out.push(swipe);
+  }
+  expect(out).toEqual(["left"]);
+});

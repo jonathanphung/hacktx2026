@@ -1385,17 +1385,17 @@ body {
 }
 .hud-discovery {
   position: absolute;
-  top: 20%;
-  left: 50%;
-  translate: -50% 0;
-  width: 36%;
+  top: 13%;
+  left: 2%;
+  translate: none;
+  width: 25%;
   padding: 0.7cqw 1cqw;
   box-sizing: border-box;
   border: 1px solid #f0d899;
   border-radius: 0.6cqw;
   background: #28213eea;
   color: #ffe8ac;
-  text-align: center;
+  text-align: left;
   animation: tale-arrive 250ms ease-out;
 }
 .hud-discovery[hidden] {
@@ -1669,4 +1669,14 @@ body {
   .film-ending .film-magic {
     opacity: 0.5;
   }
+}
+
+.story-hud .hud-feedback {
+  top: 30%;
+  left: 14%;
+  max-width: 22%;
+  font-size: 0.9cqw;
+  padding: 0.5cqw 0.7cqw;
+  box-shadow: none;
+  border-width: 1px;
 }

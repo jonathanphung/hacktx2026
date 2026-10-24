@@ -15,17 +15,23 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
   scene.load.image("runner-sheet", `${base}jon-run.png`);
   scene.load.image("runner-jump", `${base}jon-jump.png`);
+  scene.load.image("runner-sheet-left", `${base}jon-run-left.png`);
+  scene.load.image("runner-sheet-right", `${base}jon-run-right.png`);
 }
 
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.anims.exists("runner-run")) return;
-  const sheet = scene.textures.get("runner-sheet").getSourceImage() as HTMLImageElement;
-  for (let i = 0; i < RUN_FRAMES; i++) {
-    const texture = scene.textures.createCanvas(`runner-run-${i}`, TEX, TEX)!;
-    texture.context.drawImage(sheet, i * TEX, 0, TEX, TEX, 0, 0, TEX, TEX);
-    texture.refresh();
-    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  for (const direction of ["", "-left", "-right"]) {
+    const sheet = scene.textures
+      .get(`runner-sheet${direction}`)
+      .getSourceImage() as HTMLImageElement;
+    for (let i = 0; i < RUN_FRAMES; i++) {
+      const texture = scene.textures.createCanvas(`runner-run${direction}-${i}`, TEX, TEX)!;
+      texture.context.drawImage(sheet, i * TEX, 0, TEX, TEX, 0, 0, TEX, TEX);
+      texture.refresh();
+      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
   }
   scene.textures.get("runner-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
   const spark = scene.make.graphics({}, false);
@@ -130,6 +136,12 @@ export class RunnerView {
     }
     this.wasAirborne = airborne;
     sprite.anims.timeScale = pose.speed / RUNNER.baseSpeed;
+    if (!airborne) {
+      // Choose cape art without restarting the underlying leg animation.
+      const frame = sprite.anims.currentFrame?.textureKey.replace("runner-run-", "") ?? "0";
+      const direction = pose.vx < -40 ? "-left" : pose.vx > 40 ? "-right" : "";
+      sprite.setTexture(`runner-run${direction}-${frame}`);
+    }
 
     // Squash & stretch: stretch on the way up, squash briefly on landing.
     let sx = 1;

@@ -13,6 +13,7 @@ import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
 import { RelicPowers } from "./relics";
+import { hasEscapeLane } from "./spawn-safety";
 import { finishFireballs } from "./projectiles";
 import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
 import { isLastStage, type StageInfo } from "../../shared/stages";
@@ -82,7 +83,22 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   const jumpMs = () => RUNNER.jumpMs * relics.jumpFactor;
   let stageItem: StageItem | null = null;
   const laneOf = (x: number) => Math.round((x - laneX(1)) / RUNNER.laneSpacing + 1) as Lane;
+  const waiting: ObstacleSpec[] = [];
   const spawnObstacle = (spec: ObstacleSpec) => {
+    if (
+      !hasEscapeLane(
+        spec,
+        obstacles.map((o) => ({
+          lane: laneOf(o.view.x),
+          y: o.view.y,
+          jumpable: o.spec.jumpable,
+          lethal: o.spec.effect === "end-run",
+        })),
+      )
+    ) {
+      waiting.push(spec);
+      return;
+    }
     const w = spec.width ?? RUNNER.laneSpacing - 30;
     const h = spec.height ?? 40;
     const x = laneX(spec.lane),
@@ -96,6 +112,9 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
 
   const enterStage = (stage: StageInfo, time: number, first = false) => {
     if (!first) {
+      for (const obstacle of obstacles) obstacle.view.destroy();
+      obstacles.length = 0;
+      waiting.length = 0;
       events.emit("stage-changed", { index: stage.index, id: stage.id, name: stage.name });
       trail.holdUntil(time + STAGE_CALM_MS);
     }
@@ -201,6 +220,8 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       return;
     }
     now = time;
+    const queued = waiting.splice(0);
+    queued.forEach(spawnObstacle);
     if (startedAt < 0) {
       startedAt = time;
       enterStage(stages.stage, time, true);

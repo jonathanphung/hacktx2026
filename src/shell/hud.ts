@@ -6,6 +6,8 @@ import { ATTACK_BY_ID } from "../game/saboteur/attacks";
 import { playCue, startMusic, stopMusic } from "./audio";
 import { installPause } from "./pause";
 import { addBeanstalks, mountShell } from "./presentation";
+import { playStory } from "./intro";
+import { letterMarkup, REWARDS, TALE_SCENES, taleLabel } from "./story";
 
 const LANES = ["LEFT", "CENTER", "RIGHT"];
 export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): void {
@@ -15,10 +17,10 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const hud = mountShell(scene, "story-hud");
   addBeanstalks(hud);
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
-    <div class="hud-level"><strong></strong><span></span></div>
+    <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
     <div class="hud-feedback" role="status"></div>
     <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: logs / thorns / oil / sap<br>Dodge: rocks / walls / mud / fireballs</p></section>
-    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop · 4s cooldown</small></section>`;
+    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop next · Refills 4s</small></section>`;
   const score = hud.querySelector(".hud-score strong")!;
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
   const aim = hud.querySelector(".hud-giant h2")!;
@@ -26,20 +28,33 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   let cooling = false;
   const cooldownLabel = document.createElement("p");
   cooldownLabel.className = "cooldown-label";
-  hud.querySelector(".hud-level strong")!.textContent = STAGES[0].name;
+  hud.querySelector(".hud-level strong")!.textContent = taleLabel(0);
+  hud.querySelector(".hud-spell")!.innerHTML = letterMarkup(0);
   hud.querySelector(".hud-level span")!.textContent = `Find ${STAGES[0].item.name}`;
   untilShutdown(
     scene,
-    events.on("stage-changed", ({ index, name }) => {
-      hud.querySelector(".hud-level strong")!.textContent = name;
+    events.on("stage-changed", ({ index }) => {
+      hud.querySelector(".hud-level strong")!.textContent = taleLabel(index);
       hud.querySelector(".hud-level span")!.textContent = `Find ${STAGES[index].item.name}`;
       playCue("chapter");
+      scene.events.emit("shell-story-pause", true);
+      hud.inert = true;
+      playStory(scene, [TALE_SCENES[index - 1]], () => {
+        hud.inert = false;
+        scene.events.emit("shell-story-pause", false);
+      });
     }),
   );
   untilShutdown(
     scene,
-    events.on("stage-item", ({ state }) => {
-      if (state === "collected") playCue("pickup");
+    events.on("stage-item", ({ state, stage }) => {
+      if (state === "collected") {
+        playCue("pickup");
+        hud.querySelector(".hud-spell")!.innerHTML = letterMarkup(stage + 1);
+        hud.querySelector(".hud-relics")!.textContent = REWARDS.slice(0, stage + 1)
+          .map(([name]) => name)
+          .join(" · ");
+      }
     }),
   );
   const activePowerups = new Set<PowerupKind>();
@@ -87,7 +102,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
         const name = document.createElement("strong");
         name.textContent = attack?.name ?? id;
         const hint = document.createElement("small");
-        hint.textContent = "READY TO DROP";
+        hint.textContent = i === 0 ? "NEXT TO DROP" : `QUEUED ${i + 1}`;
         const counter = document.createElement("small");
         counter.className = "card-counter";
         counter.textContent = ["hurdle", "oil"].includes(id) ? "JUMP / DODGE" : "DODGE ONLY";
@@ -136,8 +151,8 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   );
   untilShutdown(
     scene,
-    events.on("runner-hit", ({ effect }) => {
-      if (activePowerups.has("shield")) {
+    events.on("runner-hit", ({ effect, blocked }) => {
+      if (blocked || activePowerups.has("shield")) {
         playCue("shield");
         announce("SHIELD BLOCKED THE HIT!", true);
         return;

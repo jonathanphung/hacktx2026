@@ -218,3 +218,31 @@ The latest team runner artwork, five-stage progression, collectible safety gaps,
 vision changes, giant aiming, buffered casts, and authoritative cooldown feedback
 are integrated. The upper-right decorative castle has been removed. Gemini
 integration and the separate timed chapter mode were removed by request.
+
+## HACKTX story adventure and balanced progression
+
+The five tales restore H, A, C, K, and T: Humpty Dumpty, Alice in Wonderland,
+Cinderella, King Triton, and Little Red Riding Hood. A sixth final climb leads to
+Xen's HackTX badge, visibly marked X. Collecting it completes the run. The opening
+Jon–Giant cutscene introduces the broken spell; five illustrated interludes link
+the tales; a three-beat reunion ends in an animated festival victory screen.
+Enter/Space advances dialogue, Esc skips, and Tab stays inside the scene controls.
+Game timing, hazards, cooldowns, and music freeze during interludes. Reduced-motion
+settings disable the decorative animation.
+
+Permanent powers last for one run: H gives 10% longer jumps; A adds 18px pickup
+reach; C cuts slow duration by 25%; K provides a ward that recharges every 22s;
+T adds 15% score; X unlocks the festival finale. Temporary pickups still work.
+Blocking a hit provides 800ms protection against immediate chained collisions.
+
+The giant uses FIFO inventory: capacity one, two after two completed tales, and
+three after four. Space/fist always drops the front card. Stock refills one card
+every four seconds, with at least 1.7 seconds between drops even when stocked.
+The queue cannot catch up missed refills in a burst. Mixed natural/giant waves
+defer an obstacle that would close all three lanes with unjumpable lethal hazards.
+Stage changes clear old hazards. Top speed still preserves the runner's reaction
+budget. These bounds are tested; final competitive tuning needs two human players.
+
+Validation for this update: all 181 tests, formatting, typecheck, and production
+build pass. Browser review covered the opening, H/T reward interludes, paused
+update clock, skip/resume, all three finale beats, and the festival result screen.

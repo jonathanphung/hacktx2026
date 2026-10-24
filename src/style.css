@@ -1010,3 +1010,227 @@ body {
 .intro-screen[data-theme="castle"] .intro-narration {
   color: #3c3b42;
 }
+
+/* The six-letter storybook: local vector scenery and quiet, looping animation. */
+.tale-cutscene {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: #131022ed;
+  color: #fff1d8;
+  font-family: "Courier New", monospace;
+  container-type: inline-size;
+}
+.tale-frame {
+  width: 80%;
+  border: 2px solid #d8b780;
+  background: #211831;
+  box-shadow:
+    0 0 0 0.6cqw #624975,
+    0 2cqw 8cqw #070610aa;
+  animation: tale-arrive 450ms ease-out;
+}
+.tale-art {
+  height: 18cqw;
+  overflow: hidden;
+  border-bottom: 2px solid #d8b780;
+}
+.tale-art svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tale-copy {
+  padding: 1.3cqw 3cqw 1.8cqw;
+}
+.tale-kicker {
+  font-size: 0.8cqw;
+  letter-spacing: 0.3em;
+  color: #c9a8de;
+  margin: 0 0 0.7cqw;
+}
+.spell-word {
+  display: flex;
+  justify-content: center;
+  gap: 0.5cqw;
+}
+.spell-letter {
+  display: inline-grid;
+  place-items: center;
+  width: 2.6cqw;
+  height: 2.9cqw;
+  border: 1px solid #8e77aa;
+  color: #887b9b;
+  background: #2f2642;
+  font-weight: bold;
+  font-size: 1.7cqw;
+}
+.spell-letter.restored {
+  color: #3a2758;
+  background: #ffe6a3;
+  border-color: #fff2ca;
+  box-shadow: 0 0 1.2cqw #ffe19d33;
+}
+.tale-speaker {
+  color: #a5e3d6;
+  font-size: 0.9cqw;
+  letter-spacing: 0.18em;
+  margin: 1cqw 0 0.4cqw;
+}
+.tale-copy h1 {
+  font-size: 2.25cqw;
+  line-height: 1.15;
+  margin: 0 0 0.8cqw;
+  letter-spacing: -0.04em;
+}
+.tale-dialogue {
+  font-size: 1.2cqw;
+  line-height: 1.6;
+  margin: 0;
+  min-height: 4cqw;
+}
+.tale-reward {
+  color: #f2cc88;
+  font-size: 0.9cqw;
+  margin: 0.8cqw 0 1cqw;
+}
+.tale-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5cqw;
+}
+.tale-controls small {
+  margin-left: auto;
+  font-size: 0.8cqw;
+  color: #cbb9d6;
+}
+.tale-skip {
+  border: 0;
+  background: none;
+  color: #d6c4e3;
+  text-decoration: underline;
+  font:
+    1cqw "Courier New",
+    monospace;
+  cursor: pointer;
+}
+.tale-cutscene button:focus-visible {
+  outline: 2px solid #a4ffe1;
+  outline-offset: 4px;
+}
+.story-relic {
+  transform-origin: 400px 140px;
+  animation: relic-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 10px 10px #21132755);
+}
+.story-clouds {
+  animation: cloud-drift 8s ease-in-out infinite alternate;
+}
+.story-sparks {
+  animation: spark-glow 2s ease-in-out infinite alternate;
+}
+.hud-level .spell-word {
+  margin-top: 0.5cqw;
+}
+.hud-level .spell-letter {
+  width: 1.5cqw;
+  height: 1.7cqw;
+  font-size: 1.1cqw;
+}
+.hud-relics {
+  display: block;
+  max-width: 28cqw;
+  font-size: 0.65cqw;
+  margin-top: 0.5cqw;
+  line-height: 1.5;
+}
+.hud-cards {
+  display: flex;
+  gap: 0.4cqw;
+  flex-wrap: wrap;
+}
+.hud-card {
+  flex: 1;
+  min-width: 6cqw;
+}
+.victory-badge {
+  height: 11cqw;
+  width: 36cqw;
+  margin: 0 auto 1cqw;
+  border: 2px solid #dfbd87;
+  overflow: hidden;
+}
+.victory-badge svg {
+  width: 100%;
+  height: 100%;
+}
+.victory-spell {
+  margin-bottom: 1cqw;
+}
+.festival-victory {
+  background: radial-gradient(ellipse at center, #fff2c8, #cdb5e4 70%);
+  overflow: hidden;
+}
+.festival-victory .story-content {
+  z-index: 2;
+}
+.festival-confetti {
+  position: absolute;
+  top: -10%;
+  left: calc(var(--i) * 4.2%);
+  width: 0.45cqw;
+  height: 1cqw;
+  background: #ffe1a1;
+  animation: festival-fall calc(3s + var(--i) * 0.08s) linear infinite;
+  animation-delay: calc(var(--i) * -0.27s);
+}
+.festival-confetti:nth-child(3n) {
+  background: #9773bd;
+}
+.festival-confetti:nth-child(3n + 1) {
+  background: #73bfaa;
+}
+@keyframes tale-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(1cqw);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes relic-float {
+  50% {
+    transform: translateY(-7px) rotate(-2deg);
+  }
+}
+@keyframes cloud-drift {
+  to {
+    transform: translateX(25px);
+  }
+}
+@keyframes spark-glow {
+  to {
+    opacity: 0.35;
+  }
+}
+@keyframes festival-fall {
+  to {
+    transform: translateY(70cqw) rotate(400deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tale-frame,
+  .story-relic,
+  .story-clouds,
+  .story-sparks,
+  .festival-confetti {
+    animation: none;
+  }
+  .festival-confetti {
+    display: none;
+  }
+}

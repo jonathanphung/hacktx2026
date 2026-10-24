@@ -26,6 +26,7 @@ export function installPause(scene: Phaser.Scene): void {
   const clock = new PlayClock();
   let paused = false;
   let ended = false;
+  let storyActive = false;
   const trigger = document.createElement("button");
   trigger.id = "pause-toggle";
   trigger.type = "button";
@@ -58,7 +59,7 @@ export function installPause(scene: Phaser.Scene): void {
     return emit.call(this, event, ...args);
   };
   const toggle = () => {
-    if (ended) return;
+    if (ended || storyActive) return;
     paused = !paused;
     pauseMusic(paused);
     playCue(paused ? "pause" : "resume");
@@ -75,6 +76,7 @@ export function installPause(scene: Phaser.Scene): void {
     }
   };
   const onKey = (event: KeyboardEvent) => {
+    if (storyActive) return;
     if (event.code === "Escape" && !event.repeat) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -87,7 +89,21 @@ export function installPause(scene: Phaser.Scene): void {
   trigger.addEventListener("click", toggle);
   resume.addEventListener("click", toggle);
   window.addEventListener("keydown", onKey, true);
+  const storyPause = (active: boolean) => {
+    storyActive = active;
+    trigger.hidden = active;
+    pauseMusic(active);
+    if (active) {
+      clock.pause(scene.game.loop.time);
+      scene.scene.pause();
+    } else {
+      clock.resume(scene.game.loop.time);
+      scene.scene.resume();
+    }
+  };
+  scene.events.on("shell-story-pause", storyPause);
   untilShutdown(scene, () => {
+    scene.events.off("shell-story-pause", storyPause);
     scene.events.emit = emit;
     window.removeEventListener("keydown", onKey, true);
     trigger.remove();

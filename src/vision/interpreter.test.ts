@@ -218,4 +218,15 @@ describe("flexible directional input", () => {
     expect(events.filter((e) => e.action === "fire")).toHaveLength(1);
     expect(aims(events).at(-1)).toBe(0);
   });
+  it("does not read the hand coming back after a swipe as a swipe the other way", () => {
+    const { events, interpret } = make();
+    for (let t = 0; t <= 300; t += 33) interpret(hand("runner", t, 0.6));
+    for (let t = 333; t <= 533; t += 33)
+      interpret(hand("runner", t, 0.6 - ((t - 333) / 200) * 0.3));
+    for (let t = 566; t <= 800; t += 33) interpret(hand("runner", t, 0.3));
+    for (let t = 833; t <= 1300; t += 33)
+      interpret(hand("runner", t, 0.3 + ((t - 833) / 467) * 0.3));
+    for (let t = 1333; t <= 2200; t += 33) interpret(hand("runner", t, 0.6));
+    expect(events).toEqual([{ player: "runner", action: "left" }]);
+  });
 });

@@ -206,3 +206,14 @@ Any instinctive cue works; they all produce the same events.
   can't drag the target back until the hand has rested and moved a deliberate distance,
   but it may still carry the target further the way the step went (a long slide).
   Steps are ignored while the fist is locking the target.
+
+## Swipe detection
+
+Swipes are judged on speed as well as distance, over every recent start point, so slow
+drift and resting jitter never fire and a swipe after a pause is caught mid-stroke. The
+hand returning after a swipe is the main false positive: within 900 ms of a swipe, the
+opposite direction must be at least as fast as the previous stroke (and ≥ 1.6 units/s), and
+a repeat in the same direction waits out the 350 ms cooldown. One-frame tracker jumps
+(> 0.35 of the frame) reset the stroke. `swipe-sim.ts` simulates human gestures (stroke,
+hold, return, jitter, variable frame timing); `swipe-sim.test.ts` pins detection rate,
+latency, return-stroke ghosts and flick-back reversals.

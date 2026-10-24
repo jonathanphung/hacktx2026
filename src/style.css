@@ -236,3 +236,368 @@ body {
   outline: 2px solid #4fc3f7;
   outline-offset: 2px;
 }
+
+/* Storybook shell: text is rendered by the browser, above the game canvas. */
+#stage {
+  container-type: inline-size;
+}
+.story-screen,
+.story-hud {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  font-family: system-ui, sans-serif;
+}
+.story-screen {
+  overflow: hidden;
+  background: linear-gradient(#bdddd3, #e6eac8 65%, #c8d4a3);
+  color: #233e2c;
+  display: grid;
+  place-items: center;
+}
+.beanstalk-art {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.beanstalk-art svg {
+  width: 100%;
+  height: 100%;
+}
+.story-content {
+  position: relative;
+  width: 84%;
+  text-align: center;
+}
+.story-eyebrow {
+  font-size: 1.15cqw;
+  letter-spacing: 0.2em;
+  font-weight: 800;
+  margin: 0 0 0.65cqw;
+}
+.story-content h1 {
+  font:
+    bold 4.3cqw Georgia,
+    serif;
+  letter-spacing: -0.04em;
+  margin: 0;
+  color: #24482d;
+}
+.story-subtitle {
+  font:
+    1.55cqw Georgia,
+    serif;
+  margin: 0.8cqw 0 1.8cqw;
+}
+.role-cards {
+  display: flex;
+  gap: 2cqw;
+  margin-bottom: 1.8cqw;
+}
+.role-card {
+  flex: 1;
+  border: 1px solid #81975c;
+  border-radius: 1.2cqw;
+  background: #fff9e8ed;
+  padding: 1.4cqw;
+  box-shadow: 0 0.4cqw 0 #27482b22;
+}
+.role-card.giant {
+  background: #f5e7cbed;
+  border-color: #ad8d59;
+}
+.role-number {
+  font-size: 1cqw;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #536b3a;
+}
+.role-card h2 {
+  font:
+    bold 2.5cqw Georgia,
+    serif;
+  margin: 0.4cqw 0;
+}
+.role-card p {
+  font-size: 1.2cqw;
+  line-height: 1.5;
+  margin: 0.6cqw 0;
+}
+.role-card strong {
+  font-size: 1.35cqw;
+  line-height: 1.6;
+  display: block;
+}
+.role-card small {
+  display: block;
+  font-size: 1.05cqw;
+  margin-top: 0.85cqw;
+  color: #516246;
+}
+.story-button,
+.pause-panel button {
+  border: 1px solid #1f4929;
+  border-radius: 0.6cqw;
+  padding: 1cqw 3cqw;
+  background: #315e36;
+  color: #fffbe9;
+  font:
+    bold 1.6cqw system-ui,
+    sans-serif;
+  box-shadow: 0 0.3cqw 0 #173b20;
+  cursor: pointer;
+}
+.story-button:hover,
+.pause-panel button:hover {
+  background: #244b2a;
+}
+.story-button:focus-visible,
+.pause-panel button:focus-visible {
+  outline: 3px solid #a66b23;
+  outline-offset: 4px;
+}
+.story-button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.start-hint {
+  font-size: 1.15cqw;
+  margin: 1.2cqw 0 0.8cqw;
+}
+.camera-hint {
+  font-size: 1.05cqw;
+  margin: 0;
+  color: #516246;
+}
+.story-results {
+  display: flex;
+  justify-content: center;
+  gap: 8cqw;
+  margin: 3cqw 0;
+}
+.story-results strong {
+  display: block;
+  font:
+    bold 4.5cqw Georgia,
+    serif;
+}
+.story-results span {
+  font-size: 1.2cqw;
+  letter-spacing: 0.12em;
+}
+.story-hud {
+  pointer-events: none;
+  color: #fff9e8;
+  font-size: 1.2cqw;
+}
+.story-hud .beanstalk-art {
+  opacity: 0.48;
+}
+.story-hud .beanstalk-art svg {
+  mask-image: linear-gradient(90deg, #000 0%, #000 20%, transparent 27%, transparent 73%, #000 80%);
+}
+.hud-score {
+  position: absolute;
+  top: 1%;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align: center;
+  padding: 0.4cqw 1.5cqw;
+  border-radius: 0.6cqw;
+  background: #173b20e8;
+}
+.hud-score span {
+  display: block;
+  font-size: 1cqw;
+  letter-spacing: 0.15em;
+}
+.hud-score strong {
+  font-size: 2.8cqw;
+}
+.hud-jack,
+.hud-giant {
+  position: absolute;
+  bottom: 4%;
+  background: #122b20ed;
+  padding: 1cqw;
+  border: 1px solid #88a87188;
+  border-radius: 0.7cqw;
+}
+.hud-jack {
+  left: 1%;
+}
+.hud-giant {
+  right: 1%;
+  text-align: right;
+}
+.story-hud h2 {
+  font-size: 1.45cqw;
+  margin: 0 0 0.7cqw;
+  color: #d9e9a4;
+}
+.story-hud p {
+  margin: 0.4cqw 0;
+}
+.story-hud small {
+  font-size: 1.05cqw;
+  color: #e0ddc3;
+}
+.hud-powerups {
+  color: #b9efa9;
+  font-weight: 700;
+  font-size: 1.1cqw;
+  margin-bottom: 0.5cqw;
+}
+.hud-cards {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6cqw;
+  margin-bottom: 0.65cqw;
+}
+.hud-card {
+  display: grid;
+  gap: 0.6cqw;
+  place-items: center;
+  min-width: 8.3cqw;
+  padding: 0.8cqw;
+  border: 1px solid var(--card-color);
+  border-top: 0.35cqw solid var(--card-color);
+  border-radius: 0.5cqw;
+  background: #213e2d;
+  text-align: center;
+}
+.hud-card strong {
+  font-size: 1.15cqw;
+}
+.hud-card.selected {
+  outline: 2px solid #f6d77c;
+  outline-offset: 1px;
+  background: #3b5130;
+}
+.hud-card.selected small {
+  color: #ffe899;
+}
+.hud-feedback {
+  position: absolute;
+  top: 14%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.6cqw 1cqw;
+  border-radius: 0.5cqw;
+  background: #273b25ed;
+  color: #ffe4a1;
+  font-size: 1.5cqw;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.hud-feedback:empty,
+.hud-feedback[hidden] {
+  display: none;
+}
+.hud-feedback.positive {
+  color: #b9efa9;
+}
+#pause-toggle {
+  position: absolute;
+  top: 12px;
+  left: 22%;
+  z-index: 4;
+  padding: 6px 10px;
+  border: 1px solid #a8c28c;
+  border-radius: 6px;
+  background: #173b20;
+  color: #fff9e8;
+  cursor: pointer;
+  font:
+    clamp(10px, 1.2vw, 14px) system-ui,
+    sans-serif;
+}
+#pause-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: #10251ce8;
+  backdrop-filter: blur(4px);
+  font-family: system-ui, sans-serif;
+}
+#pause-overlay[hidden],
+#pause-toggle[hidden] {
+  display: none;
+}
+.pause-panel {
+  max-width: 70%;
+  text-align: center;
+  border: 1px solid #b4bf83;
+  border-radius: 1.5cqw;
+  padding: 3cqw;
+  color: #284430;
+  background: #fff7df;
+}
+.pause-panel h2 {
+  font:
+    bold 3cqw Georgia,
+    serif;
+  margin: 0 0 1cqw;
+}
+.pause-panel p {
+  font-size: 1.4cqw;
+  margin-bottom: 2cqw;
+}
+#sound-toggle {
+  background: #173b20;
+  color: #fff9e8;
+  border-color: #a8c28c;
+}
+.cam {
+  background: #173b20;
+}
+
+/* Enchanted fairy garden, with readable parchment surfaces. */
+.story-screen {
+  background:
+    radial-gradient(ellipse at 50% 10%, #fff2e3aa, transparent 60%),
+    linear-gradient(#c7b8e3, #d8e9d5 55%, #efd4df);
+}
+.story-eyebrow {
+  color: #76517d;
+}
+.story-content h1 {
+  color: #3e4e45;
+  text-shadow: 0 2px 0 #fff8e6;
+}
+.role-card {
+  border: 3px double #aa9c72;
+  box-shadow: 0 0.5cqw 1.8cqw #7a64852b;
+}
+.role-card.giant {
+  background: #f6eaf6f2;
+  border-color: #b38ab4;
+}
+.story-button {
+  background: linear-gradient(#79619a, #60427d);
+  border-color: #543867;
+  box-shadow:
+    0 0.3cqw 0 #422b57,
+    0 0 2cqw #fff4ce99;
+}
+.story-button:hover {
+  background: #60427d;
+}
+.fairy-glow {
+  filter: drop-shadow(0 0 8px #fff7a0);
+}
+.hud-score,
+.hud-jack,
+.hud-giant {
+  background: #2e2949ee;
+  border-color: #e0c79f88;
+}
+.hud-card {
+  background: #453753;
+}
+.hud-card.selected {
+  background: #665074;
+}

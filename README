@@ -1,4 +1,4 @@
-# HackTX Runner
+# Jack & the Beanstalk
 
 A two-player, webcam-controlled endless runner. One player dodges; the other throws
 traps at them. Both control the game with hand gestures in front of one webcam.
@@ -29,7 +29,7 @@ Live two-player webcam and gesture playtesting remains outstanding.
 
 Initial-card integration issue resolved upstream: GameScene now installs the HUD before the saboteur announces its starting hand. Verified after rebase.
 
-Next: HUD clarity and feedback, then live camera playtesting, audio/art, and demo polish.
+Next: live camera playtesting, audio listening, and deployed-site verification.
 
 HUD update: added labeled distance, explicit aim lane, larger cards with selection
 labels, empty-hand messaging, and fading attack/hit feedback. Event subscriptions
@@ -83,3 +83,33 @@ Remaining manual checks: live two-player gestures, camera denial/retry on the de
 browser, audio volume/listening, and a successful run on the deployed HTTPS site.
 
 Production smoke check: the built game loads and starts under /hacktx2026/ when preview uses the explicit base above. Default preview currently uses / and cannot serve the prefixed assets correctly. Camera failure now offers retry and keyboard-mode links.
+
+## Storybook presentation and pause
+
+The shell now presents Jack (runner, left) versus the Giant (saboteur, right),
+with illustrated vines, clouds, parchment cards, and a woodland palette. Menus,
+results, and the HUD use native HTML text rather than scaled canvas text for
+clearer rendering. The runner and saboteur lane owners maintain gameplay mechanics.
+
+During a run, press **Esc** or click **Pause**. Resume with Esc or the Resume
+button. Pausing freezes the scene, physics, animations, and feedback timers.
+A shared adjusted update clock excludes pause time from score, attack cooldowns,
+and powerup expiry. Camera previews continue; both players' gameplay inputs are
+ignored while paused. Two minimal cross-lane input guards implement this in the
+runner and saboteur handlers; mark the PR `[cross-lane]`.
+
+Validation includes repeated pause/resume, unchanged score and aim while paused,
+blocked attack input, and no card catch-up after a long pause. Clock unit tests
+cover frozen time and repeated pauses. Live gesture testing remains outstanding.
+
+Fairy theme expansion (explicitly requested): Jack is now drawn as a wizard with
+violet robes, a crescent hat, and crystal staff. Three scrolling leafy beanstalk
+stems replace the road while retaining lane centers and collision geometry.
+Pastel skies, twinkling lights, fairy silhouettes, flowers, mushrooms, and a distant
+cloud castle carry the theme through menus and gameplay. Art is generated locally;
+there are no new dependencies or external asset requests. These runner visual
+changes are also cross-lane and must be called out in the PR.
+
+The previously intermittent saboteur test now fixes its random draw to a barrier,
+so it consistently measures cooldown behavior rather than double-wall multiplicity.
+An additional test checks that paused scenes ignore saboteur input.

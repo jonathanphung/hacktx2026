@@ -1,115 +1,104 @@
-import Phaser from "phaser";
+import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
-import { GAME_HEIGHT, GAME_WIDTH } from "../shared/types";
 import type { GameEvents, PowerupKind } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
-
 import { playCue } from "./audio";
+import { installPause } from "./pause";
+import { addBeanstalks, mountShell } from "./presentation";
 
-const TEXT = { fontFamily: "system-ui, sans-serif", color: "#ffffff" };
-const LANE_NAMES = ["LEFT", "CENTER", "RIGHT"];
-
-/** Presentation only: subscribes to game events and never changes gameplay state. */
+const LANES = ["LEFT", "CENTER", "RIGHT"];
 export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): void {
-  const label = (x: number, y: number, value: string, size = 16) =>
-    scene.add.text(x, y, value, { ...TEXT, fontSize: `${size}px` }).setDepth(100);
-
-  label(GAME_WIDTH / 2, 12, "SCORE", 13)
-    .setOrigin(0.5, 0)
-    .setColor("#a8b6d3");
-  const score = label(GAME_WIDTH / 2, 30, "0", 36).setOrigin(0.5, 0);
-  untilShutdown(
-    scene,
-    events.on("score", (e) => score.setText(String(e.score))),
-  );
-
-  label(20, GAME_HEIGHT - 90, "P1 / RUNNER", 20).setColor("#4fc3f7");
-  label(20, GAME_HEIGHT - 58, "Swipe left / right · Swipe up to jump");
-  label(20, GAME_HEIGHT - 34, "Keyboard: A / D / W", 14).setColor("#a8b6d3");
-
-  const right = GAME_WIDTH - 20;
-  const aim = label(right, GAME_HEIGHT - 150, "P2 / SABOTEUR · AIM: CENTER", 20)
-    .setOrigin(1, 0)
-    .setColor("#ff7575");
-  const cards = scene.add.container(right, GAME_HEIGHT - 40).setDepth(100);
-  const empty = label(right, GAME_HEIGHT - 86, "Cards appear here · Move your hand to aim", 16)
-    .setOrigin(1, 0)
-    .setColor("#a8b6d3");
-  untilShutdown(
-    scene,
-    events.on("hand-changed", ({ hand, selected, aimLane }) => {
-      aim.setText(`P2 / SABOTEUR · AIM: ${LANE_NAMES[aimLane]}`);
-      cards.removeAll(true);
-      empty.setVisible(hand.length === 0);
-      empty.setText("Hand empty · Waiting for the next card…");
-      hand.forEach((id, i) => {
-        const attack = ATTACK_BY_ID.get(id);
-        const x = -(hand.length - i) * 140;
-        const active = i === selected;
-        const card = scene.add
-          .rectangle(x, 0, 130, 70, 0x202940)
-          .setOrigin(0, 1)
-          .setStrokeStyle(active ? 3 : 1, active ? 0xffffff : (attack?.color ?? 0x888888));
-        const name = scene.add
-          .text(x + 65, -48, attack?.name ?? id, { ...TEXT, fontSize: "16px" })
-          .setOrigin(0.5);
-        const selection = scene.add
-          .text(x + 65, -21, active ? `${i + 1} · SELECTED` : `${i + 1} · SELECT`, {
-            ...TEXT,
-            fontSize: "12px",
-            color: active ? "#4fc3f7" : "#a8b6d3",
-          })
-          .setOrigin(0.5);
-        cards.add([card, name, selection]);
-      });
-    }),
-  );
-  label(right, GAME_HEIGHT - 24, "Aim J/K/L · Fist / Space: fire · 1–3: select", 14)
-    .setOrigin(1, 0)
-    .setColor("#a8b6d3");
-
+  installPause(scene);
+  const hud = mountShell(scene, "story-hud");
+  addBeanstalks(hud);
+  hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
+    <div class="hud-feedback" role="status"></div>
+    <section class="hud-jack"><div class="hud-powerups"></div><h2>JACK</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small></section>
+    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: fire · 1–3: cards</small></section>`;
+  const score = hud.querySelector(".hud-score strong")!;
+  const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
+  const aim = hud.querySelector(".hud-giant h2")!;
+  const cards = hud.querySelector(".hud-cards")!;
   const activePowerups = new Set<PowerupKind>();
   const powerupNames: Record<PowerupKind, string> = {
     shield: "SHIELD",
     slowmo: "SLOW MOTION",
     double: "2× SCORE",
   };
-  const powerupStatus = label(20, GAME_HEIGHT - 125, "", 16).setColor("#70e0b1");
-  const feedback = label(GAME_WIDTH / 2, 98, "", 20)
-    .setOrigin(0.5)
-    .setAlpha(0);
+  let feedbackTimer: Phaser.Time.TimerEvent | undefined;
+  const announce = (message: string, positive = false) => {
+    feedbackTimer?.remove();
+    feedback.textContent = message;
+    feedback.classList.toggle("positive", positive);
+    feedback.hidden = false;
+    feedbackTimer = scene.time.delayedCall(1400, () => {
+      feedback.hidden = true;
+    });
+  };
+  untilShutdown(
+    scene,
+    events.on("score", (e) => {
+      score.textContent = String(e.score);
+    }),
+  );
+  untilShutdown(
+    scene,
+    events.on("hand-changed", ({ hand, selected, aimLane }) => {
+      aim.textContent = `GIANT · AIM: ${LANES[aimLane]}`;
+      cards.replaceChildren();
+      if (!hand.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "Waiting for the next trick…";
+        cards.append(empty);
+      }
+      hand.forEach((id, i) => {
+        const attack = ATTACK_BY_ID.get(id);
+        const card = document.createElement("div");
+        card.className = `hud-card${i === selected ? " selected" : ""}`;
+        card.style.setProperty(
+          "--card-color",
+          `#${(attack?.color ?? 0x888888).toString(16).padStart(6, "0")}`,
+        );
+        const name = document.createElement("strong");
+        name.textContent = attack?.name ?? id;
+        const hint = document.createElement("small");
+        hint.textContent = `${i + 1} · ${i === selected ? "SELECTED" : "SELECT"}`;
+        card.append(name, hint);
+        cards.append(card);
+      });
+    }),
+  );
   untilShutdown(
     scene,
     events.on("powerup", ({ kind, active }) => {
       if (active) activePowerups.add(kind);
       else activePowerups.delete(kind);
-      powerupStatus.setText(
-        [...activePowerups].map((powerup) => powerupNames[powerup]).join(" · "),
-      );
-      if (active) announce(`${powerupNames[kind]} ACTIVE`, "#70e0b1");
+      hud.querySelector(".hud-powerups")!.textContent = [...activePowerups]
+        .map((p) => powerupNames[p])
+        .join(" · ");
+      if (active) announce(`${powerupNames[kind]} ACTIVE`, true);
     }),
   );
-  const announce = (message: string, color: string) => {
-    scene.tweens.killTweensOf(feedback);
-    feedback.setText(message).setColor(color).setAlpha(1);
-    scene.tweens.add({ targets: feedback, alpha: 0, delay: 1000, duration: 250 });
-  };
   untilShutdown(
     scene,
     events.on("attack-fired", ({ attackId, lane }) => {
       playCue("attack");
-      announce(`${ATTACK_BY_ID.get(attackId)?.name ?? attackId} → ${LANE_NAMES[lane]}`, "#ffce85");
+      announce(`${ATTACK_BY_ID.get(attackId)?.name ?? attackId} → ${LANES[lane]}`);
     }),
   );
   untilShutdown(
     scene,
     events.on("runner-hit", ({ effect }) => {
       if (activePowerups.has("shield")) {
-        announce("SHIELD BLOCKED THE HIT!", "#70e0b1");
+        announce("SHIELD BLOCKED THE HIT!", true);
         return;
       }
       playCue(effect === "slow" ? "slow" : "end");
-      announce(effect === "slow" ? "RUNNER SLOWED!" : "RUNNER CAUGHT!", "#ff7575");
+      announce(effect === "slow" ? "JACK SLOWED!" : "JACK CAUGHT!");
     }),
+  );
+  untilShutdown(
+    scene,
+    events.on("game-over", () => scene.events.emit("shell-run-ended")),
   );
 }

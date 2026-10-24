@@ -1,0 +1,26 @@
+{
+  "name": "hacktx2026",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "postinstall": "node scripts/copy-mediapipe.mjs"
+  },
+  "dependencies": {
+    "@mediapipe/tasks-vision": "1.1.1",
+    "phaser": "3.90.0"
+  },
+  "devDependencies": {
+    "prettier": "3.9.10",
+    "typescript": "5.9.3",
+    "vite": "8.3.5",
+    "vitest": "5.0.5"
+  }
+}

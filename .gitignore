@@ -21,3 +21,6 @@ Thumbs.db
 
 # agent-local state (shared agent rules are in AGENTS.md)
 .claude/settings.local.json
+
+# copied from node_modules by scripts/copy-mediapipe.mjs
+public/mediapipe/

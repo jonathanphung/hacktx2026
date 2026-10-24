@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vision debug</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 16px;
+        background: #111;
+        color: #eee;
+        font:
+          14px system-ui,
+          sans-serif;
+      }
+      #halves {
+        display: flex;
+        gap: 16px;
+      }
+      .half {
+        position: relative;
+        flex: 1;
+      }
+      .half canvas {
+        width: 100%;
+        display: block;
+      }
+      .half canvas.overlay {
+        position: absolute;
+        inset: 0;
+        height: 100%;
+      }
+      .label {
+        margin: 4px 0;
+        font-weight: 600;
+      }
+      #log {
+        margin-top: 12px;
+        height: 220px;
+        overflow: auto;
+        font-family: ui-monospace, monospace;
+        background: #000;
+        padding: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      Vision debug: each player's half of the camera, the tracked hand, and the input events it
+      produces. <a href="./" style="color: #8cf">Back to game</a>
+    </p>
+    <div id="halves"></div>
+    <div id="log"></div>
+    <script type="module" src="/src/vision/debug.ts"></script>
+  </body>
+</html>

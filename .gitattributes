@@ -5,3 +5,5 @@
 *.png binary
 *.jpg binary
 *.pdf binary
+*.task binary
+*.wasm binary

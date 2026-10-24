@@ -14,7 +14,7 @@ export function playStory(
   screen.setAttribute("role", "dialog");
   screen.setAttribute("aria-modal", "true");
   screen.setAttribute("aria-label", "Story cutscene");
-  screen.innerHTML = `<div class="tale-frame"><div class="tale-art"></div><div class="tale-copy"><p class="tale-kicker">THE HACKTX SPELL</p><div class="spell-word" aria-label="Restored letters"></div><p class="tale-speaker"></p><h1></h1><p class="tale-dialogue" aria-live="polite"></p><p class="tale-reward"></p><div class="tale-controls"><button class="story-button tale-next" type="button">Next</button><button class="tale-skip" type="button">Skip scene</button><small>Enter: next · Esc: skip</small></div></div></div>`;
+  screen.innerHTML = `<div class="tale-frame"><div class="tale-art"></div><div class="tale-copy"><p class="tale-kicker">THE SEARCH FOR CLAUDE</p><div class="spell-word" aria-label="Restored letters"></div><p class="tale-speaker"></p><h1></h1><p class="tale-dialogue" aria-live="polite"></p><p class="tale-reward"></p><div class="tale-controls"><button class="story-button tale-next" type="button">Next</button><button class="tale-skip" type="button">Skip scene</button><small>Enter: next · Esc: skip</small></div></div></div>`;
   const next = screen.querySelector<HTMLButtonElement>(".tale-next")!;
   const skip = screen.querySelector<HTMLButtonElement>(".tale-skip")!;
   const previousFocus =
@@ -45,11 +45,11 @@ export function playStory(
     const reward = beat.collected > 0 ? REWARDS[beat.collected - 1] : null;
     screen.querySelector(".tale-reward")!.textContent = reward
       ? `${reward[0]} unlocked · ${reward[1]}`
-      : "Five tales · six letters · one extraordinary climb";
+      : "Five tales · one missing companion · a hidden message";
     next.textContent =
       index === beats.length - 1
         ? beat.collected === 6
-          ? "To the festival"
+          ? "Together again"
           : "Continue the adventure"
         : "Next";
     playCue(beat.speaker === "THE GIANT" ? "giant" : "jon");

@@ -219,35 +219,27 @@ vision changes, giant aiming, buffered casts, and authoritative cooldown feedbac
 are integrated. The upper-right decorative castle has been removed. Gemini
 integration and the separate timed chapter mode were removed by request.
 
-## HACKTX story adventure and balanced progression
+## Claude's rescue and the hidden message
 
-The five tales restore H, A, C, K, and T: Humpty Dumpty, Alice in Wonderland,
-Cinderella, King Triton, and Little Red Riding Hood. A sixth final climb leads to
-Xen's HackTX badge, visibly marked X. Collecting it completes the run. The opening
-Jon–Giant cutscene introduces the broken spell; five illustrated interludes link
-the tales; a three-beat reunion ends in an animated festival victory screen.
-Enter/Space advances dialogue, Esc skips, and Tab stays inside the scene controls.
-Game timing, hazards, cooldowns, and music freeze during interludes. Reduced-motion
-settings disable the decorative animation.
+The giant has kidnapped Jon's companion Claude and locked him in a tower cell.
+The opening introduces the rescue; each of the five tales reveals one letter from
+its collectible, and Xen's final badge reveals the sixth. Uncollected letters are
+question marks in both visible text and accessible labels. Stage labels, opening
+art, and dialogue do not reveal the complete answer ahead of collection.
 
-Permanent powers last for one run: H gives 10% longer jumps; A adds 18px pickup
-reach; C cuts slow duration by 25%; K provides a ward that recharges every 22s;
-T adds 15% score; X unlocks the festival finale. Temporary pickups still work.
-Blocking a hit provides 800ms protection against immediate chained collisions.
+At the tower, all six recovered clues appear in order beside a textbox. The cell
+opens only when the player enters their message (case-insensitive, with outer
+whitespace ignored). Wrong answers allow retries. Esc cannot bypass the lock.
+Correct entry animates the bars opening, plays Jon and Claude's reunion, and
+shows the rescue victory screen. Timers and focus handlers are cleaned up on
+scene shutdown. Reduced motion disables decorative motion and opens bars directly.
 
-The giant uses FIFO inventory: capacity one, two after two completed tales, and
-three after four. Space/fist always drops the front card. Stock refills one card
-every four seconds, with at least 1.7 seconds between drops even when stocked.
-The queue cannot catch up missed refills in a burst. Mixed natural/giant waves
-defer an obstacle that would close all three lanes with unjumpable lethal hazards.
-Stage changes clear old hazards. Top speed still preserves the runner's reaction
-budget. These bounds are tested; final competitive tuning needs two human players.
+Permanent powers and giant FIFO progression retain the previous balance limits:
+10% longer jumps, 18px pickup reach, 25% shorter slows, a 22s recharging ward,
+and 15% extra score. Giant capacity grows from one to three every two completed
+tales; refills take four seconds per obstacle, with a 1.7s minimum drop gap.
+Three-lane lethal walls are deferred. Esc resume uses a cancellable 3-2-1 countdown.
 
-Validation for this update: all 181 tests, formatting, typecheck, and production
-build pass. Browser review covered the opening, H/T reward interludes, paused
-update clock, skip/resume, all three finale beats, and the festival result screen.
-
-Resuming from Esc or the pause button now shows a three-second ready countdown.
-Gameplay and music remain paused until it finishes; pressing Esc again cancels
-back to pause. Browser checks confirmed the countdown and cancellation preserve
-score while frozen.
+Validation: formatting, typecheck, all 183 tests, and production build pass.
+Browser checks cover wrong answers, Esc protection, case-insensitive correct
+entry, animated unlock, reunion, and the victory screen.

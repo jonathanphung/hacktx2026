@@ -1234,3 +1234,76 @@ body {
     display: none;
   }
 }
+
+.rescue-form {
+  margin-top: 1cqw;
+}
+.rescue-form label {
+  display: block;
+  color: #c4e9dc;
+  font-size: 1cqw;
+  margin-bottom: 0.6cqw;
+}
+.rescue-form > div {
+  display: flex;
+  gap: 1cqw;
+}
+.rescue-form input {
+  min-width: 0;
+  flex: 1;
+  padding: 0.8cqw 1cqw;
+  border: 2px solid #a891bd;
+  background: #120d23;
+  color: #fff2c9;
+  font:
+    bold 1.8cqw "Courier New",
+    monospace;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+.rescue-form input:focus {
+  outline: 2px solid #b7f4d8;
+  outline-offset: 2px;
+}
+.rescue-form input[aria-invalid="true"] {
+  border-color: #f1a59d;
+}
+.rescue-form [role="status"] {
+  font-size: 1cqw;
+  line-height: 1.5;
+  min-height: 2.6cqw;
+  color: #e6c88d;
+}
+.rescue-lock .spell-word {
+  margin: 1cqw 0;
+}
+.cell-open {
+  animation: cell-lift 1.6s ease-in-out forwards;
+}
+.rescue-unlocked .tale-frame {
+  box-shadow: 0 0 5cqw #bce4c980;
+}
+.claude-companion {
+  animation: claude-breathe 2.5s ease-in-out infinite;
+  transform-origin: 400px 160px;
+}
+@keyframes cell-lift {
+  to {
+    transform: translateY(-95px);
+    opacity: 0;
+  }
+}
+@keyframes claude-breathe {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .claude-companion {
+    animation: none;
+  }
+  .cell-open {
+    animation: none;
+    opacity: 0;
+  }
+}

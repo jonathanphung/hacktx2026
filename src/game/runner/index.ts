@@ -107,6 +107,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
     (view as { setDepth?: (depth: number) => unknown }).setDepth?.(spec.effect === "slow" ? 2 : 3);
     obstacles.push({ spec, view, w, h, touched: false });
+    events.emit("obstacle-spawned", { kind: spec.kind, lane: spec.lane });
   };
   const pickups: Pickup[] = [];
 
@@ -313,6 +314,8 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           kind: ob.spec.kind,
           effect: ob.spec.effect,
           blocked: time < safeUntil || powerups.isActive("shield", time) || relics.wardReady(time),
+          shieldBroken:
+            time >= safeUntil && (powerups.isActive("shield", time) || relics.wardReady(time)),
         });
         if (time < safeUntil) {
           // A blocked hit cannot immediately chain into another fatal collision.

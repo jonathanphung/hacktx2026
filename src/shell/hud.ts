@@ -3,7 +3,7 @@ import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
 import type { GameEvents, PowerupKind } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
-import { playCue, startMusic, stopMusic, setMusicStage } from "./audio";
+import { playCue, playObstacle, startMusic, stopMusic, setMusicStage } from "./audio";
 import { installPause } from "./pause";
 import { addBeanstalks, mountShell } from "./presentation";
 import { letterMarkup, REWARDS, taleLabel } from "./story";
@@ -164,21 +164,25 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   untilShutdown(
     scene,
     events.on("attack-fired", ({ attackId, lane }) => {
-      playCue(attackId === "fireball" ? "fireball" : "attack");
       announce(`${ATTACK_BY_ID.get(attackId)?.name ?? attackId} → ${LANES[lane]}`);
     }),
   );
   untilShutdown(
     scene,
-    events.on("runner-hit", ({ effect, blocked }) => {
+    events.on("runner-hit", ({ kind, effect, blocked, shieldBroken }) => {
       if (blocked || activePowerups.has("shield")) {
-        playCue("shield");
+        if (shieldBroken ?? activePowerups.has("shield")) playCue("glass");
         announce("SHIELD BLOCKED THE HIT!", true);
         return;
       }
-      playCue(effect === "slow" ? "slow" : "end");
+      playObstacle(kind);
+      if (effect !== "slow") playCue("end");
       announce(effect === "slow" ? "JON SLOWED!" : "JON CAUGHT!");
     }),
+  );
+  untilShutdown(
+    scene,
+    events.on("obstacle-spawned", ({ kind }) => playObstacle(kind)),
   );
   untilShutdown(
     scene,

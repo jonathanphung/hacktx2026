@@ -1,5 +1,8 @@
+import { MUSIC_THEMES, musicNotes } from "./music";
+import { OBSTACLE_CUES, OBSTACLE_SOUNDS } from "./obstacle-sounds";
 /** Short local chiptune cues; no audio downloads or external services. */
 export type Cue =
+  | keyof typeof OBSTACLE_SOUNDS
   | "step"
   | "clue"
   | "relic"
@@ -24,7 +27,7 @@ export type Cue =
   | "pause"
   | "resume";
 interface Sound {
-  notes: number[];
+  notes: readonly number[];
   wave?: OscillatorType;
   step?: number;
   duration?: number;
@@ -32,6 +35,7 @@ interface Sound {
   glide?: number;
 }
 const SOUNDS: Record<Cue, Sound> = {
+  ...OBSTACLE_SOUNDS,
   step: { notes: [115], wave: "triangle", volume: 0.018, duration: 0.035, glide: 0.5 },
   clue: {
     notes: [523, 659, 784, 1046, 1318, 1568],
@@ -52,7 +56,14 @@ const SOUNDS: Record<Cue, Sound> = {
   aim: { notes: [380], wave: "sine", volume: 0.025, duration: 0.035 },
   start: { notes: [440, 660, 880] },
   attack: { notes: [330, 165], glide: 0.7 },
-  fireball: { notes: [180, 120, 75], wave: "sawtooth", volume: 0.04, duration: 0.18, glide: 0.45 },
+  fireball: {
+    notes: [95, 170, 260, 110],
+    wave: "sawtooth",
+    volume: 0.07,
+    duration: 0.23,
+    step: 0.045,
+    glide: 1.8,
+  },
   slow: { notes: [220, 180], glide: 0.7 },
   end: { notes: [330, 247, 165], duration: 0.18 },
   jump: {
@@ -87,62 +98,60 @@ let musicPaused = false;
 let nextBeat = 0;
 let beat = 0;
 let musicStage = 0;
+let blend: { from: number; to: number; start: number } | undefined;
 export function setMusicStage(stage: number): void {
-  musicStage = Math.max(0, Math.min(5, stage));
+  const next = Math.max(0, Math.min(5, Math.floor(stage)));
+  if (next === musicStage) return;
+  blend =
+    musicWanted && context
+      ? { from: musicStage, to: next, start: Math.max(nextBeat, context.currentTime + 0.04) }
+      : undefined;
+  musicStage = next;
+}
+export function playObstacle(kind: string): void {
+  playCue(OBSTACLE_CUES[kind as keyof typeof OBSTACLE_CUES] ?? "attack");
 }
 const musicVoices = new Set<OscillatorNode>();
-// Original looping melody in A minor, with a soft root-note accompaniment.
-const melody = [
-  69, 72, 76, 72, 74, 71, 67, 71, 69, 72, 77, 76, 74, 72, 71, 67, 69, 76, 79, 76, 77, 74, 71, 74,
-  72, 71, 69, 67, 64, 67, 71, 72,
-];
 function scheduleMusic(): void {
   if (!musicWanted || musicPaused || !context || !output || context.state !== "running") return;
   nextBeat = Math.max(nextBeat, context.currentTime + 0.04);
   while (nextBeat < context.currentTime + 0.6) {
-    const notes = [melody[beat % melody.length]];
-    if (beat % 2 === 0) notes.push([45, 43, 41, 40][Math.floor(beat / 8) % 4]);
-    for (const note of notes) {
-      const voice = context.createOscillator();
-      const gain = context.createGain();
-      voice.type = "triangle";
-      voice.frequency.setValueAtTime(440 * 2 ** ((note - 69) / 12), nextBeat);
-      gain.gain.setValueAtTime(0, nextBeat);
-      gain.gain.linearRampToValueAtTime(note < 60 ? 0.05 : 0.038, nextBeat + 0.015);
-      gain.gain.exponentialRampToValueAtTime(0.001, nextBeat + 0.3);
-      voice.connect(gain);
-      gain.connect(output);
-      musicVoices.add(voice);
-      voice.onended = () => {
-        musicVoices.delete(voice);
-        voice.disconnect();
-        gain.disconnect();
-      };
-      voice.start(nextBeat);
-      voice.stop(nextBeat + 0.32);
+    const progress = blend ? Math.min(1, Math.max(0, (nextBeat - blend.start) / 2.4)) : 1;
+    const layers =
+      blend && progress < 1
+        ? [
+            { stage: blend.from, weight: 1 - progress },
+            { stage: blend.to, weight: progress },
+          ]
+        : [{ stage: musicStage, weight: 1 }];
+    for (const layer of layers) {
+      if (layer.weight < 0.001) continue;
+      for (const note of musicNotes(layer.stage, beat)) {
+        const voice = context.createOscillator(),
+          envelope = context.createGain();
+        const start = nextBeat + (note.delay ?? 0);
+        voice.type = note.wave;
+        voice.frequency.setValueAtTime(440 * 2 ** ((note.midi - 69) / 12), start);
+        envelope.gain.setValueAtTime(0, start);
+        envelope.gain.linearRampToValueAtTime(note.volume * layer.weight, start + 0.012);
+        envelope.gain.exponentialRampToValueAtTime(0.0001, start + note.duration);
+        voice.connect(envelope);
+        envelope.connect(output);
+        musicVoices.add(voice);
+        voice.onended = () => {
+          musicVoices.delete(voice);
+          voice.disconnect();
+          envelope.disconnect();
+        };
+        voice.start(start);
+        voice.stop(start + note.duration + 0.01);
+      }
     }
-    // Synthesized kick, snare and hats give the loop a steady arcade groove.
-    const drum = context.createOscillator(),
-      envelope = context.createGain();
-    const kick = beat % 4 === 0;
-    const snare = beat % 4 === 2;
-    const duration = kick ? 0.16 : snare ? 0.09 : 0.025;
-    drum.type = kick ? "sine" : snare ? "triangle" : "square";
-    drum.frequency.setValueAtTime(kick ? 130 : snare ? 240 : 5800, nextBeat);
-    drum.frequency.exponentialRampToValueAtTime(kick ? 38 : snare ? 80 : 3800, nextBeat + duration);
-    envelope.gain.setValueAtTime(kick ? 0.08 : snare ? 0.035 : 0.006, nextBeat);
-    envelope.gain.exponentialRampToValueAtTime(0.001, nextBeat + duration);
-    drum.connect(envelope);
-    envelope.connect(output);
-    musicVoices.add(drum);
-    drum.onended = () => {
-      musicVoices.delete(drum);
-      drum.disconnect();
-      envelope.disconnect();
-    };
-    drum.start(nextBeat);
-    drum.stop(nextBeat + duration + 0.01);
-    nextBeat += 0.26 - musicStage * 0.008;
+    const step = blend
+      ? MUSIC_THEMES[blend.from].step * (1 - progress) + MUSIC_THEMES[blend.to].step * progress
+      : MUSIC_THEMES[musicStage].step;
+    if (progress === 1) blend = undefined;
+    nextBeat += step;
     beat++;
   }
 }
@@ -167,6 +176,8 @@ export function stopMusic(): void {
   musicPaused = false;
   clearMusic();
   beat = 0;
+  musicStage = 0;
+  blend = undefined;
 }
 export function pauseMusic(paused: boolean): void {
   musicPaused = paused;

@@ -773,7 +773,7 @@ body {
 #facecam .cam {
   position: absolute;
   top: 9%;
-  width: 26%;
+  width: 29%;
   max-width: none;
   border: 2px solid #ffffff55;
   border-radius: 8px;
@@ -781,7 +781,7 @@ body {
   box-shadow: 0 6px 20px #0008;
 }
 #facecam.expanded .cam {
-  width: 28%;
+  width: 31%;
 }
 #facecam .cam.left {
   left: 1%;

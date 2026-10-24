@@ -1,7 +1,7 @@
 import Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
 import { GAME_HEIGHT, GAME_WIDTH } from "../shared/types";
-import type { GameEvents } from "../shared/world";
+import type { GameEvents, PowerupKind } from "../shared/world";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
 
 import { playCue } from "./audio";
@@ -14,7 +14,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const label = (x: number, y: number, value: string, size = 16) =>
     scene.add.text(x, y, value, { ...TEXT, fontSize: `${size}px` }).setDepth(100);
 
-  label(GAME_WIDTH / 2, 12, "DISTANCE", 13)
+  label(GAME_WIDTH / 2, 12, "SCORE", 13)
     .setOrigin(0.5, 0)
     .setColor("#a8b6d3");
   const score = label(GAME_WIDTH / 2, 30, "0", 36).setOrigin(0.5, 0);
@@ -68,9 +68,27 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     .setOrigin(1, 0)
     .setColor("#a8b6d3");
 
+  const activePowerups = new Set<PowerupKind>();
+  const powerupNames: Record<PowerupKind, string> = {
+    shield: "SHIELD",
+    slowmo: "SLOW MOTION",
+    double: "2× SCORE",
+  };
+  const powerupStatus = label(20, GAME_HEIGHT - 125, "", 16).setColor("#70e0b1");
   const feedback = label(GAME_WIDTH / 2, 98, "", 20)
     .setOrigin(0.5)
     .setAlpha(0);
+  untilShutdown(
+    scene,
+    events.on("powerup", ({ kind, active }) => {
+      if (active) activePowerups.add(kind);
+      else activePowerups.delete(kind);
+      powerupStatus.setText(
+        [...activePowerups].map((powerup) => powerupNames[powerup]).join(" · "),
+      );
+      if (active) announce(`${powerupNames[kind]} ACTIVE`, "#70e0b1");
+    }),
+  );
   const announce = (message: string, color: string) => {
     scene.tweens.killTweensOf(feedback);
     feedback.setText(message).setColor(color).setAlpha(1);
@@ -86,6 +104,10 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   untilShutdown(
     scene,
     events.on("runner-hit", ({ effect }) => {
+      if (activePowerups.has("shield")) {
+        announce("SHIELD BLOCKED THE HIT!", "#70e0b1");
+        return;
+      }
       playCue(effect === "slow" ? "slow" : "end");
       announce(effect === "slow" ? "RUNNER SLOWED!" : "RUNNER CAUGHT!", "#ff7575");
     }),

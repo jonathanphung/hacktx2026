@@ -27,9 +27,7 @@ Browser checks covered an 800 × 600 layout, click/Enter/jump-input start, game-
 and replay. Camera readiness transitions were checked with simulated vision frames.
 Live two-player webcam and gesture playtesting remains outstanding.
 
-Known integration issue: the saboteur announces its initial hand before the HUD
-subscribes, so the first card is invisible until the next hand update. Coordinate
-with the runner/saboteur owners to fix installation order or expose initial state.
+Initial-card integration issue resolved upstream: GameScene now installs the HUD before the saboteur announces its starting hand. Verified after rebase.
 
 Next: HUD clarity and feedback, then live camera playtesting, audio/art, and demo polish.
 
@@ -44,3 +42,13 @@ The mute control silences currently playing cues too. No external audio assets o
 new dependencies. Browser checks verified the button and shortcut; listening and
 live gesture testing remain manual checks. Enter-start prevents activating a
 focused sound button at the same time. All standard checks passed.
+
+Post-rebase playtest: checked the new runner artwork, lane movement/jump, attack
+warnings, aim display, and card readability. Changed the HUD label from DISTANCE
+to SCORE because the double-score powerup changes points independently of distance.
+Added active powerup labels and corrected shield-block feedback using existing
+contracts. Simulated events verified activation, shield consumption, and expiration.
+The upstream saboteur cooldown test has a random-card assumption: double-wall
+spawns two obstacles while the test expects one. That lane's code is unchanged.
+
+Verified game-over and Enter replay with the combined game; no browser warnings or errors. All 33 tests passed on this run; the random-card test issue above remains intermittent.

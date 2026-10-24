@@ -230,3 +230,61 @@ describe("flexible directional input", () => {
     expect(events).toEqual([{ player: "runner", action: "left" }]);
   });
 });
+
+describe("hand dropouts during fast motion", () => {
+  const settings = { version: 1 as const, swipeDistance: 0.2, aim: { minX: 0, maxX: 1 } };
+  const run = (player: "runner" | "saboteur", frames: [number, number | null, string?][]) => {
+    const events: InputEvent[] = [];
+    const interpret = createInterpreter(
+      (e) => events.push(e),
+      () => settings,
+    );
+    for (const [t, x, gesture] of frames)
+      interpret({
+        player,
+        t,
+        gesture: gesture ?? "Open_Palm",
+        landmarks: x === null ? null : Array.from({ length: 21 }, () => ({ x, y: 0.5 })),
+      });
+    return events;
+  };
+  const rest = (from: number, to: number, x: number): [number, number][] => {
+    const out: [number, number][] = [];
+    for (let t = from; t <= to; t += 33) out.push([t, x]);
+    return out;
+  };
+
+  it("still recognizes a fast swipe when the tracker loses the hand mid-stroke", () => {
+    const events = run("runner", [
+      ...rest(0, 300, 0.7),
+      [333, 0.62],
+      [366, null],
+      [399, null],
+      [432, 0.3],
+      ...rest(465, 700, 0.3),
+    ]);
+    expect(events).toEqual([{ player: "runner", action: "left" }]);
+  });
+  it("treats a long loss as the hand leaving, not as a swipe", () => {
+    const events = run("runner", [
+      ...rest(0, 300, 0.7),
+      ...Array.from({ length: 12 }, (_, i): [number, null] => [333 + i * 33, null]),
+      ...rest(729, 1000, 0.3),
+    ]);
+    expect(events).toEqual([]);
+  });
+  it("keeps the saboteur's target lock and fist hold through a dropped frame", () => {
+    const events = run("saboteur", [
+      ...rest(0, 300, 0.2).map((f): [number, number, string] => [...f, "Open_Palm"]),
+      [333, 0.2, "Closed_Fist"],
+      [366, null],
+      [399, 0.5, "Closed_Fist"],
+      [432, 0.5, "Closed_Fist"],
+      [465, 0.5, "Closed_Fist"],
+      [498, 0.5, "Closed_Fist"],
+    ]);
+    expect(events.filter((e) => e.action === "fire")).toHaveLength(1);
+    // The palm drifted toward the middle while the hand blinked out; the lock holds lane 0.
+    expect(events.filter((e) => e.action === "aim").at(-1)).toMatchObject({ lane: 0 });
+  });
+});

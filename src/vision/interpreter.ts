@@ -12,6 +12,14 @@ import { PalmFilter } from "./gestures/smoothing";
 import { getVisionSettings, aimPosition, type VisionSettings } from "./calibration";
 import { DEFAULT_SWIPE, SwipeDetector } from "./gestures/swipe";
 
+/**
+ * A hand moving fast blurs and the tracker briefly reports "no hand" mid-gesture. Treating that
+ * as the hand leaving would wipe the stroke, release a target lock and restart every hold. So a
+ * "no hand" frame within this long of the last real one is skipped, as if it were never taken:
+ * the detectors just see a slightly longer gap between two real frames.
+ */
+export const DROPOUT_BRIDGE_MS = 140;
+
 /** Per-session state, shared by the live camera and rehearsal/recording replay. */
 export function createInterpreter(
   emit: (event: InputEvent) => void,
@@ -20,7 +28,13 @@ export function createInterpreter(
   const fist = new FistTrigger();
   let settings = getSettings();
   let interpret = buildInterpreter(emit, settings, fist);
+  const lastSeen: Record<string, number> = {};
   return (frame: HandFrame) => {
+    if (frame.landmarks) lastSeen[frame.player] = frame.t;
+    else if (frame.t - (lastSeen[frame.player] ?? -Infinity) <= DROPOUT_BRIDGE_MS) {
+      const seenAt = lastSeen[frame.player];
+      if (frame.t >= seenAt) return null;
+    }
     const next = getSettings();
     if (next !== settings) {
       settings = next;

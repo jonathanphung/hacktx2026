@@ -35,3 +35,13 @@ it("explains the correct half when a hand is not detected", () => {
   feedback.fail("runner", "model unavailable");
   expect(feedback.view("runner", 120).status).toContain("model unavailable");
 });
+it("keeps the last skeleton through a brief dropout, then admits the hand is gone", () => {
+  const feedback = new VisionFeedback();
+  feedback.frame(hand, 120);
+  feedback.frame({ ...hand, t: 140, landmarks: null }, 150);
+  expect(feedback.view("runner", 151)).toMatchObject({ status: "Hand tracked" });
+  expect(feedback.view("runner", 151).landmarks).not.toBeNull();
+  feedback.frame({ ...hand, t: 400, landmarks: null }, 410);
+  expect(feedback.view("runner", 411).landmarks).toBeNull();
+  expect(feedback.view("runner", 411).status).toContain("Show hand");
+});

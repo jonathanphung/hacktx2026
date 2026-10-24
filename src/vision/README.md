@@ -217,3 +217,13 @@ a repeat in the same direction waits out the 350 ms cooldown. One-frame tracker 
 (> 0.35 of the frame) reset the stroke. `swipe-sim.ts` simulates human gestures (stroke,
 hold, return, jitter, variable frame timing); `swipe-sim.test.ts` pins detection rate,
 latency, return-stroke ghosts and flick-back reversals.
+
+## Fast-motion dropouts
+
+A fast hand blurs and the tracker briefly reports "no hand". "No hand" frames within 140 ms
+of the last real one are skipped (`DROPOUT_BRIDGE_MS` in `interpreter.ts`), so swipe
+strokes, target locks and fist holds survive the blink; a longer loss still resets
+everything. The camera overlay holds the last skeleton for the same time. The swipe
+glitch guard is speed-based (14 units/s), so a real flick across a dropped frame isn't
+mistaken for a tracker jump. Both MediaPipe models also run with 0.35 detection / presence /
+tracking confidence (default 0.5) to keep a blurred hand instead of re-detecting it.

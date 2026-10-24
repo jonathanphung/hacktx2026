@@ -20,8 +20,12 @@ const MAX_GAP_MS = 220;
 const MIN_STRAIGHTNESS = 0.75;
 /** How much one axis must dominate the other (1.35 ≈ within 36° of horizontal/vertical). */
 const DOMINANCE = 1.35;
-/** One frame jumping this far is the tracker losing and re-finding the hand, not a hand. */
-const MAX_STEP = 0.35;
+/**
+ * Faster than any hand moves (units/s): the tracker losing and re-finding the hand, or
+ * jumping to something else. Speed rather than distance, so a real flick that spans a
+ * dropped frame isn't mistaken for it.
+ */
+const MAX_SPEED = 14;
 const OPPOSITE: Record<Swipe, Swipe> = { left: "right", right: "left", up: "down", down: "up" };
 export const DEFAULT_SWIPE: SwipeOptions = {
   windowMs: 300,
@@ -53,8 +57,10 @@ export class SwipeDetector {
     }
     const cooling = t - this.lastFire < this.opts.cooldownMs;
     const previous = this.samples[this.samples.length - 1];
-    if (previous && Math.hypot(p.x - previous.p.x, p.y - previous.p.y) > MAX_STEP)
-      this.samples = [];
+    if (previous) {
+      const step = Math.hypot(p.x - previous.p.x, p.y - previous.p.y);
+      if (step / (Math.max(16, t - previous.t) / 1000) > MAX_SPEED) this.samples = [];
+    }
     this.samples.push({ t, p });
     while (this.samples.length && t - this.samples[0].t > this.opts.windowMs) this.samples.shift();
     // Test every start point, shortest window first: a swipe that begins after a rest, or

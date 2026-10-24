@@ -7,8 +7,14 @@ export const RUNNER = {
   hitboxSize: 48,
   /** Gesture input lags ~200-300 ms behind a keyboard, so start slower than Subway Surfers. */
   baseSpeed: 260,
-  /** Speed added per second survived. */
+  /** Speed added per second survived, up to the cap set by `minWarningMs`. */
   accel: 6,
+  /**
+   * Shortest time an obstacle is on screen before it reaches the runner, at top speed.
+   * Dodging by gesture needs ~0.5-0.7 s (reaction + gesture detection + lane switch), so keep a margin.
+   * This caps the speed; see speed.ts.
+   */
+  minWarningMs: 1000,
   laneSwitchMs: 110,
   jumpMs: 650,
   slowFactor: 0.5,

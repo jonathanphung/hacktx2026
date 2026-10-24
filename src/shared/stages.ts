@@ -35,7 +35,7 @@ export const STAGES: readonly StageInfo[] = [
     name: "Little Red Riding Hood",
     item: { id: "hood", name: "Red Hood" },
   },
-  { index: 5, id: "xen", name: "Xen's HackTX Badge", item: { id: "badge", name: "X Badge" } },
+  { index: 5, id: "xen", name: "Xen’s Tower", item: { id: "badge", name: "Keeper’s Badge" } },
 ];
 
 export const isLastStage = (index: number) => index === STAGES.length - 1;

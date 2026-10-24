@@ -21,15 +21,15 @@ in the browser. No backend. Deployed as a static site to GitHub Pages.
 Each person owns one area. Work inside your owner's lane. If you must touch
 another lane, keep the change minimal and say so in the PR title (`[cross-lane]`).
 
-| Lane                    | Owner             | Directories                                                                                     | Label      |
-| ----------------------- | ----------------- | ----------------------------------------------------------------------------------------------- | ---------- |
-| A. Vision (gestures)    | _TBD_             | `src/vision/`, `vision.html`, `public/models/`                                                  | `vision`   |
-| B. Runner (P1) + world  | _TBD_             | `src/game/runner/`, `src/game/GameScene.ts`                                                     | `runner`   |
-| C. Saboteur (P2)        | _TBD_             | `src/game/saboteur/`                                                                            | `saboteur` |
-| D. Shell & presentation | _TBD_             | `src/shell/`, `src/style.css`, `index.html`, `public/assets/`, `scripts/`, `.github/`, `README` | `shell`    |
-| **Shared contracts**    | everyone (see §3) | `src/shared/`                                                                                   | `contract` |
+| Lane                    | Owner                     | Directories                                                                                     | Label      |
+| ----------------------- | ------------------------- | ----------------------------------------------------------------------------------------------- | ---------- |
+| A. Vision (gestures)    | Ani (@AnirudhSekar)       | `src/vision/`, `vision.html`, `public/models/`                                                  | `vision`   |
+| B. Runner (P1) + world  | Aariv (@aariv-modi)       | `src/game/runner/`, `src/game/GameScene.ts`                                                     | `runner`   |
+| C. Saboteur (P2)        | Jonathan (@jonathanphung) | `src/game/saboteur/`                                                                            | `saboteur` |
+| D. Shell & presentation | Prahalad (@PPilot2)       | `src/shell/`, `src/style.css`, `index.html`, `public/assets/`, `scripts/`, `.github/`, `README` | `shell`    |
+| **Shared contracts**    | everyone (see §3)         | `src/shared/`                                                                                   | `contract` |
 
-Team: @jonathanphung, @aariv-modi, @AnirudhSekar, @PPilot2 — put one handle per lane.
+Branch prefixes: `ani/`, `aariv/`, `jonathan/`, `prahalad/`.
 
 What each lane owns:
 

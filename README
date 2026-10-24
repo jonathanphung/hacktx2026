@@ -1,1 +1,13 @@
-# Hacktx
+# HackTX Runner
+
+A two-player, webcam-controlled endless runner. One player dodges; the other throws
+traps at them. Both control the game with hand gestures in front of one webcam.
+
+```bash
+npm install
+npm run dev
+```
+
+Open http://localhost:5173 (add `?novision` to play with the keyboard only).
+
+Contributors and coding agents: read [AGENTS.md](AGENTS.md) first.

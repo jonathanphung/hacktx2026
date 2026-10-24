@@ -29,7 +29,7 @@ gh api -X PUT "repos/$repo/branches/main/protection" --input - >/dev/null <<'JSO
 JSON
 
 echo "Lane labels"
-for l in web api ai glue contract; do
+for l in vision runner saboteur shell contract; do
   gh label create "$l" --repo "$repo" --force >/dev/null
 done
 

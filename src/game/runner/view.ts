@@ -59,6 +59,7 @@ function drawFrame(scene: Phaser.Scene, key: string, phase: number | null) {
   g.fillCircle(29, 42, 1.5);
   g.fillCircle(37, 47, 1.5);
   g.generateTexture(key, TEX, TEX);
+  scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
   g.destroy();
 }
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
@@ -68,6 +69,13 @@ function ensureAssets(scene: Phaser.Scene) {
     drawFrame(scene, `runner-run-${i}`, (i / RUN_FRAMES) * Math.PI * 2);
   }
   drawFrame(scene, "runner-jump", null);
+  const spark = scene.make.graphics({}, false);
+  spark.fillStyle(0xffedb0);
+  spark.fillRect(3, 0, 2, 8);
+  spark.fillRect(0, 3, 8, 2);
+  spark.generateTexture("wizard-spark", 8, 8);
+  spark.destroy();
+  scene.textures.get("wizard-spark").setFilter(Phaser.Textures.FilterMode.NEAREST);
   scene.anims.create({
     key: "runner-run",
     frames: Array.from({ length: RUN_FRAMES }, (_, i) => ({ key: `runner-run-${i}` })),
@@ -106,6 +114,7 @@ export class RunnerView {
   private fx: RunnerFx;
   private lastFrameKey = "";
   private lastGhostAt = -Infinity;
+  private magic: Phaser.GameObjects.Particles.ParticleEmitter;
 
   constructor(
     private scene: Phaser.Scene,
@@ -121,6 +130,20 @@ export class RunnerView {
       .setDepth(10);
     this.sprite.play("runner-run");
     this.fx = new RunnerFx(scene);
+    this.magic = scene.add
+      .particles(0, 0, "wizard-spark", {
+        follow: this.sprite,
+        followOffset: { x: 0, y: 18 },
+        frequency: 100,
+        lifespan: 450,
+        speed: { min: 8, max: 25 },
+        angle: { min: 60, max: 120 },
+        scale: { start: 0.7, end: 0 },
+        alpha: { start: 0.8, end: 0 },
+        blendMode: "ADD",
+        quantity: 1,
+      })
+      .setDepth(9);
     this.shield = scene.add
       .circle(x, groundY, RUNNER.runnerSize * 0.75)
       .setStrokeStyle(3, 0x80deea)
@@ -138,6 +161,7 @@ export class RunnerView {
 
     // Takeoff / landing: swap between the run cycle and the tucked jump pose.
     if (airborne && !this.wasAirborne) {
+      this.magic.emitParticleAt(pose.x, this.groundY, 14);
       sprite.anims.pause();
       sprite.setTexture("runner-jump");
     } else if (!airborne && this.wasAirborne) {
@@ -165,7 +189,7 @@ export class RunnerView {
     // Jumping = rising toward the camera: bigger and slightly up the screen.
     const grow = 1 + 0.35 * h;
     sprite.setScale(this.baseScale * grow * sx, this.baseScale * grow * sy);
-    sprite.setPosition(pose.x, this.groundY - 14 * h);
+    sprite.setPosition(pose.x, this.groundY - 32 * h);
 
     const lean = Phaser.Math.Clamp(pose.vx * RUNNER.leanPerSpeed, -18, 18);
     const wobble = pose.slowed ? Math.sin(time / 45) * 7 : 0;

@@ -601,3 +601,120 @@ body {
 .hud-card.selected {
   background: #665074;
 }
+
+/* Retro spellbook: native text, stepped frames, and an arcade palette. */
+.story-screen,
+.story-hud,
+.pause-panel {
+  font-family: "Courier New", monospace;
+}
+.story-content h1 {
+  font-family: "Courier New", monospace;
+  font-size: 3.8cqw;
+  font-weight: 900;
+  letter-spacing: -0.065em;
+  text-shadow:
+    2px 2px 0 #f5e0a5,
+    4px 4px 0 #89658f55;
+}
+.story-eyebrow {
+  letter-spacing: 0.13em;
+}
+.story-subtitle {
+  font-family: "Courier New", monospace;
+  font-size: 1.3cqw;
+}
+.role-card {
+  border: 2px solid #826a95;
+  border-radius: 0;
+  box-shadow:
+    4px 4px 0 #72547c66,
+    inset 0 0 0 3px #fffaf1;
+}
+.role-card h2 {
+  font-family: "Courier New", monospace;
+  font-size: 2.15cqw;
+  letter-spacing: -0.06em;
+}
+.role-card strong {
+  font-size: 1.2cqw;
+}
+.role-card small {
+  font-size: 1cqw;
+}
+.story-button,
+.pause-panel button {
+  border: 2px solid #ecd6a5;
+  border-radius: 0;
+  font-family: "Courier New", monospace;
+  text-transform: uppercase;
+  font-size: 1.35cqw;
+  box-shadow:
+    4px 4px 0 #433258,
+    -2px -2px 0 #56406e;
+  background: #69468c;
+}
+.hud-score,
+.hud-jack,
+.hud-giant,
+.hud-card,
+.hud-feedback {
+  border-radius: 0;
+  border: 2px solid #d4bc8a;
+  box-shadow: 3px 3px 0 #3c2a53;
+}
+.hud-score strong {
+  color: #ffedb0;
+}
+.hud-card.selected {
+  outline-color: #a4ffe3;
+  border-color: #a4ffe3;
+}
+.hud-card small {
+  font-size: 0.9cqw;
+}
+.hud-card .card-counter {
+  color: #bdf4dd;
+  font-weight: bold;
+  font-size: 0.85cqw;
+}
+.jump-legend {
+  color: #f4dfa5;
+  font-size: 1cqw;
+  line-height: 1.5;
+}
+.pause-panel {
+  border-radius: 0;
+  border: 3px solid #b998cd;
+  box-shadow: 6px 6px 0 #4b345b;
+}
+.pause-panel h2 {
+  font-family: "Courier New", monospace;
+  font-size: 2.6cqw;
+}
+#pause-toggle,
+#sound-toggle {
+  border-radius: 0;
+  border: 2px solid #e0c58e;
+  background: #49325f;
+  font-family: "Courier New", monospace;
+}
+
+/* Keep a full hand of three cards outside the playable beanstalk lanes. */
+.hud-jack,
+.hud-giant {
+  width: 27%;
+  box-sizing: border-box;
+}
+.hud-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.hud-card {
+  min-width: 0;
+  padding: 0.7cqw 0.25cqw;
+}
+.hud-card strong {
+  font-size: 1.05cqw;
+  overflow-wrap: anywhere;
+}

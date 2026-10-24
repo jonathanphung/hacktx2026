@@ -58,7 +58,14 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
       g.lineStyle(2, 0xb7d583, 0.7);
       g.lineBetween(cx, y + 10, cx + dir * 75, y - 3);
     }
+    // An illuminated rune between the leaf platforms.
+    g.lineStyle(2, 0xffedab, 0.85);
+    g.strokeRect(cx - 8, 120, 16, 16);
+    g.fillStyle(0xffedab, 0.8);
+    g.fillRect(cx - 2, 115, 4, 26);
+    g.fillRect(cx - 13, 126, 26, 4);
     g.generateTexture(key, width, 256);
+    scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
     g.destroy();
   }
   const stems = LANES.map((lane) =>

@@ -119,3 +119,11 @@ Production browser checks at 800 × 600 verified the HTML menu/HUD, wizard and
 beanstalk artwork, pause input blocking, replay, and pause after replay. Survival
 time excluded a long pause; no browser warnings/errors were recorded. Both theme
 and pause are committed. Live two-player webcam and audio listening remain manual.
+
+Retro magic pass: stepped spellbook frames, arcade-style native HTML typography,
+nearest-filtered wizard/stalk textures, luminous stalk runes, a pixel-spark trail,
+and a jump sparkle burst. Jump animation rises more visibly without changing its
+collision duration. The HUD and cards explain counters: jump or dodge hurdles,
+drifters, and oil; dodge walls and mud. Card panels stay outside the playable lanes
+with a full three-card hand. Browser checks covered jumping, movement, full hands,
+and Esc pause/resume; all 36 tests, typecheck, formatting, and build passed.

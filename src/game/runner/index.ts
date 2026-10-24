@@ -13,6 +13,7 @@ import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
 import { speedAt } from "./speed";
+import { TrailSpawner, trailHazard } from "./trail";
 import { createTrack } from "./track";
 import { createPickupView, RunnerView } from "./view";
 
@@ -55,6 +56,17 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let over = false;
   let nextPowerupAt = -1;
   const obstacles: Obstacle[] = [];
+  const trail = new TrailSpawner();
+  const spawnObstacle = (spec: ObstacleSpec) => {
+    const w = spec.width ?? RUNNER.laneSpacing - 30;
+    const h = spec.height ?? 40;
+    const x = laneX(spec.lane),
+      y = -h;
+    const view =
+      spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
+    (view as { setDepth?: (depth: number) => unknown }).setDepth?.(spec.effect === "slow" ? 2 : 3);
+    obstacles.push({ spec, view, w, h, touched: false });
+  };
   const pickups: Pickup[] = [];
   const powerups = new PowerupState();
   const score = () => Math.floor(points);
@@ -125,6 +137,14 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       time,
       dt,
     );
+    if (
+      trail.due(
+        time,
+        obstacles.some((ob) => ob.view.y < 260),
+      )
+    ) {
+      spawnObstacle(trailHazard(pick(LANES), Math.random()));
+    }
 
     if (time >= nextPowerupAt) {
       nextPowerupAt = time + POWERUPS.everyMs;
@@ -193,18 +213,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     get speed() {
       return speed;
     },
-    spawnObstacle(spec) {
-      const w = spec.width ?? RUNNER.laneSpacing - 30;
-      const h = spec.height ?? 40;
-      const x = laneX(spec.lane);
-      const y = -h;
-      const view =
-        spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
-      // Surfaces under solid obstacles, both above the lane markings (depth 1).
-      (view as { setDepth?: (depth: number) => unknown }).setDepth?.(
-        spec.effect === "slow" ? 2 : 3,
-      );
-      obstacles.push({ spec, view, w, h, touched: false });
-    },
+    spawnObstacle,
   };
 }

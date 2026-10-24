@@ -216,3 +216,23 @@ body {
   outline: 2px solid #4fc3f7;
   outline-offset: 2px;
 }
+
+#banner button,
+#banner a {
+  display: inline-block;
+  margin: 4px;
+  border: 1px solid #4fc3f7;
+  border-radius: 4px;
+  padding: 5px 8px;
+  background: #101426;
+  color: #e5edff;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#banner button:focus-visible,
+#banner a:focus-visible {
+  outline: 2px solid #4fc3f7;
+  outline-offset: 2px;
+}

@@ -62,6 +62,19 @@ export function showBanner(text: string): void {
   banner.textContent = text;
   banner.hidden = false;
   banner.setAttribute("role", "status");
+  // main reports camera startup failures through this existing shell entry point.
+  if (text.startsWith("Camera unavailable")) {
+    const retry = document.createElement("button");
+    retry.type = "button";
+    retry.textContent = "Retry camera";
+    retry.addEventListener("click", () => location.reload());
+    const keyboard = document.createElement("a");
+    const url = new URL(location.href);
+    url.searchParams.set("novision", "");
+    keyboard.href = url.href;
+    keyboard.textContent = "Keyboard mode";
+    banner.append(" ", retry, " ", keyboard);
+  }
 }
 
 function setupCameraDock(): void {

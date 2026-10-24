@@ -52,3 +52,34 @@ The upstream saboteur cooldown test has a random-card assumption: double-wall
 spawns two obstacles while the test expects one. That lane's code is unchanged.
 
 Verified game-over and Enter replay with the combined game; no browser warnings or errors. All 33 tests passed on this run; the random-card test issue above remains intermittent.
+
+## Demo checklist
+
+1. Start with `npm install` and `npm run dev`. Use localhost or HTTPS for the webcam.
+2. Place the laptop at hand height with both players in good light. Runner stands
+   on the left of the mirrored preview; saboteur stands on the right.
+3. Allow camera access. Wait for both previews to say **Hand detected · Ready**.
+4. Click Start once to enable audio. Check volume and mute with the sound button or M.
+5. Show runner swipes/jump, then saboteur aim/fist. Explain that a warning precedes
+   each attack and cards replenish automatically.
+6. Demonstrate one collision, the score/survival screen, and a replay.
+7. Keep `?novision` ready as a keyboard fallback. If camera setup fails, the banner
+   offers Retry camera and Keyboard mode. A browser permission denial may need
+   to be changed in the browser's site settings before retrying.
+8. Before presenting, record a short successful two-player run as a backup.
+
+### Production preview
+
+Run `npm run build`, then `npm run preview -- --base /hacktx2026/`. Open
+`http://localhost:4173/hacktx2026/` (or add `?novision`). Check that the title screen,
+initial cards, runner, sound toggle, and replay work under this deployment prefix.
+The vision debug page is `/hacktx2026/vision.html`.
+
+Merging to main triggers the GitHub Pages deployment workflow. A repo admin must
+have selected **GitHub Actions** as the Pages source. Local production preview
+checks do not confirm that the remote deployment is live.
+
+Remaining manual checks: live two-player gestures, camera denial/retry on the demo
+browser, audio volume/listening, and a successful run on the deployed HTTPS site.
+
+Production smoke check: the built game loads and starts under /hacktx2026/ when preview uses the explicit base above. Default preview currently uses / and cannot serve the prefixed assets correctly. Camera failure now offers retry and keyboard-mode links.

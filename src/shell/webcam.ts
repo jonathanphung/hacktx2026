@@ -30,14 +30,19 @@ export function mountWebcamCorners(
     const status = document.createElement("div");
     status.className = "cam-status";
     status.setAttribute("role", "status");
-    status.textContent = "Raise one hand in your half";
+    status.textContent = vision.onFrame
+      ? "Raise one hand in your half"
+      : "Layout preview · Camera off";
     corner.replaceChildren(label, vision.previews[player], status);
     corner.dataset.ready = "false";
     statuses.set(player, status);
     visible.set(player, false);
   }
   setupCameraDock();
-  if (!vision.onFrame) return;
+  if (!vision.onFrame) {
+    showBanner("Camera layout preview · Camera and gesture input are off");
+    return;
+  }
   showBanner("Stand side by side: Jon on the left, Giant on the right. Raise one hand each.");
 
   const unsubscribe = vision.onFrame((frame) => {

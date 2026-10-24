@@ -10,12 +10,7 @@ vi.mock("./giant-hand", () => ({
   createGiantHand: vi.fn(() => ({ release: vi.fn(), destroy: vi.fn() })),
 }));
 
-afterEach(() => vi.restoreAllMocks());
-
 function setup() {
-  // Deterministic deals: always the first attack (Barrier, one obstacle). A random Double wall
-  // spawns two obstacles and made the "called once" assertions flaky (~1 in 6 runs).
-  vi.spyOn(Math, "random").mockReturnValue(0);
   const events = new Emitter<{ update: number; shutdown: undefined }>();
   const warnings: { destroy: ReturnType<typeof vi.fn> }[] = [];
   const isPaused = vi.fn(() => false);

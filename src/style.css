@@ -734,3 +734,39 @@ body {
   font-weight: bold;
   font-size: 1.3cqw;
 }
+
+/* Integrate the upstream camera dock without covering the playable lanes or HUD. */
+#facecam {
+  top: 12%;
+  right: 1%;
+  bottom: auto;
+  left: auto;
+  width: 27%;
+}
+#facecam.expanded {
+  width: 34%;
+}
+#facecam .cam {
+  width: auto;
+  max-width: none;
+}
+#facecam .cam-label,
+#facecam .cam-status {
+  font-size: clamp(9px, 0.9vw, 12px);
+}
+
+/* Keep the menu title and role instructions clear while cameras are visible. */
+#stage:has(.story-screen) #facecam {
+  top: auto;
+  bottom: 1%;
+  width: 23%;
+}
+#stage:has(.story-screen) #facecam .cam canvas {
+  height: 55px;
+}
+.start-hint,
+.camera-hint {
+  max-width: 60%;
+  margin-left: auto;
+  margin-right: auto;
+}

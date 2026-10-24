@@ -194,3 +194,10 @@ time from both speed and density progression.
 Latest validation: all 46 tests, formatting, typecheck, and production build passed.
 A browser integration check confirmed a fireball hits once and exits the bottom
 instead of disappearing at contact. Production preview confirms the Jon branding.
+
+Pre-push integration: rebased onto the latest team main. Preserved spring-based
+movement, jump buffering, collision surface behavior, runner effects, vision
+updates, and the collapsible camera dock while retaining the wizard/beanstalk
+art and local game mechanics. Combined the duplicate deterministic RNG test setup.
+The complete scripts/check.sh passed with 110 tests; browser checks covered the
+camera dock, wizard rendering, movement, and jump with no console warnings/errors.

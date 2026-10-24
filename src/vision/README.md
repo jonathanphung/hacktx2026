@@ -162,3 +162,23 @@ The live log contained `source: vision` jump and right events while hand trackin
 was active. This verifies live model → interpreter → input-bus feedback, not a
 physical movement-to-screen latency measurement or a two-person distance test.
 No webcam images or landmark recording were saved for this check.
+
+## Facecam layout test branch
+
+The game route (`/`) is the primary gameplay view. It groups both live camera
+halves into a compact bottom-left facecam dock, above the runner’s instruction
+line and away from the central lanes and right-side card deck. It defaults to
+28% of stage width (up to 360 px), with a larger 34% option and a collapse button.
+Collapsing hides the video panel only; vision input keeps running. The Lab link
+opens detailed diagnostics separately. The full halves keep their aspect ratios
+so hands are not cropped out to manufacture a landscape feed. Overlay text is
+limited to thin header/footer strips, leaving faces and gestures visible.
+
+For a camera-free layout check, open `/?facecam-preview`. The game is real and
+keyboard-playable; both clearly marked camera placeholders are static, with no
+tracking or generated input. The normal `/` route uses the actual webcam. The
+existing `/?novision` route remains keyboard-only with no facecam dock.
+
+This presentation change also touches shell mounting, stage CSS and `index.html`;
+it is intentionally a cross-lane PR for review. It must remain unmerged until the
+team has tested and approved it, as requested by Anirudh.

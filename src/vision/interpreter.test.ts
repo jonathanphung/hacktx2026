@@ -11,27 +11,47 @@ function frame(t: number, gesture: string | null, x = 0.5): HandFrame {
     landmarks: Array.from({ length: 21 }, () => ({ x, y: 0.5 })),
   };
 }
-it("selects slots directly, holds once, releases, then fires", () => {
+function palmAt(t: number, gesture: string | null, x: number, y = 0.5): HandFrame {
+  return {
+    player: "saboteur",
+    t,
+    gesture,
+    landmarks: Array.from({ length: 21 }, () => ({ x, y })),
+  };
+}
+it("fires once per fist and re-arms after the hand opens", () => {
   const events: InputEvent[] = [];
   const interpret = createInterpreter((e) => events.push(e));
   for (const [start, pose] of [
-    [0, "Victory"],
-    [400, "Open_Palm"],
-    [800, "Closed_Fist"],
+    [0, "Open_Palm"],
+    [400, "Closed_Fist"],
+    [800, "Open_Palm"],
+    [1200, "Closed_Fist"],
   ] as const)
     for (let t = start; t < start + 400; t += 40) interpret(frame(t, pose));
-  expect(events).toEqual([
-    { player: "saboteur", action: "select", slot: 1 },
-    { player: "saboteur", action: "fire" },
-  ]);
+  expect(events.filter((e) => e.action === "fire")).toHaveLength(2);
 });
-it("maps all three card poses to explicit slots", () => {
-  for (const [slot, pose] of ["Pointing_Up", "Victory", "Thumb_Up"].entries()) {
-    const events: InputEvent[] = [];
-    const interpret = createInterpreter((e) => events.push(e));
-    for (let t = 0; t < 300; t += 40) interpret(frame(t, pose));
-    expect(events).toEqual([{ player: "saboteur", action: "select", slot }]);
-  }
+it("locks the target lane while the fist closes, then resumes aiming when the hand opens", () => {
+  const events: InputEvent[] = [];
+  const settings = { version: 1 as const, swipeDistance: 0.2, aim: { minX: 0, maxX: 1 } };
+  const interpret = createInterpreter(
+    (e) => events.push(e),
+    () => settings,
+  );
+  for (let t = 0; t < 400; t += 40) interpret(palmAt(t, "Open_Palm", 0.5));
+  // Palm slides into lane 2 as the fingers curl; the fist is then recognized there.
+  for (let t = 400; t < 800; t += 40) interpret(palmAt(t, t < 480 ? null : "Closed_Fist", 0.9));
+  const aims = events.filter((e) => e.action === "aim");
+  expect(aims.at(-1)).toEqual({ player: "saboteur", action: "aim", lane: 1 });
+  expect(events.at(-1)).toEqual({ player: "saboteur", action: "fire" });
+  expect(events.slice(events.findIndex((e) => e.action === "fire") + 1)).toEqual([]);
+  interpret(palmAt(800, "Open_Palm", 0.9));
+  interpret(palmAt(840, "Open_Palm", 0.9));
+  expect(events.filter((e) => e.action === "aim").at(-1)).toEqual({
+    player: "saboteur",
+    action: "aim",
+    lane: 2,
+  });
 });
 it("never emits an unsupported down action", () => {
   const events: InputEvent[] = [];

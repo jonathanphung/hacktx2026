@@ -182,3 +182,13 @@ existing `/?novision` route remains keyboard-only with no facecam dock.
 This presentation change also touches shell mounting, stage CSS and `index.html`;
 it is intentionally a cross-lane PR for review. It must remain unmerged until the
 team has tested and approved it, as requested by Anirudh.
+
+## Saboteur controls (current)
+
+The card poses above are no longer used; the game drops one random obstacle per cast.
+Aim with an open palm; a fist fires. While the fist closes, the target is locked to the
+lane held ~200 ms earlier (finger curl drags the palm landmark) and aiming resumes when
+the hand opens. Vision only sends intentions (`aim`, `fire`); the game accepts or rejects
+each cast and reports it through `cast-result` / `saboteur-status` (mirrored on
+`saboteurBus`), which the camera overlay shows as Ready / Cast queued / Cooldown /
+Rejected instead of only "SENT".

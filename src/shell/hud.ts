@@ -99,6 +99,14 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   );
   untilShutdown(
     scene,
+    events.on("cast-result", (r) => {
+      // The game, not vision, decides whether a drop was accepted.
+      if (!r.accepted && r.reason === "cooldown")
+        announce(`NOT READY · ${(r.remainingMs / 1000).toFixed(1)}s`);
+    }),
+  );
+  untilShutdown(
+    scene,
     events.on("attack-fired", ({ attackId, lane }) => {
       playCue("attack");
       announce(`${ATTACK_BY_ID.get(attackId)?.name ?? attackId} → ${LANES[lane]}`);

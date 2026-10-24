@@ -1,5 +1,5 @@
 import type Phaser from "phaser";
-import type { Emitter } from "./emitter";
+import { Emitter } from "./emitter";
 import type { StageId } from "./stages";
 import type { Lane } from "./types";
 
@@ -50,7 +50,8 @@ export interface GameEvents {
   "attack-fired": { attackId: string; lane: Lane };
   /** Authoritative game state, separate from vision's acknowledgement of sent input. */
   "saboteur-status": {
-    state: "ready" | "cooldown" | "empty" | "over";
+    /** "queued": a cast was accepted and its warning is counting down; remainingMs = time to impact. */
+    state: "ready" | "queued" | "cooldown" | "empty" | "over";
     remainingMs: number;
     aimLane: Lane;
   };
@@ -64,3 +65,9 @@ export interface GameEvents {
   /** A powerup was picked up (active: true) or ran out / was used up (active: false). */
   powerup: { kind: PowerupKind; active: boolean; durationMs: number };
 }
+
+/**
+ * App-wide mirror of the saboteur's authoritative state. GameEvents is recreated per run, so
+ * anything outside the scene (e.g. the webcam overlay) listens here instead.
+ */
+export const saboteurBus = new Emitter<Pick<GameEvents, "saboteur-status" | "cast-result">>();

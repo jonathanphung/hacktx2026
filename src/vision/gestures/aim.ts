@@ -9,6 +9,15 @@ export class LaneAim {
 
   constructor(private margin = 0.05) {}
 
+  get current(): Lane {
+    return this.lane;
+  }
+
+  /** Forces the lane, e.g. when a target lock rewinds aim to the last stable lane. */
+  set(lane: Lane) {
+    this.lane = lane;
+  }
+
   /** Returns the new lane when it changes, otherwise null. */
   push(x: number | null): Lane | null {
     if (x === null || !Number.isFinite(x)) return null;

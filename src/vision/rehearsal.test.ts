@@ -18,9 +18,6 @@ it("replays the synthetic demo through the real interpreter, with one fire for a
     }
   }
   expect(events.filter((e) => e.action === "fire")).toHaveLength(1);
-  expect(events.filter((e) => e.action === "select")).toEqual(
-    [0, 1, 2].map((slot) => ({ player: "saboteur", action: "select", slot })),
-  );
   expect(events.some((e) => e.action === "jump")).toBe(true);
   expect(circles).toEqual(["clockwise"]);
 });

@@ -22,11 +22,17 @@ function setup() {
       once: (_name: string, callback: () => void) => events.on("shutdown", callback),
     },
     add: {
-      triangle: () => ({ setDepth: vi.fn() }),
-      rectangle: () => {
-        const warning = { setDepth: vi.fn(), destroy: vi.fn() };
-        warnings.push(warning);
-        return warning;
+      triangle: () => ({ setDepth: vi.fn(), x: 0 }),
+      rectangle: (...args: unknown[]) => {
+        const rect = {
+          setDepth: vi.fn(() => rect),
+          x: 0,
+          setAlpha: vi.fn(() => rect),
+          destroy: vi.fn(),
+        };
+        // Only the 0.3-alpha attack warnings count; the lane glow is a permanent fixture.
+        if (args[5] === 0.3) warnings.push(rect);
+        return rect;
       },
     },
     tweens: { add: vi.fn() },
@@ -134,6 +140,146 @@ describe("saboteur attack warnings", () => {
       expect(warnings).toHaveLength(1);
       expect(warnings[0].destroy).toHaveBeenCalledOnce();
       expect(vi.mocked(createGiantHand).mock.results[0].value.destroy).toHaveBeenCalledOnce();
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
+});
+
+describe("saboteur authoritative feedback", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("reports starting, accepted, queued, cooldown and ready states", () => {
+    const { events, world, fire } = setup();
+    try {
+      const results: GameEvents["cast-result"][] = [];
+      const states: GameEvents["saboteur-status"][] = [];
+      world.events.on("cast-result", (r) => results.push(r));
+      world.events.on("saboteur-status", (s) => states.push(s));
+      fire();
+      expect(results.at(-1)).toMatchObject({ accepted: false, reason: "starting" });
+      events.emit("update", 1000);
+      fire();
+      expect(results.at(-1)).toMatchObject({
+        accepted: true,
+        remainingMs: SABOTEUR.fireCooldownMs,
+      });
+      expect(states.at(-1)).toMatchObject({ state: "queued", remainingMs: SABOTEUR.warningMs });
+      events.emit("update", 1100);
+      fire();
+      expect(results.at(-1)).toMatchObject({
+        accepted: false,
+        reason: "cooldown",
+        remainingMs: SABOTEUR.fireCooldownMs - 100,
+      });
+      events.emit("update", 1000 + SABOTEUR.warningMs);
+      expect(states.at(-1)).toMatchObject({ state: "cooldown" });
+      events.emit("update", 1000 + SABOTEUR.fireCooldownMs);
+      expect(states.at(-1)).toMatchObject({ state: "ready", remainingMs: 0 });
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
+
+  it("rejects casts after game over", () => {
+    const { events, world, fire } = setup();
+    try {
+      const results: GameEvents["cast-result"][] = [];
+      world.events.on("cast-result", (r) => results.push(r));
+      world.events.emit("game-over", { score: 0, survivedMs: 1 });
+      fire();
+      expect(results.at(-1)).toMatchObject({ accepted: false, reason: "game-over" });
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
+});
+
+describe("saboteur input stress", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("never casts faster than the cooldown under random input spam", () => {
+    for (let seed = 1; seed <= 50; seed++) {
+      let n = seed;
+      const rand = () => (n = (n * 1664525 + 1013904223) >>> 0) / 2 ** 32;
+      const { events, world } = setup();
+      try {
+        const accepted: number[] = [];
+        let clock = 0;
+        world.events.on("cast-result", (r) => r.accepted && accepted.push(clock));
+        for (let i = 0; i < 600; i++) {
+          clock += 16;
+          events.emit("update", clock);
+          if (rand() < 0.3)
+            inputBus.emit("input", { player: "saboteur", action: "fire", source: "vision" });
+          if (rand() < 0.3)
+            inputBus.emit("input", {
+              player: "saboteur",
+              action: "aim",
+              lane: Math.floor(rand() * 3) as 0 | 1 | 2,
+              source: "vision",
+            });
+        }
+        for (let i = 1; i < accepted.length; i++)
+          expect(accepted[i] - accepted[i - 1]).toBeGreaterThanOrEqual(SABOTEUR.fireCooldownMs);
+        expect(accepted.length).toBeGreaterThan(0);
+      } finally {
+        events.emit("shutdown", undefined);
+      }
+    }
+  });
+});
+
+describe("saboteur fire buffering", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.spyOn(Math, "random").mockReturnValue(0);
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("casts a fire sent just before the cooldown ends, at the lane aimed when it was sent", () => {
+    const { events, world, warnings, fire } = setup();
+    try {
+      const results: GameEvents["cast-result"][] = [];
+      world.events.on("cast-result", (r) => results.push(r));
+      events.emit("update", 1000);
+      fire();
+      const ready = 1000 + SABOTEUR.fireCooldownMs;
+      events.emit("update", ready - 100);
+      inputBus.emit("input", { player: "saboteur", action: "aim", lane: 2, source: "vision" });
+      fire();
+      expect(warnings).toHaveLength(1);
+      expect(results.filter((r) => !r.accepted)).toHaveLength(0);
+      inputBus.emit("input", { player: "saboteur", action: "aim", lane: 0, source: "vision" });
+      events.emit("update", ready);
+      expect(warnings).toHaveLength(2);
+      expect(results.at(-1)).toMatchObject({ accepted: true, lane: 2 });
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
+
+  it("still rejects a fire that is too early for the buffer, and never double-casts", () => {
+    const { events, warnings, world, fire } = setup();
+    try {
+      const results: GameEvents["cast-result"][] = [];
+      world.events.on("cast-result", (r) => results.push(r));
+      events.emit("update", 1000);
+      fire();
+      events.emit("update", 1000 + SABOTEUR.fireCooldownMs - SABOTEUR.fireBufferMs - 1);
+      fire();
+      expect(results.at(-1)).toMatchObject({ accepted: false, reason: "cooldown" });
+      events.emit("update", 1000 + SABOTEUR.fireCooldownMs + 16);
+      events.emit("update", 1000 + SABOTEUR.fireCooldownMs + 32);
+      expect(warnings).toHaveLength(1);
     } finally {
       events.emit("shutdown", undefined);
     }

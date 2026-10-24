@@ -735,34 +735,77 @@ body {
   font-size: 1.3cqw;
 }
 
-/* Integrate the upstream camera dock without covering the playable lanes or HUD. */
+/*
+ * Split cameras: each player's own half of the webcam sits in their own corner, Jon's on the
+ * left and the Giant's on the right. The dock's controls become a small pill at top center.
+ */
 #facecam {
-  top: 12%;
-  right: 1%;
-  bottom: auto;
-  left: auto;
-  width: 27%;
-}
-#facecam.expanded {
-  width: 34%;
-}
-#facecam .cam {
+  inset: 0;
   width: auto;
   max-width: none;
+  border: 0;
+  border-radius: 0;
+  overflow: visible;
+  background: none;
+  box-shadow: none;
+  pointer-events: none;
+}
+#facecam.expanded {
+  width: auto;
+  max-width: none;
+}
+#facecam .facecam-header {
+  position: absolute;
+  top: 0.3%;
+  left: 50%;
+  transform: translateX(-50%) scale(0.8);
+  transform-origin: top center;
+  width: max-content;
+  border: 1px solid #64748b80;
+  border-radius: 999px;
+  background: #0c1221d9;
+  pointer-events: auto;
+  z-index: 1;
+}
+#facecam-body {
+  display: contents;
+}
+#facecam .cam {
+  position: absolute;
+  top: 9%;
+  width: 26%;
+  max-width: none;
+  border: 2px solid #ffffff55;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px #0008;
+}
+#facecam.expanded .cam {
+  width: 28%;
+}
+#facecam .cam.left {
+  left: 1%;
+}
+#facecam .cam.right {
+  right: 1%;
+  border-left: 2px solid #ffffff55;
+}
+#facecam .cam canvas {
+  height: auto;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
 }
 #facecam .cam-label,
 #facecam .cam-status {
   font-size: clamp(9px, 0.9vw, 12px);
 }
 
-/* Keep the menu title and role instructions clear while cameras are visible. */
-#stage:has(.story-screen) #facecam {
-  top: auto;
-  bottom: 1%;
-  width: 23%;
+/* On the menu the cameras stay in the top corners but shrink, clear of the title and cards. */
+#stage:has(.story-screen) #facecam .cam {
+  width: 18%;
 }
 #stage:has(.story-screen) #facecam .cam canvas {
-  height: 55px;
+  aspect-ratio: 16 / 9;
 }
 .start-hint,
 .camera-hint {

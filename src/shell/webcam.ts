@@ -1,11 +1,70 @@
 import type { PlayerId } from "../shared/types";
 import type { VisionHandle } from "../shared/vision";
 
-/** Reuse vision previews in a compact dock, leaving the game as the primary view. */
-export function mountWebcamCorners(vision: Pick<VisionHandle, "previews">): void {
-  for (const player of ["runner", "saboteur"] as PlayerId[]) {
-    document.getElementById(`cam-${player}`)?.replaceChildren(vision.previews[player]);
+const PLAYERS = ["runner", "saboteur"] as const;
+const LABELS: Record<PlayerId, string> = {
+  runner: "P1 · Runner · Left",
+  saboteur: "P2 · Saboteur · Right",
+};
+
+/** Camera startup begins in main; keep its presentation here in the shell. */
+const keyboardOnly = new URLSearchParams(location.search).has("novision");
+showBanner(
+  keyboardOnly
+    ? "Keyboard mode · P1: A / D / W · P2: J / K / L + Space"
+    : "Setting up camera… Allow camera access when prompted. You can also play with the keyboard.",
+);
+
+/** Shows the existing vision previews and readiness without changing gesture recognition. */
+export function mountWebcamCorners(
+  vision: Pick<VisionHandle, "previews"> & Partial<Pick<VisionHandle, "onFrame">>,
+): void {
+  const statuses = new Map<PlayerId, HTMLElement>();
+  const visible = new Map<PlayerId, boolean>();
+  for (const player of PLAYERS) {
+    const corner = document.getElementById(`cam-${player}`);
+    if (!corner) continue;
+    const label = document.createElement("div");
+    label.className = "cam-label";
+    label.textContent = LABELS[player];
+    const status = document.createElement("div");
+    status.className = "cam-status";
+    status.setAttribute("role", "status");
+    status.textContent = "Raise one hand in your half";
+    corner.replaceChildren(label, vision.previews[player], status);
+    corner.dataset.ready = "false";
+    statuses.set(player, status);
+    visible.set(player, false);
   }
+  setupCameraDock();
+  if (!vision.onFrame) return;
+  showBanner("Stand side by side: runner on the left, saboteur on the right. Raise one hand each.");
+
+  const unsubscribe = vision.onFrame((frame) => {
+    const detected = !!frame.landmarks?.length;
+    if (visible.get(frame.player) === detected) return;
+    visible.set(frame.player, detected);
+    const status = statuses.get(frame.player);
+    if (status)
+      status.textContent = detected ? "Hand detected · Ready" : "Hand missing · Raise one hand";
+    const corner = document.getElementById(`cam-${frame.player}`);
+    if (corner) corner.dataset.ready = String(detected);
+    const banner = document.getElementById("banner");
+    if (banner) banner.hidden = PLAYERS.every((player) => visible.get(player));
+  });
+  // Vision and the previews live across game restarts, with one subscription per page.
+  window.addEventListener("pagehide", unsubscribe, { once: true });
+}
+
+export function showBanner(text: string): void {
+  const banner = document.getElementById("banner");
+  if (!banner) return;
+  banner.textContent = text;
+  banner.hidden = false;
+  banner.setAttribute("role", "status");
+}
+
+function setupCameraDock(): void {
   const dock = document.getElementById("facecam");
   const body = document.getElementById("facecam-body");
   const toggle = document.getElementById("facecam-toggle");
@@ -34,13 +93,6 @@ export function mountWebcamCorners(vision: Pick<VisionHandle, "previews">): void
     size.title = label;
     size.textContent = expanded ? "↙" : "↗";
   };
-}
-
-export function showBanner(text: string): void {
-  const banner = document.getElementById("banner");
-  if (!banner) return;
-  banner.textContent = text;
-  banner.hidden = false;
 }
 
 /** Camera-free layout check; placeholders never emit game input or pretend to be inference. */

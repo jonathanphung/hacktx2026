@@ -11,3 +11,24 @@ npm run dev
 Open http://localhost:5173 (add `?novision` to play with the keyboard only).
 
 Contributors and coding agents: read [AGENTS.md](AGENTS.md) first.
+
+## Shell progress
+
+Prahalad owns the shell and presentation (`prahalad/` branches).
+
+- Title screen explains both player roles, positions, gestures, and keyboard controls.
+- Start and replay support clicks, Enter, and runner jump input. Restart listeners are cleaned up.
+- Game-over screen shows score and survival time, with an 800 ms replay guard.
+- Camera UI shows startup guidance, player labels, hand readiness, and positioning guidance.
+- `?novision` shows keyboard instructions; camera startup failure falls back to keyboard controls.
+
+Validation: formatting, TypeScript, 13 unit tests, and production build passed.
+Browser checks covered an 800 × 600 layout, click/Enter/jump-input start, game-over,
+and replay. Camera readiness transitions were checked with simulated vision frames.
+Live two-player webcam and gesture playtesting remains outstanding.
+
+Known integration issue: the saboteur announces its initial hand before the HUD
+subscribes, so the first card is invisible until the next hand update. Coordinate
+with the runner/saboteur owners to fix installation order or expose initial state.
+
+Next: HUD clarity and feedback, then live camera playtesting, audio/art, and demo polish.

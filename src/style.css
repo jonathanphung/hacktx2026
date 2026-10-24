@@ -142,3 +142,54 @@ body {
     sans-serif;
   z-index: 3;
 }
+
+.cam {
+  width: 18%;
+  max-width: 210px;
+  background: #101426;
+  color: #e5edff;
+  font:
+    clamp(9px, 1.15vw, 14px) system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+
+.cam canvas {
+  height: clamp(50px, 10vh, 90px);
+  object-fit: contain;
+  background: #080b14;
+}
+
+.cam-label,
+.cam-status {
+  padding: 4px 8px;
+}
+
+.cam-label {
+  font-weight: 700;
+}
+
+.cam-status {
+  color: #ffce85;
+}
+
+.cam[data-ready="true"] {
+  border-color: #70e0b1;
+}
+
+.cam[data-ready="true"] .cam-status {
+  color: #70e0b1;
+}
+
+#banner {
+  bottom: 2px;
+  max-width: 90%;
+  width: max-content;
+  box-sizing: border-box;
+  text-align: center;
+  font-size: clamp(10px, 1.2vw, 14px);
+}
+
+#banner[hidden] {
+  display: none;
+}

@@ -262,7 +262,7 @@ controls.get("start")!.onclick = async () => {
     mode = "LIVE CAMERA";
     mount(handle.previews);
     unsubscribe = handle.onFrame(render);
-    line("Live tracking started. Open palm between poses; hold a selection pose for 180 ms.");
+    line("Live tracking started. Aim with an open palm, close a fist to cast.");
   } catch (error) {
     if (current === generation)
       status.textContent = `Camera unavailable: ${error}. You can still run rehearsal.`;

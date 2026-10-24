@@ -1,7 +1,10 @@
 import type { InputEvent } from "../shared/input";
+import type { Lane } from "../shared/types";
 import type { HandFrame } from "../shared/vision";
 import { LaneAim } from "./gestures/aim";
-import { FistTrigger, PoseTrigger } from "./gestures/fire";
+import { FistTrigger } from "./gestures/fire";
+import { effectivePose } from "./gestures/hand-pose";
+import { TargetLock } from "./gestures/target-lock";
 import { PalmFilter } from "./gestures/smoothing";
 import { getVisionSettings, aimPosition, type VisionSettings } from "./calibration";
 import { DEFAULT_SWIPE, SwipeDetector } from "./gestures/swipe";
@@ -12,15 +15,14 @@ export function createInterpreter(
   getSettings: () => VisionSettings = getVisionSettings,
 ) {
   const fist = new FistTrigger();
-  const cards = ["Pointing_Up", "Victory", "Thumb_Up"].map((pose) => new PoseTrigger(pose, 180));
   let settings = getSettings();
-  let interpret = buildInterpreter(emit, settings, fist, cards);
+  let interpret = buildInterpreter(emit, settings, fist);
   return (frame: HandFrame) => {
     const next = getSettings();
     if (next !== settings) {
       settings = next;
       // Rebuild temporal state: changing settings must not complete a buffered gesture.
-      interpret = buildInterpreter(emit, settings, fist, cards);
+      interpret = buildInterpreter(emit, settings, fist);
     }
     return interpret(frame);
   };
@@ -29,9 +31,10 @@ function buildInterpreter(
   emit: (event: InputEvent) => void,
   settings: VisionSettings,
   fist: FistTrigger,
-  cards: PoseTrigger[],
 ) {
   const swipe = new SwipeDetector({ ...DEFAULT_SWIPE, minDistance: settings.swipeDistance });
+  const lock = new TargetLock();
+  let sentLane: Lane = 1;
   const aim = new LaneAim();
   const filters = { runner: new PalmFilter(), saboteur: new PalmFilter() };
   return (f: HandFrame) => {
@@ -45,12 +48,21 @@ function buildInterpreter(
         emit({ player: "runner", action: direction === "up" ? "jump" : direction });
       return direction;
     }
-    const lane = aim.push(p ? aimPosition(p.x, settings.aim) : null);
-    if (lane !== null) emit({ player: "saboteur", action: "aim", lane });
-    const gesture = p ? f.gesture : null;
-    cards.forEach((card, slot) => {
-      if (card.push(f.t, gesture)) emit({ player: "saboteur", action: "select", slot });
-    });
+    const gesture = p ? effectivePose(f.gesture, f.landmarks) : null;
+    const lockedLane = lock.push(f.t, gesture, !!p, aim.current);
+    if (lockedLane !== null) {
+      // Fire at the last stable target, not wherever the curling fingers dragged the palm.
+      aim.set(lockedLane);
+      if (lockedLane !== sentLane) emit({ player: "saboteur", action: "aim", lane: lockedLane });
+      sentLane = lockedLane;
+    }
+    if (!lock.locked) {
+      const lane = aim.push(p ? aimPosition(p.x, settings.aim) : null);
+      if (lane !== null) {
+        sentLane = lane;
+        emit({ player: "saboteur", action: "aim", lane });
+      }
+    }
     if (fist.push(f.t, gesture)) emit({ player: "saboteur", action: "fire" });
     return null;
   };

@@ -1,12 +1,19 @@
 import type Phaser from "phaser";
 import { untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
-import type { Lane } from "../../shared/types";
-import type { World } from "../../shared/world";
+import { GAME_HEIGHT, type Lane } from "../../shared/types";
+import { saboteurBus, type GameEvents, type World } from "../../shared/world";
 import { ATTACK_BY_ID, ATTACKS } from "./attacks";
 import { SABOTEUR } from "./config";
 
 import { createGiantHand } from "./giant-hand";
+
+const GLOW_WIDTH = 160;
+const GLOW_ALPHA = 0.14;
+const GLOW_LOCK_ALPHA = 0.4;
+/** Time constants (ms) for the aim indicators gliding between lanes. */
+const GLOW_EASE_MS = 40;
+const MARKER_EASE_MS = 70;
 
 /** Player 2: aims one random obstacle and drops it every four seconds into the runner's world. */
 export function installSaboteur(scene: Phaser.Scene, world: World): void {
@@ -39,59 +46,122 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     world.events.on("game-over", () => {
       over = true;
       clearWarnings();
+      bufferedFire = null;
+      publish("saboteur-status", status(now));
     }),
   );
 
+  /** Authoritative saboteur state, mirrored on saboteurBus for UI that outlives a run. */
+  function publish<K extends "saboteur-status" | "cast-result">(name: K, payload: GameEvents[K]) {
+    world.events.emit(name, payload);
+    saboteurBus.emit(name, payload);
+  }
+  function status(time: number): GameEvents["saboteur-status"] {
+    if (over) return { state: "over", remainingMs: 0, aimLane };
+    if (pending.length) {
+      const next = Math.min(...pending.map((attack) => attack.landsAt));
+      return { state: "queued", remainingMs: Math.max(0, next - time), aimLane };
+    }
+    if (time < nextFire) return { state: "cooldown", remainingMs: nextFire - time, aimLane };
+    return { state: "ready", remainingMs: 0, aimLane };
+  }
+  const reject = (reason: "cooldown" | "starting" | "game-over", remainingMs = 0) =>
+    publish("cast-result", { accepted: false, reason, lane: aimLane, remainingMs });
+  let lastState: GameEvents["saboteur-status"]["state"] = "ready";
+
   const marker = scene.add.triangle(world.laneX(aimLane), 90, 0, 0, 40, 0, 20, 30, 0xff5252);
   marker.setDepth(10);
+  // The target lane lights up the instant aim changes; the marker above eases over after it.
+  const glow = scene.add
+    .rectangle(world.laneX(aimLane), GAME_HEIGHT / 2, GLOW_WIDTH, GAME_HEIGHT, 0xff5252, GLOW_ALPHA)
+    .setDepth(8);
 
-  const announce = () =>
+  const announce = () => {
     world.events.emit("hand-changed", {
       hand: nextFire > 0 && now < nextFire ? [] : [nextAttack],
       selected: 0,
       aimLane,
     });
+    publish("saboteur-status", status(now));
+  };
+
+  const cast = (lane: Lane) => {
+    const id = nextAttack;
+    nextFire = now + SABOTEUR.fireCooldownMs;
+    glow.setAlpha(GLOW_LOCK_ALPHA);
+    scene.tweens.add({ targets: glow, alpha: GLOW_ALPHA, duration: 300 });
+    publish("cast-result", {
+      accepted: true,
+      attackId: id,
+      lane,
+      remainingMs: SABOTEUR.fireCooldownMs,
+    });
+    const warning = scene.add.rectangle(
+      world.laneX(lane),
+      40,
+      80,
+      80,
+      ATTACK_BY_ID.get(id)!.color,
+      0.3,
+    );
+    warning.setDepth(9);
+    const hand = createGiantHand(
+      scene,
+      world.laneX(lane),
+      ATTACK_BY_ID.get(id)!.color,
+      SABOTEUR.warningMs,
+      id,
+    );
+    pending.push({ id, lane: lane, landsAt: now + SABOTEUR.warningMs, warning, hand });
+  };
+  let bufferedFire: Lane | null = null;
 
   untilShutdown(
     scene,
     inputBus.on("input", (e) => {
       if (scene.sys?.isPaused()) return;
-      if (over || e.player !== "saboteur") return;
+      if (e.player !== "saboteur") return;
+      if (over) {
+        if (e.action === "fire") reject("game-over");
+        return;
+      }
       if (e.action === "aim") {
         aimLane = e.lane;
-        scene.tweens.add({ targets: marker, x: world.laneX(aimLane), duration: 100 });
+        // Marker and glow glide toward the new lane each frame (see update) instead of snapping.
       } else if (e.action === "fire") {
-        if (now < 0 || now < nextFire) return;
-        const id = nextAttack;
-        nextFire = now + SABOTEUR.fireCooldownMs;
-        const warning = scene.add.rectangle(
-          world.laneX(aimLane),
-          40,
-          80,
-          80,
-          ATTACK_BY_ID.get(id)!.color,
-          0.3,
-        );
-        warning.setDepth(9);
-        const hand = createGiantHand(
-          scene,
-          world.laneX(aimLane),
-          ATTACK_BY_ID.get(id)!.color,
-          SABOTEUR.warningMs,
-          id,
-        );
-        pending.push({ id, lane: aimLane, landsAt: now + SABOTEUR.warningMs, warning, hand });
+        if (now < 0) return reject("starting");
+        if (now < nextFire) {
+          // Gestures land a little early as often as a little late: hold a fire that arrives
+          // just before the cooldown ends and cast it the moment it does, at the lane aimed.
+          if (nextFire - now <= SABOTEUR.fireBufferMs) bufferedFire = aimLane;
+          else return reject("cooldown", nextFire - now);
+          return;
+        }
+        cast(aimLane);
       }
       announce();
     }),
   );
 
+  let lastFrame = -1;
   const update = (time: number) => {
     if (over) return;
+    // Exponential easing on the game clock: the glow leads, the marker follows a beat behind.
+    const dt = lastFrame < 0 ? 0 : Math.min(100, time - lastFrame);
+    lastFrame = time;
+    const target = world.laneX(aimLane);
+    glow.x += (target - glow.x) * (1 - Math.exp(-dt / GLOW_EASE_MS));
+    marker.x += (target - marker.x) * (1 - Math.exp(-dt / MARKER_EASE_MS));
     const wasCooling = nextFire > 0 && now < nextFire;
     now = time;
     if (wasCooling && now >= nextFire) {
       nextAttack = draw();
+      announce();
+    }
+    if (bufferedFire !== null && now >= nextFire) {
+      const lane = bufferedFire;
+      bufferedFire = null;
+      cast(lane);
       announce();
     }
     for (let i = pending.length - 1; i >= 0; i--) {
@@ -104,6 +174,10 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
       world.events.emit("attack-fired", { attackId: attack.id, lane: attack.lane });
       if (over) return;
     }
+    // Re-publish every frame while a countdown runs, and once more when it ends.
+    const next = status(time);
+    if (next.state !== lastState || next.remainingMs > 0) publish("saboteur-status", next);
+    lastState = next.state;
   };
   scene.events.on("update", update);
   untilShutdown(scene, () => scene.events.off("update", update));

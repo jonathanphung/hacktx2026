@@ -1,3 +1,4 @@
+import type { GameEvents } from "../shared/world";
 import type { InputEvent } from "../shared/input";
 import type { PlayerId } from "../shared/types";
 import type { HandFrame } from "../shared/vision";
@@ -33,6 +34,31 @@ export class VisionFeedback {
       error: null,
     },
   };
+  private game: { status: GameEvents["saboteur-status"]; at: number } | null = null;
+  private rejection: { text: string; until: number } | null = null;
+  /** Authoritative saboteur state from the game: what actually happened to the sent command. */
+  status(status: GameEvents["saboteur-status"], now: number) {
+    this.game = { status, at: now };
+  }
+  result(result: GameEvents["cast-result"], now: number) {
+    if (result.accepted || result.reason === "game-over") return void (this.rejection = null);
+    const why = { cooldown: "COOLDOWN", empty: "NO CARDS", starting: "NOT READY" }[result.reason!];
+    this.rejection = { text: `REJECTED: ${why ?? "NOT READY"}`, until: now + 900 };
+  }
+  private cast(now: number) {
+    if (this.rejection && now < this.rejection.until)
+      return { text: this.rejection.text, tone: "bad" as const };
+    if (!this.game || this.game.status.state === "over") return null;
+    const { state, remainingMs } = this.game.status;
+    const left = Math.max(0, remainingMs - (now - this.game.at));
+    const seconds = (left / 1000).toFixed(1);
+    if (state === "queued" && left > 0)
+      return { text: `CAST QUEUED ${seconds}s`, tone: "wait" as const };
+    if (state === "cooldown" && left > 0)
+      return { text: `COOLDOWN ${seconds}s`, tone: "bad" as const };
+    if (state === "empty") return { text: "NO CARDS", tone: "bad" as const };
+    return { text: "READY", tone: "ready" as const };
+  }
   frame(frame: HandFrame, received: number) {
     const state = this.states[frame.player];
     state.frame = frame;
@@ -74,6 +100,7 @@ export class VisionFeedback {
               ? "Hand tracked"
               : `Show hand in ${player === "runner" ? "LEFT" : "RIGHT"} half`,
       action: now - state.actionAt < 900 ? state.action : "",
+      cast: player === "saboteur" ? this.cast(now) : null,
       latency: state.latency,
     };
   }

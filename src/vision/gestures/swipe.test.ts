@@ -60,3 +60,29 @@ it.each([15, 30, 60])("recognizes a deliberate swipe at %i fps", (fps) => {
   }
   expect(events).toEqual(["right"]);
 });
+
+it("recognizes a swipe that starts after a rest, with jitter and a slightly diagonal path", () => {
+  const detector = new SwipeDetector();
+  const events: { swipe: string; t: number }[] = [];
+  for (let t = 0; t <= 800; t += 33) {
+    const k = Math.min(1, Math.max(0, (t - 400) / 230));
+    const jitter = Math.sin(t) * 0.006;
+    // Up stroke drifting sideways ~25 degrees off vertical, like a real hand.
+    const result = detector.push(t, { x: 0.5 + k * 0.1 + jitter, y: 0.75 - k * 0.3 + jitter });
+    if (result) events.push({ swipe: result, t });
+  }
+  expect(events.map((e) => e.swipe)).toEqual(["up"]);
+  // Fires partway through the stroke instead of waiting for it to finish.
+  expect(events[0].t).toBeLessThan(400 + 230);
+});
+it("recognizes a slow deliberate swipe spread over most of the window", () => {
+  expect(run(new SwipeDetector(), [0.3, 0.5], [0.65, 0.5], 320)).toEqual(["right"]);
+});
+it("still ignores the return stroke after a swipe", () => {
+  const detector = new SwipeDetector();
+  const out = [
+    ...run(detector, [0.7, 0.5], [0.3, 0.5], 200),
+    ...run(detector, [0.3, 0.5], [0.7, 0.5], 250, 233),
+  ];
+  expect(out).toEqual(["left"]);
+});

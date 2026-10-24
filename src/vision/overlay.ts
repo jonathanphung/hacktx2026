@@ -25,6 +25,7 @@ const EDGES = [
   [18, 19],
   [19, 20],
 ];
+const CAST_COLORS = { ready: "#69f0ae", wait: "#ffd54f", bad: "#ff8a80" };
 export function drawFeedback(
   canvas: HTMLCanvasElement,
   player: PlayerId,
@@ -83,14 +84,16 @@ export function drawFeedback(
   const footer = h - font * 3.1;
   ctx.fillStyle = "#080d15cc";
   ctx.fillRect(0, footer, w, h - footer);
-  ctx.fillStyle = color;
+  ctx.fillStyle = view.cast ? CAST_COLORS[view.cast.tone] : color;
   ctx.font = `bold ${font * 1.15}px system-ui`;
   ctx.fillText(
-    view.action
-      ? `SENT: ${view.action}`
-      : player === "runner"
-        ? "SWIPE ← → ↑"
-        : "AIM · FIST TO FIRE",
+    view.cast
+      ? view.cast.text
+      : view.action
+        ? `SENT: ${view.action}`
+        : player === "runner"
+          ? "SWIPE ← → ↑"
+          : "PALM AIM · FLICK ↑ CARD · FIST CAST",
     pad,
     footer + font / 4,
     w - 2 * pad,

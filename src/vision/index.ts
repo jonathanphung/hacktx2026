@@ -2,8 +2,10 @@ import { Emitter } from "../shared/emitter";
 import { inputBus } from "../shared/input";
 import { PLAYER_SIDE, type PlayerId } from "../shared/types";
 import type { HandFrame, VisionHandle } from "../shared/vision";
+import { saboteurBus } from "../shared/world";
 import { createInterpreter } from "./interpreter";
 import { createAsyncTracker, type AsyncTracker } from "./async-tracker";
+import { watchCameraFrames } from "./camera-clock";
 import { FrameTask } from "./frame-task";
 import { VisionFeedback } from "./feedback";
 import { drawFeedback } from "./overlay";
@@ -90,6 +92,10 @@ export async function startVision(
     saboteur: document.createElement("canvas"),
   };
   const feedback = new VisionFeedback();
+  const unlisten = [
+    saboteurBus.on("saboteur-status", (s) => feedback.status(s, performance.now())),
+    saboteurBus.on("cast-result", (r) => feedback.result(r, performance.now())),
+  ];
   const interpret = createInterpreter((event) => {
     feedback.input(event, performance.now());
     inputBus.emit("input", { ...event, source: "vision" });
@@ -103,6 +109,8 @@ export async function startVision(
     if (!running) return;
     running = false;
     cancelAnimationFrame(raf);
+    unlisten.forEach((off) => off());
+    stopWatching?.();
     signal?.removeEventListener("abort", stop);
     for (const player of ["runner", "saboteur"] as const) {
       tasks[player].stop();
@@ -111,54 +119,62 @@ export async function startVision(
     (video.srcObject as MediaStream).getTracks().forEach((track) => track.stop());
   };
   signal?.addEventListener("abort", stop, { once: true });
+  /** Starts inference for one player on this frame; a no-op if that lane is busy or saw it already. */
+  const infer = (player: PlayerId, frameKey: number) => {
+    if (!running || video.videoWidth === 0 || !tasks[player].canRun(frameKey)) return;
+    // Raw input has its own canvas: overlays can never become model input.
+    drawHalf(video, inputs[player], player, 320);
+    const t = performance.now();
+    tasks[player].run(
+      frameKey,
+      () => trackers[player].detect(inputs[player], t),
+      (result) => {
+        const now = performance.now();
+        const age = now - t;
+        // A delayed startup/stalled worker must not replay old movement into the game.
+        const frame: HandFrame = {
+          player,
+          t,
+          landmarks: age <= 180 ? result.landmarks : null,
+          gesture: age <= 180 ? result.gesture : null,
+        };
+        feedback.frame(frame, now);
+        interpret(frame); // Dispatch immediately; never wait for the other player's model.
+        frames.emit("frame", frame);
+        latest[player] = { result, age };
+        const runner = latest.runner,
+          saboteur = latest.saboteur;
+        if (player === "runner" && runner && saboteur)
+          onTiming?.({
+            t,
+            roundTripMs: age,
+            runnerMs: runner.result.inferenceMs,
+            saboteurMs: saboteur.result.inferenceMs,
+            runnerHand: !!runner.result.landmarks,
+            saboteurHand: !!saboteur.result.landmarks,
+            backends: { runner: trackers.runner.backend, saboteur: trackers.saboteur.backend },
+          });
+      },
+      (error) => {
+        feedback.fail(player, String(error));
+        interpret({ player, t: performance.now(), landmarks: null, gesture: null });
+        tasks[player].stop();
+        trackers[player].close();
+        console.error(`[vision] ${player} tracking stopped`, error);
+      },
+    );
+  };
+  // Where supported, inference follows actual camera frames; otherwise poll once per animation frame.
+  const stopWatching = watchCameraFrames(video, (frameKey) => {
+    for (const player of ["runner", "saboteur"] as const) infer(player, frameKey);
+  });
   const tick = () => {
     if (!running) return;
     if (video.videoWidth > 0)
       for (const player of ["runner", "saboteur"] as const) {
         drawHalf(video, previews[player], player);
         drawFeedback(previews[player], player, feedback, performance.now());
-        if (!tasks[player].canRun(video.currentTime)) continue;
-        // Raw input has its own canvas: overlays can never become model input.
-        drawHalf(video, inputs[player], player, 320);
-        const t = performance.now();
-        tasks[player].run(
-          video.currentTime,
-          () => trackers[player].detect(inputs[player], t),
-          (result) => {
-            const now = performance.now();
-            const age = now - t;
-            // A delayed startup/stalled worker must not replay old movement into the game.
-            const frame: HandFrame = {
-              player,
-              t,
-              landmarks: age <= 180 ? result.landmarks : null,
-              gesture: age <= 180 ? result.gesture : null,
-            };
-            feedback.frame(frame, now);
-            interpret(frame); // Dispatch immediately; never wait for the other player's model.
-            frames.emit("frame", frame);
-            latest[player] = { result, age };
-            const runner = latest.runner,
-              saboteur = latest.saboteur;
-            if (player === "runner" && runner && saboteur)
-              onTiming?.({
-                t,
-                roundTripMs: age,
-                runnerMs: runner.result.inferenceMs,
-                saboteurMs: saboteur.result.inferenceMs,
-                runnerHand: !!runner.result.landmarks,
-                saboteurHand: !!saboteur.result.landmarks,
-                backends: { runner: trackers.runner.backend, saboteur: trackers.saboteur.backend },
-              });
-          },
-          (error) => {
-            feedback.fail(player, String(error));
-            interpret({ player, t: performance.now(), landmarks: null, gesture: null });
-            tasks[player].stop();
-            trackers[player].close();
-            console.error(`[vision] ${player} tracking stopped`, error);
-          },
-        );
+        if (!stopWatching) infer(player, video.currentTime);
       }
     raf = requestAnimationFrame(tick);
   };

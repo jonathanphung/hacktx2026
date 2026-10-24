@@ -1,11 +1,18 @@
 import Phaser from "phaser";
 import { type Emitter, untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
-import { GAME_HEIGHT, GAME_WIDTH, type Lane } from "../../shared/types";
-import type { GameEvents, ObstacleSpec, ObstacleView, World } from "../../shared/world";
-import { RUNNER } from "./config";
+import { GAME_HEIGHT, GAME_WIDTH, LANES, type Lane } from "../../shared/types";
+import type {
+  GameEvents,
+  ObstacleSpec,
+  ObstacleView,
+  PowerupKind,
+  World,
+} from "../../shared/world";
+import { POWERUPS, RUNNER } from "./config";
+import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { createTrack } from "./track";
-import { RunnerView } from "./view";
+import { createPickupView, RunnerView } from "./view";
 
 interface Obstacle {
   spec: ObstacleSpec;
@@ -13,6 +20,13 @@ interface Obstacle {
   w: number;
   h: number;
 }
+
+interface Pickup {
+  kind: PowerupKind;
+  view: ObstacleView;
+}
+
+const pick = <T>(items: readonly T[]) => items[Math.floor(Math.random() * items.length)];
 
 /** Builds the scrolling three-lane world and the player-1 runner. Returns the World API. */
 export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>): World {
@@ -30,10 +44,24 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let startedAt = -1;
   let airborneUntil = 0;
   let slowUntil = 0;
-  let distance = 0;
+  let points = 0;
   let speed = RUNNER.baseSpeed;
   let over = false;
+  let nextPowerupAt = -1;
   const obstacles: Obstacle[] = [];
+  const pickups: Pickup[] = [];
+  const powerups = new PowerupState();
+  const score = () => Math.floor(points);
+
+  const startPowerup = (kind: PowerupKind, time: number) => {
+    powerups.activate(kind, time);
+    if (kind === "shield") runner.setShield(true);
+    events.emit("powerup", { kind, active: true, durationMs: POWERUP_DURATION[kind] });
+  };
+  const endPowerup = (kind: PowerupKind) => {
+    if (kind === "shield") runner.setShield(false);
+    events.emit("powerup", { kind, active: false, durationMs: 0 });
+  };
 
   const moveTo = (next: Lane) => {
     runner.moveTo(laneX(next), next < lane ? -1 : 1);
@@ -59,12 +87,37 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   const update = (time: number, delta: number) => {
     if (over) return;
     now = time;
-    if (startedAt < 0) startedAt = time;
+    if (startedAt < 0) {
+      startedAt = time;
+      nextPowerupAt = time + POWERUPS.everyMs;
+    }
     const dt = delta / 1000;
     const elapsed = (time - startedAt) / 1000;
+    powerups.expire(time).forEach(endPowerup);
     speed =
-      (RUNNER.baseSpeed + elapsed * RUNNER.accel) * (time < slowUntil ? RUNNER.slowFactor : 1);
+      (RUNNER.baseSpeed + elapsed * RUNNER.accel) *
+      (time < slowUntil ? RUNNER.slowFactor : 1) *
+      powerups.speedFactor(time);
     const airborne = time < airborneUntil;
+
+    if (time >= nextPowerupAt) {
+      nextPowerupAt = time + POWERUPS.everyMs;
+      const kind = pick(POWERUP_KINDS);
+      const view = createPickupView(scene, laneX(pick(LANES)), -POWERUPS.size, kind);
+      pickups.push({ kind, view });
+    }
+    for (let i = pickups.length - 1; i >= 0; i--) {
+      const p = pickups[i];
+      p.view.y += speed * dt;
+      const touched =
+        Math.abs(p.view.x - runner.x) < (POWERUPS.size + hitbox) / 2 &&
+        Math.abs(p.view.y - RUNNER.runnerY) < (POWERUPS.size + hitbox) / 2;
+      if (touched) startPowerup(p.kind, time);
+      if (touched || p.view.y > GAME_HEIGHT + POWERUPS.size) {
+        p.view.destroy();
+        pickups.splice(i, 1);
+      }
+    }
 
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const ob = obstacles[i];
@@ -75,16 +128,18 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         !(ob.spec.jumpable && airborne);
       if (hit) {
         events.emit("runner-hit", { kind: ob.spec.kind, effect: ob.spec.effect });
-        if (ob.spec.effect === "end-run") {
+        if (powerups.absorbHit(time)) {
+          endPowerup("shield");
+          runner.shieldBlocked();
+        } else if (ob.spec.effect === "end-run") {
           over = true;
           runner.crash();
           events.emit("game-over", {
-            score: Math.floor(distance / 10),
+            score: score(),
             survivedMs: time - startedAt,
           });
           return;
-        }
-        if (ob.spec.effect === "slow") {
+        } else if (ob.spec.effect === "slow") {
           slowUntil = time + RUNNER.slowMs;
           runner.slowed();
         }
@@ -97,8 +152,8 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
 
     track.scroll(speed * dt);
     runner.setSpeed(speed);
-    distance += speed * dt;
-    events.emit("score", { score: Math.floor(distance / 10) });
+    points += (speed * dt * powerups.scoreFactor(time)) / 10;
+    events.emit("score", { score: score() });
   };
   scene.events.on("update", update);
   untilShutdown(scene, () => scene.events.off("update", update));

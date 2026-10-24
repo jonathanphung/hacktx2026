@@ -130,6 +130,7 @@
     <div class="controls">
       <button id="start">Start camera</button><button id="stop">Stop</button
       ><button id="rehearse">Run synthetic rehearsal</button>
+      <button id="benchmark">Benchmark real models</button>
       <button id="record">Record landmarks</button><button id="download">Download JSON</button>
       <label class="upload"
         >Replay JSON <input id="upload" type="file" accept=".json,application/json"
@@ -138,6 +139,10 @@
     <div id="status" role="status">
       Camera off. Start live tracking or watch the synthetic rehearsal.
     </div>
+    <p id="metrics" role="status">
+      Performance measurements appear here. Benchmark uses real models with empty images; it does
+      not measure hand accuracy or tracking distance.
+    </p>
     <div id="halves"></div>
     <div class="help">
       <p>

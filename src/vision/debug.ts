@@ -4,13 +4,17 @@ import type { HandFrame, VisionHandle } from "../shared/vision";
 import { CircleDetector } from "./gestures/circle";
 import { createInterpreter } from "./interpreter";
 import { startVision } from "./index";
+import { benchmarkVision } from "./benchmark";
+import { VisionPerformance } from "./performance";
 import { parseRecording, rehearsalFrames } from "./rehearsal";
 
 const halves = document.getElementById("halves")!;
 const log = document.getElementById("log")!;
 const status = document.getElementById("status")!;
+const metrics = document.getElementById("metrics")!;
+let performanceStats = new VisionPerformance();
 const controls = new Map<string, HTMLButtonElement>();
-for (const id of ["start", "stop", "rehearse", "record", "download"])
+for (const id of ["start", "stop", "rehearse", "record", "download", "benchmark"])
   controls.set(id, document.getElementById(id) as HTMLButtonElement);
 const overlays = {} as Record<
   PlayerId,
@@ -137,7 +141,12 @@ controls.get("start")!.onclick = async () => {
   startup = new AbortController();
   status.textContent = "Opening camera and loading local models…";
   try {
-    const handle = await startVision(startup.signal);
+    performanceStats = new VisionPerformance();
+    const handle = await startVision(startup.signal, (timing) => {
+      performanceStats.push(timing);
+      const s = performanceStats.summary();
+      metrics.textContent = `LIVE · ${s.fps.toFixed(1)} processed fps · inference round trip p50/p95 ${s.p50.toFixed(0)}/${s.p95.toFixed(0)} ms · runner/saboteur model ${s.runnerMs.toFixed(0)}/${s.saboteurMs.toFixed(0)} ms · hands visible ${(s.runnerCoverage * 100).toFixed(0)}% / ${(s.saboteurCoverage * 100).toFixed(0)}% · ${timing.backends.runner} + ${timing.backends.saboteur}`;
+    });
     if (current !== generation) {
       handle.stop();
       return;
@@ -156,6 +165,8 @@ function replay(frames: HandFrame[], name: string) {
   stop();
   mount();
   mode = name;
+  metrics.textContent =
+    "Synthetic/recorded replay: FPS is playback cadence, not model performance.";
   interpret = createInterpreter(event);
   const start = performance.now();
   const offset = frames[0].t;
@@ -212,3 +223,22 @@ controls.get("download")!.onclick = () => {
 };
 window.addEventListener("pagehide", stop);
 mount();
+
+controls.get("benchmark")!.onclick = async () => {
+  stop();
+  const current = generation;
+  startup = new AbortController();
+  const signal = startup.signal;
+  status.textContent = "Benchmark: real local models, empty images, no camera.";
+  try {
+    const result = await benchmarkVision(signal, (text) => {
+      if (current === generation) metrics.textContent = text;
+    });
+    if (current !== generation) return;
+    status.textContent = "Benchmark complete · 60 frames after warm-up · NO HANDS / no camera";
+    metrics.textContent = `Round trip p50/p95: ${result.p50.toFixed(1)}/${result.p95.toFixed(1)} ms · throughput ${result.fps.toFixed(1)} fps · model medians ${result.runnerMs.toFixed(1)}/${result.saboteurMs.toFixed(1)} ms · longest UI frame gap ${result.maxUiGap.toFixed(1)} ms (${result.uiStalls} gaps >50 ms; startup max ${result.startupUiGap.toFixed(1)} ms) · ${result.backends?.runner} + ${result.backends?.saboteur}`;
+    line(`No-hand model benchmark: ${JSON.stringify(result)}`);
+  } catch (error) {
+    if (current === generation) metrics.textContent = `Benchmark failed: ${error}`;
+  }
+};

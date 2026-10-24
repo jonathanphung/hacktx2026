@@ -40,8 +40,28 @@ Time the live FPS and tracking distance with both players on the demo laptop.
 Synthetic replay FPS measures playback cadence, not inference speed. No live
 accuracy, distance, or latency benchmark has been established by these tests.
 At very low inference rates (gaps over 180 ms), motion/dwell is deliberately reset
-rather than connecting stale positions. The current inference still runs on the
-main thread; move it into workers if real measurements show visible game stutter.
+rather than connecting stale positions. Inference now runs in two classic Web Workers, keeping model processing off the
+main thread. GPU is attempted first, then CPU. Browsers where worker startup fails
+use the visible **main-thread fallback**. Worker scripts, model files, WASM and the
+vendor runtime are all local assets. The vendor IIFE is loaded as raw source in a
+Blob to prevent the dev server from inserting module imports into a classic worker.
+Only one frame per tracker can be in flight; the next shared camera frame waits
+until both results arrive. Stop/abort terminates workers and rejects pending work.
+Cold inference has a 20-second timeout for shader compilation; later frames have
+5 seconds. This keeps failures bounded without accumulating stale frames.
+
+**Benchmark real models** runs both actual models on 60 empty images after one
+warm-up frame, without opening the camera. It reports median/p95 round-trip time,
+individual model medians, processing cadence, backend and animation frame gaps.
+Startup frame gaps are reported separately from steady-state gaps. Results are
+specific to this browser/device and to no-hand images; they do not predict tracking
+accuracy or gesture latency. CPU/GPU contention can reduce model throughput even
+while moving work off the main thread improves animation responsiveness.
+
+Live tracking also reports rolling latency and the fraction of frames with a hand
+for each half. Use those numbers with two people at the actual demo distance to
+finish the go/no-go measurement in issue #3. Do not mark that issue complete from
+the no-camera benchmark alone.
 
 ## Implementation and tuning
 
@@ -58,3 +78,12 @@ main thread; move it into workers if real measurements show visible game stutter
 Run `npm test` for deterministic traces at multiple sample rates, idle jitter,
 dropouts, pose release, card mapping, circle direction and the full rehearsal.
 Run `./scripts/check.sh` before pushing.
+
+## Observed no-camera check (2026-10-24)
+
+The production build was served locally under `/hacktx2026/` and benchmarked in
+the Codex in-app browser on this laptop, with both trackers reporting worker/GPU.
+For 60 empty frames after warm-up: 29.0 processed fps; round-trip p50 24.6 ms and
+p95 34.9 ms; longest steady-state animation frame gap 17.7 ms, with zero gaps over
+50 ms. Startup's longest observed gap was 33.6 ms. These are a short local sample,
+not a two-person tracking benchmark or a guarantee for Chrome/other laptops.

@@ -1,4 +1,3 @@
-import { campaignLevelAt, getGameplayMode } from "../shared/campaign";
 import { STAGES } from "../shared/stages";
 import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
@@ -13,11 +12,10 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   installPause(scene);
   startMusic();
   untilShutdown(scene, stopMusic);
-  const campaignMode = getGameplayMode() === "campaign";
   const hud = mountShell(scene, "story-hud");
   addBeanstalks(hud);
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
-    <div class="hud-level"><strong></strong><span></span><progress aria-label="Chapter progress"></progress></div>
+    <div class="hud-level"><strong></strong><span></span></div>
     <div class="hud-feedback" role="status"></div>
     <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2><p>Swipe to dodge · Swipe up to jump</p><small>A / D / W</small><p class="jump-legend">Jump: logs / thorns / oil / sap<br>Dodge: rocks / walls / mud / fireballs</p></section>
     <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Fist / Space: drop · 4s cooldown</small></section>`;
@@ -25,36 +23,11 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
   const aim = hud.querySelector(".hud-giant h2")!;
   const cards = hud.querySelector(".hud-cards")!;
-  let runStartedAt = -1;
-  let lastChapter = -1;
   let cooling = false;
   const cooldownLabel = document.createElement("p");
   cooldownLabel.className = "cooldown-label";
-  const updateCooldown = (time: number) => {
-    if (!campaignMode) return;
-    if (runStartedAt < 0) runStartedAt = time;
-    const stage = campaignLevelAt((time - runStartedAt) / 1000);
-    hud.dataset.theme = stage.level.theme;
-    const chapterName = hud.querySelector(".hud-level strong")!;
-    const name = `CHAPTER ${stage.index + 1}/3 · ${stage.level.name}`;
-    if (chapterName.textContent !== name) chapterName.textContent = name;
-    hud.querySelector(".hud-level span")!.textContent = `${Math.ceil(stage.remainingSec)}s`;
-    const progress = hud.querySelector<HTMLProgressElement>(".hud-level progress")!;
-    progress.max = stage.level.durationSec;
-    progress.value = stage.level.durationSec - stage.remainingSec;
-    if (lastChapter >= 0 && stage.index !== lastChapter) {
-      playCue("chapter");
-      announce(stage.level.description, true);
-    }
-    lastChapter = stage.index;
-  };
-  scene.events.on("update", updateCooldown);
-  untilShutdown(scene, () => scene.events.off("update", updateCooldown));
-  if (!campaignMode) {
-    hud.querySelector(".hud-level strong")!.textContent = STAGES[0].name;
-    hud.querySelector(".hud-level span")!.textContent = `Find ${STAGES[0].item.name}`;
-    hud.querySelector<HTMLProgressElement>(".hud-level progress")!.hidden = true;
-  }
+  hud.querySelector(".hud-level strong")!.textContent = STAGES[0].name;
+  hud.querySelector(".hud-level span")!.textContent = `Find ${STAGES[0].item.name}`;
   untilShutdown(
     scene,
     events.on("stage-changed", ({ index, name }) => {
@@ -183,9 +156,8 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   );
   untilShutdown(
     scene,
-    events.on("game-over", (result) => {
+    events.on("game-over", () => {
       stopMusic();
-      if (result.outcome === "escaped") playCue("victory");
       scene.events.emit("shell-run-ended");
     }),
   );

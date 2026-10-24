@@ -1,5 +1,4 @@
 import Phaser from "phaser";
-import { campaignLevelAt, getGameplayMode } from "../../shared/campaign";
 import { type Emitter, untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
 import { GAME_HEIGHT, GAME_WIDTH, LANES, type Lane } from "../../shared/types";
@@ -13,7 +12,6 @@ import type {
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
-import { MAX_SPEED } from "./speed";
 import { finishFireballs } from "./projectiles";
 import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
 import { isLastStage, type StageInfo } from "../../shared/stages";
@@ -58,8 +56,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   const laneX = (lane: Lane) => GAME_WIDTH / 2 + (lane - 1) * RUNNER.laneSpacing;
 
   const track = createTrack(scene, laneX);
-  const campaignMode = getGameplayMode() === "campaign";
-  let chapterIndex = -1;
 
   let lane: Lane = 1;
   const runner = new RunnerView(scene, laneX(lane), RUNNER.runnerY);
@@ -192,43 +188,14 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     now = time;
     if (startedAt < 0) {
       startedAt = time;
-      if (!campaignMode) enterStage(stages.stage, time, true);
+      enterStage(stages.stage, time, true);
       nextPowerupAt = time + POWERUPS.everyMs;
     }
     const dt = delta / 1000;
-    const chapter = campaignLevelAt((time - startedAt) / 1000);
-    if (campaignMode && chapter.complete) {
-      over = true;
-      events.emit("game-over", {
-        score: score(),
-        survivedMs: time - startedAt,
-        outcome: "escaped",
-      });
-      return;
-    }
-    if (campaignMode && chapter.index !== chapterIndex) {
-      const palette =
-        STAGE_TUNING[
-          chapter.level.theme === "grove"
-            ? "humpty"
-            : chapter.level.theme === "clouds"
-              ? "mermaid"
-              : "wonderland"
-        ];
-      track.setStage(palette, chapterIndex < 0 ? 1 : STAGE_BLEND_MS);
-      track.announce(chapter.level.name);
-      if (chapterIndex >= 0) trail.holdUntil(time + STAGE_CALM_MS);
-      chapterIndex = chapter.index;
-    }
     powerups.expire(time).forEach(endPowerup);
     const inStage = stages.secInStage(time);
     speed =
-      (campaignMode
-        ? Math.min(
-            (RUNNER.baseSpeed + ((time - startedAt) / 1000) * 1.7) * chapter.level.speedMultiplier,
-            MAX_SPEED,
-          )
-        : stageSpeed(stages.stage.id, inStage)) *
+      stageSpeed(stages.stage.id, inStage) *
       (time < slowUntil ? RUNNER.slowFactor : 1) *
       powerups.speedFactor(time);
     if (jumpQueued && time >= airborneUntil) {
@@ -248,7 +215,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       time,
       dt,
     );
-    if (!campaignMode && stages.itemDue(time)) spawnStageItem(time);
+    if (stages.itemDue(time)) spawnStageItem(time);
     if (stageItem) {
       stageItem.view.y += speed * dt;
       const reach = (STAGE_ITEM.size + hitbox) / 2;
@@ -265,26 +232,13 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       trail.due(
         time,
         obstacles.some((ob) => ob.view.y < 260),
-        campaignMode
-          ? chapter.level.spawnIntervalMs
-          : stageHazardInterval(stages.stage.id, inStage),
+        stageHazardInterval(stages.stage.id, inStage),
       )
     ) {
       const tuning = STAGE_TUNING[stages.stage.id];
-      const count = campaignMode
-        ? chapter.level.naturalHazards
-        : Math.random() < tuning.doubleChance
-          ? 2
-          : 1;
-      const mix = campaignMode
-        ? {
-            thorns: Number(chapter.level.hazards.includes("wild-thorns")),
-            rock: Number(chapter.level.hazards.includes("moss-rock")),
-            sap: Number(chapter.level.hazards.includes("sticky-sap")),
-          }
-        : tuning.mix;
+      const count = Math.random() < tuning.doubleChance ? 2 : 1;
       for (const target of naturalLanes(count))
-        spawnObstacle(trailHazard(target, Math.random(), mix));
+        spawnObstacle(trailHazard(target, Math.random(), tuning.mix));
     }
 
     if (time >= nextPowerupAt) {

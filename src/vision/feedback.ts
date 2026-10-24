@@ -43,11 +43,13 @@ export class VisionFeedback {
   input(event: InputEvent, now: number) {
     const state = this.states[event.player];
     state.action =
-      event.action === "aim"
-        ? `AIM ${event.lane + 1}`
-        : event.action === "select"
-          ? `CARD ${event.slot + 1}`
-          : names[event.action];
+      event.action === "cycle"
+        ? "NEXT CARD"
+        : event.action === "aim"
+          ? `AIM ${event.lane + 1}`
+          : event.action === "select"
+            ? `CARD ${event.slot + 1}`
+            : names[event.action];
     state.actionAt = now;
   }
   fail(player: PlayerId, message: string) {

@@ -9,6 +9,7 @@ export type InputEvent =
   | { player: "runner"; action: "left" | "right" | "jump" }
   | { player: "saboteur"; action: "aim"; lane: Lane }
   | { player: "saboteur"; action: "fire" }
+  | { player: "saboteur"; action: "cycle" }
   | { player: "saboteur"; action: "select"; slot: number };
 
 export type InputSource = "vision" | "keyboard";

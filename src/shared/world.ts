@@ -44,6 +44,19 @@ export interface GameEvents {
   "game-over": { score: number; survivedMs: number };
   "hand-changed": { hand: readonly string[]; selected: number; aimLane: Lane };
   "attack-fired": { attackId: string; lane: Lane };
+  /** Authoritative game state, separate from vision's acknowledgement of sent input. */
+  "saboteur-status": {
+    state: "ready" | "cooldown" | "empty" | "over";
+    remainingMs: number;
+    aimLane: Lane;
+  };
+  "cast-result": {
+    accepted: boolean;
+    reason?: "cooldown" | "empty" | "starting" | "game-over";
+    attackId?: string;
+    lane: Lane;
+    remainingMs: number;
+  };
   /** A powerup was picked up (active: true) or ran out / was used up (active: false). */
   powerup: { kind: PowerupKind; active: boolean; durationMs: number };
 }

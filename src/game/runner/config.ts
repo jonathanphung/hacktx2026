@@ -14,7 +14,8 @@ export const RUNNER = {
    * This caps the speed; see speed.ts. Budget for a dodge (2026-10-24):
    * - hand starts moving -> runner fully in the new lane: ~325 ms for a typical 250 ms swipe,
    *   ~450 ms for a slow one. Measured through the real vision interpreter + game at 29 fps,
-   *   plus ~45 ms capture/inference from the vision benchmark; no live camera yet.
+   *   plus ~45 ms capture/inference from the vision benchmark; no live camera yet. Measured at
+   *   the default swipe distance (0.2); vision calibration can lower it, which detects sooner.
    * - seeing the obstacle and choosing a direction: ~350-450 ms (typical human reaction).
    * Total ~0.7-0.9 s, so 1.0 s leaves ~100-300 ms margin. Raise this if playtesters with
    * slow swipes keep getting hit at top speed.

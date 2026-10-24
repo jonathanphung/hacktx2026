@@ -1,11 +1,16 @@
 import type Phaser from "phaser";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { Emitter } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
 import type { GameEvents, World } from "../../shared/world";
 import { installSaboteur } from "./index";
 
+afterEach(() => vi.restoreAllMocks());
+
 function setup() {
+  // Deterministic deals: always the first attack (Barrier, one obstacle). A random Double wall
+  // spawns two obstacles and made the "called once" assertions flaky (~1 in 6 runs).
+  vi.spyOn(Math, "random").mockReturnValue(0);
   const events = new Emitter<{ update: number; shutdown: undefined }>();
   const warnings: { destroy: ReturnType<typeof vi.fn> }[] = [];
   const scene = {

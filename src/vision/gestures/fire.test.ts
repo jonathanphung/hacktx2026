@@ -34,3 +34,34 @@ describe("FistTrigger", () => {
     expect(trigger.push(1000, "Closed_Fist")).toBe(false);
   });
 });
+
+it("tolerates a brief uncertain classification during a fist hold", () => {
+  const trigger = new FistTrigger();
+  expect(trigger.push(0, "Closed_Fist")).toBe(false);
+  expect(trigger.push(40, null)).toBe(false);
+  expect(trigger.push(70, "Closed_Fist")).toBe(false);
+  expect(trigger.push(110, "Closed_Fist")).toBe(true);
+  expect(trigger.push(150, "Closed_Fist")).toBe(false);
+});
+
+it("tolerates brief uncertainty during open-palm rearming", () => {
+  const trigger = new FistTrigger();
+  trigger.push(0, "Closed_Fist");
+  expect(trigger.push(120, "Closed_Fist")).toBe(true);
+  trigger.push(150, "Open_Palm");
+  trigger.push(190, null);
+  trigger.push(220, "Open_Palm");
+  trigger.push(280, "Open_Palm");
+  trigger.push(300, "Closed_Fist");
+  expect(trigger.push(420, "Closed_Fist")).toBe(true);
+});
+
+it("does not bridge prolonged uncertainty or another classified pose", () => {
+  for (const gesture of [null, "None", "Victory"]) {
+    const trigger = new FistTrigger();
+    trigger.push(0, "Closed_Fist");
+    trigger.push(40, gesture);
+    trigger.push(90, gesture);
+    expect(trigger.push(120, "Closed_Fist")).toBe(false);
+  }
+});

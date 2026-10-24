@@ -20,6 +20,8 @@ interface Obstacle {
   view: ObstacleView;
   w: number;
   h: number;
+  /** Already touched the runner: effects apply once per obstacle. */
+  touched: boolean;
 }
 
 interface Pickup {
@@ -122,10 +124,12 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       const ob = obstacles[i];
       ob.view.y += speed * dt;
       const hit =
+        !ob.touched &&
         Math.abs(ob.view.x - runner.x) < (ob.w + hitbox) / 2 &&
         Math.abs(ob.view.y - RUNNER.runnerY) < (ob.h + hitbox) / 2 &&
         !(ob.spec.jumpable && airborne);
       if (hit) {
+        ob.touched = true;
         events.emit("runner-hit", { kind: ob.spec.kind, effect: ob.spec.effect });
         if (powerups.absorbHit(time)) {
           endPowerup("shield");
@@ -143,7 +147,9 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           runner.slowed();
         }
       }
-      if (hit || ob.view.y > GAME_HEIGHT + ob.h) {
+      // Solid obstacles break on contact; surfaces (slow) stay and scroll away.
+      const smashed = hit && ob.spec.effect === "end-run";
+      if (smashed || ob.view.y > GAME_HEIGHT + ob.h) {
         ob.view.destroy();
         obstacles.splice(i, 1);
       }
@@ -171,7 +177,11 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       const y = -h;
       const view =
         spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
-      obstacles.push({ spec, view, w, h });
+      // Surfaces under solid obstacles, both above the lane markings (depth 1).
+      (view as { setDepth?: (depth: number) => unknown }).setDepth?.(
+        spec.effect === "slow" ? 2 : 3,
+      );
+      obstacles.push({ spec, view, w, h, touched: false });
     },
   };
 }

@@ -127,3 +127,12 @@ collision duration. The HUD and cards explain counters: jump or dodge hurdles,
 drifters, and oil; dodge walls and mud. Card panels stay outside the playable lanes
 with a full three-card hand. Browser checks covered jumping, movement, full hands,
 and Esc pause/resume; all 36 tests, typecheck, formatting, and build passed.
+
+Giant attack pass: each pending attack now summons an oversized reaching hand with
+a purple sleeve, gold cuff, curled fingers, and an attack-colored spell. It releases
+with an impact ring when the warning completes, then retracts. Animations use scene
+tweens, so Esc freezes them; pending hands are removed on game over/shutdown.
+The giant starts with two cards (was one), draws every 2000 ms (was 3000), and fires
+at most every 650 ms (was 750). The 500 ms warning and three-card limit stay intact.
+Tests cover opening-hand limits, cooldowns, release, cancellation, and paused input.
+This is explicitly requested cross-lane saboteur work on `prahalad/shell`.

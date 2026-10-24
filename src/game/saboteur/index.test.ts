@@ -4,6 +4,11 @@ import { Emitter } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
 import type { GameEvents, World } from "../../shared/world";
 import { installSaboteur } from "./index";
+import { SABOTEUR } from "./config";
+import { createGiantHand } from "./giant-hand";
+vi.mock("./giant-hand", () => ({
+  createGiantHand: vi.fn(() => ({ release: vi.fn(), destroy: vi.fn() })),
+}));
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -47,6 +52,7 @@ function setup() {
 describe("saboteur attack warnings", () => {
   // Cooldown assertions count obstacles, so use a single-obstacle card.
   beforeEach(() => {
+    vi.clearAllMocks();
     vi.spyOn(Math, "random").mockReturnValue(0);
   });
   afterEach(() => {
@@ -80,6 +86,7 @@ describe("saboteur attack warnings", () => {
       events.emit("update", 50_500);
       expect(world.spawnObstacle).toHaveBeenCalledWith(expect.objectContaining({ lane: 1 }));
       expect(warnings[0].destroy).toHaveBeenCalledOnce();
+      expect(vi.mocked(createGiantHand).mock.results[0].value.release).toHaveBeenCalledOnce();
     } finally {
       events.emit("shutdown", undefined);
     }
@@ -93,10 +100,10 @@ describe("saboteur attack warnings", () => {
       fire();
       fire();
       expect(warnings).toHaveLength(1);
-      events.emit("update", 9749);
+      events.emit("update", 9000 + SABOTEUR.fireCooldownMs - 1);
       fire();
       expect(warnings).toHaveLength(1);
-      events.emit("update", 9750);
+      events.emit("update", 9000 + SABOTEUR.fireCooldownMs);
       fire();
       expect(warnings).toHaveLength(2);
       expect(world.spawnObstacle).toHaveBeenCalledOnce();
@@ -116,6 +123,7 @@ describe("saboteur attack warnings", () => {
       expect(world.spawnObstacle).not.toHaveBeenCalled();
       expect(warnings).toHaveLength(1);
       expect(warnings[0].destroy).toHaveBeenCalledOnce();
+      expect(vi.mocked(createGiantHand).mock.results[0].value.destroy).toHaveBeenCalledOnce();
     } finally {
       events.emit("shutdown", undefined);
     }

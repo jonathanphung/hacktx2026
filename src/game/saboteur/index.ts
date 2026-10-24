@@ -6,6 +6,7 @@ import type { World } from "../../shared/world";
 import { ATTACK_BY_ID, ATTACKS } from "./attacks";
 import { SABOTEUR } from "./config";
 import { Deck } from "./deck";
+import { createGiantHand } from "./giant-hand";
 
 /** Player 2: draws random attack cards, aims at a lane, and fires them into the runner's world. */
 export function installSaboteur(scene: Phaser.Scene, world: World): void {
@@ -22,10 +23,14 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     lane: Lane;
     landsAt: number;
     warning: Phaser.GameObjects.Rectangle;
+    hand: ReturnType<typeof createGiantHand>;
   }[] = [];
 
   const clearWarnings = () => {
-    for (const attack of pending) attack.warning.destroy();
+    for (const attack of pending) {
+      attack.warning.destroy();
+      attack.hand.destroy();
+    }
     pending.length = 0;
   };
   untilShutdown(scene, clearWarnings);
@@ -67,7 +72,13 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
           0.3,
         );
         warning.setDepth(9);
-        pending.push({ id, lane: aimLane, landsAt: now + SABOTEUR.warningMs, warning });
+        const hand = createGiantHand(
+          scene,
+          world.laneX(aimLane),
+          ATTACK_BY_ID.get(id)!.color,
+          SABOTEUR.warningMs,
+        );
+        pending.push({ id, lane: aimLane, landsAt: now + SABOTEUR.warningMs, warning, hand });
       }
       announce();
     }),
@@ -81,6 +92,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
       if (time < attack.landsAt) continue;
       pending.splice(i, 1);
       attack.warning.destroy();
+      attack.hand.release();
       ATTACK_BY_ID.get(attack.id)!.fire(world, attack.lane);
       world.events.emit("attack-fired", { attackId: attack.id, lane: attack.lane });
       if (over) return;

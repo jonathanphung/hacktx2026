@@ -21,7 +21,13 @@ export const RUNNER = {
    * slow swipes keep getting hit at top speed.
    */
   minWarningMs: 1000,
-  laneSwitchMs: 110,
+  /**
+   * Lane-change spring stiffness (rad/s). 42 clears an obstacle's lane in ~45 ms and settles
+   * in ~115 ms with no overshoot (motion.test.ts). Higher = snappier, lower = floatier.
+   */
+  laneOmega: 42,
+  /** Lean angle (degrees) per px/s of sideways speed; peaks around 16 degrees. */
+  leanPerSpeed: 0.0062,
   jumpMs: 650,
   /** A jump sent this close to landing is kept and fires on landing (instead of being lost). */
   jumpBufferMs: 150,

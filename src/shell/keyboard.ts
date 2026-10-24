@@ -16,6 +16,12 @@ const KEYS: Record<string, InputEvent> = {
 
 export function installKeyboard(): void {
   window.addEventListener("keydown", (e) => {
+    if (
+      e.target instanceof HTMLElement &&
+      (e.target.isContentEditable || e.target.closest("input, textarea, select, [contenteditable]"))
+    )
+      return;
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
     const event = KEYS[e.code];
     if (!event || e.repeat) return;
     e.preventDefault();

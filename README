@@ -243,3 +243,7 @@ Three-lane lethal walls are deferred. Esc resume uses a cancellable 3-2-1 countd
 Validation: formatting, typecheck, all 183 tests, and production build pass.
 Browser checks cover wrong answers, Esc protection, case-insensitive correct
 entry, animated unlock, reunion, and the victory screen.
+
+Textbox keyboard fix: game shortcuts ignore editable fields and modifier shortcuts.
+All 184 tests pass. Browser verification used individual H/A/C/K/T/X key presses
+with installKeyboard enabled, then Enter to unlock Claude successfully.

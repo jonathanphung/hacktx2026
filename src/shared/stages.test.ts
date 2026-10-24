@@ -1,16 +1,26 @@
 import { describe, expect, it } from "vitest";
-import { isLastStage, STAGES } from "./stages";
+import { isLastStage, STAGES, STORY_LETTERS } from "./stages";
 
 describe("stages", () => {
-  it("are the five tales in order, each with its own item", () => {
+  it("are five tales plus Xen, spelling HACKTX", () => {
     expect(STAGES.map((s) => s.id)).toEqual([
       "humpty",
       "wonderland",
       "cinderella",
       "mermaid",
       "redhood",
+      "xen",
     ]);
-    expect(STAGES.map((s) => s.item.id)).toEqual(["egg", "potion", "slipper", "trident", "hood"]);
+    expect(STAGES.map((s) => s.item.id)).toEqual([
+      "egg",
+      "potion",
+      "slipper",
+      "trident",
+      "hood",
+      "badge",
+    ]);
+    expect(STORY_LETTERS).toBe("HACKTX");
+    expect(STAGES).toHaveLength(STORY_LETTERS.length);
     STAGES.forEach((s, i) => expect(s.index).toBe(i));
   });
 

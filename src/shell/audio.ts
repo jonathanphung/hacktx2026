@@ -1,5 +1,11 @@
 /** Short local chiptune cues; no audio downloads or external services. */
 export type Cue =
+  | "step"
+  | "clue"
+  | "relic"
+  | "spawn"
+  | "expire"
+  | "aim"
   | "start"
   | "attack"
   | "fireball"
@@ -26,6 +32,24 @@ interface Sound {
   glide?: number;
 }
 const SOUNDS: Record<Cue, Sound> = {
+  step: { notes: [115], wave: "triangle", volume: 0.018, duration: 0.035, glide: 0.5 },
+  clue: {
+    notes: [523, 659, 784, 1046, 1318, 1568],
+    wave: "triangle",
+    volume: 0.085,
+    step: 0.065,
+    duration: 0.18,
+  },
+  relic: {
+    notes: [1046, 1318, 1568, 2093],
+    wave: "sine",
+    volume: 0.045,
+    step: 0.12,
+    duration: 0.25,
+  },
+  spawn: { notes: [440, 880, 1320], wave: "sine", volume: 0.04, duration: 0.18 },
+  expire: { notes: [660, 440, 330], wave: "triangle", volume: 0.035, duration: 0.08 },
+  aim: { notes: [380], wave: "sine", volume: 0.025, duration: 0.035 },
   start: { notes: [440, 660, 880] },
   attack: { notes: [330, 165], glide: 0.7 },
   fireball: { notes: [180, 120, 75], wave: "sawtooth", volume: 0.04, duration: 0.18, glide: 0.45 },
@@ -62,6 +86,10 @@ let musicWanted = false;
 let musicPaused = false;
 let nextBeat = 0;
 let beat = 0;
+let musicStage = 0;
+export function setMusicStage(stage: number): void {
+  musicStage = Math.max(0, Math.min(5, stage));
+}
 const musicVoices = new Set<OscillatorNode>();
 // Original looping melody in A minor, with a soft root-note accompaniment.
 const melody = [
@@ -73,14 +101,14 @@ function scheduleMusic(): void {
   nextBeat = Math.max(nextBeat, context.currentTime + 0.04);
   while (nextBeat < context.currentTime + 0.6) {
     const notes = [melody[beat % melody.length]];
-    if (beat % 4 === 0) notes.push([45, 43, 41, 40][Math.floor(beat / 8) % 4]);
+    if (beat % 2 === 0) notes.push([45, 43, 41, 40][Math.floor(beat / 8) % 4]);
     for (const note of notes) {
       const voice = context.createOscillator();
       const gain = context.createGain();
-      voice.type = note < 60 ? "triangle" : "sine";
+      voice.type = "triangle";
       voice.frequency.setValueAtTime(440 * 2 ** ((note - 69) / 12), nextBeat);
       gain.gain.setValueAtTime(0, nextBeat);
-      gain.gain.linearRampToValueAtTime(note < 60 ? 0.025 : 0.018, nextBeat + 0.015);
+      gain.gain.linearRampToValueAtTime(note < 60 ? 0.05 : 0.038, nextBeat + 0.015);
       gain.gain.exponentialRampToValueAtTime(0.001, nextBeat + 0.3);
       voice.connect(gain);
       gain.connect(output);
@@ -93,7 +121,28 @@ function scheduleMusic(): void {
       voice.start(nextBeat);
       voice.stop(nextBeat + 0.32);
     }
-    nextBeat += 0.34;
+    // Synthesized kick, snare and hats give the loop a steady arcade groove.
+    const drum = context.createOscillator(),
+      envelope = context.createGain();
+    const kick = beat % 4 === 0;
+    const snare = beat % 4 === 2;
+    const duration = kick ? 0.16 : snare ? 0.09 : 0.025;
+    drum.type = kick ? "sine" : snare ? "triangle" : "square";
+    drum.frequency.setValueAtTime(kick ? 130 : snare ? 240 : 5800, nextBeat);
+    drum.frequency.exponentialRampToValueAtTime(kick ? 38 : snare ? 80 : 3800, nextBeat + duration);
+    envelope.gain.setValueAtTime(kick ? 0.08 : snare ? 0.035 : 0.006, nextBeat);
+    envelope.gain.exponentialRampToValueAtTime(0.001, nextBeat + duration);
+    drum.connect(envelope);
+    envelope.connect(output);
+    musicVoices.add(drum);
+    drum.onended = () => {
+      musicVoices.delete(drum);
+      drum.disconnect();
+      envelope.disconnect();
+    };
+    drum.start(nextBeat);
+    drum.stop(nextBeat + duration + 0.01);
+    nextBeat += 0.26 - musicStage * 0.008;
     beat++;
   }
 }

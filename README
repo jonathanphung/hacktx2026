@@ -246,3 +246,8 @@ budget. These bounds are tested; final competitive tuning needs two human player
 Validation for this update: all 181 tests, formatting, typecheck, and production
 build pass. Browser review covered the opening, H/T reward interludes, paused
 update clock, skip/resume, all three finale beats, and the festival result screen.
+
+Resuming from Esc or the pause button now shows a three-second ready countdown.
+Gameplay and music remain paused until it finishes; pressing Esc again cancels
+back to pause. Browser checks confirmed the countdown and cancellation preserve
+score while frozen.

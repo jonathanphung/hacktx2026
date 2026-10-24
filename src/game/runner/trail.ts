@@ -1,50 +1,47 @@
 import type Phaser from "phaser";
 import type { Lane } from "../../shared/types";
 import type { ObstacleSpec } from "../../shared/world";
+import type { HazardMix } from "./stage-tuning";
 
 export const TRAIL = {
   firstMs: 5000,
-  everyMs: 4500,
-  minEveryMs: 1800,
-  rampSeconds: 90,
-  doubleWaveSeconds: 45,
   retryMs: 600,
 };
-export function trailDifficulty(elapsedSeconds: number) {
-  const progress = Math.min(1, Math.max(0, elapsedSeconds) / TRAIL.rampSeconds);
-  return {
-    intervalMs: TRAIL.everyMs - (TRAIL.everyMs - TRAIL.minEveryMs) * progress,
-    count: elapsedSeconds >= TRAIL.doubleWaveSeconds ? 2 : 1,
-  };
-}
-export function naturalLanes(elapsedSeconds: number, rng: () => number = Math.random): Lane[] {
+
+/** One lane, or two distinct lanes (always leaving an escape lane). */
+export function naturalLanes(count: 1 | 2, rng: () => number = Math.random): Lane[] {
   const first = Math.floor(rng() * 3) as Lane;
-  return trailDifficulty(elapsedSeconds).count === 1
-    ? [first]
-    : [first, ((first + 1 + Math.floor(rng() * 2)) % 3) as Lane];
+  return count === 1 ? [first] : [first, ((first + 1 + Math.floor(rng() * 2)) % 3) as Lane];
 }
 
 /** Uses the same pause-adjusted game clock; never catches up with a burst. */
 export class TrailSpawner {
   private nextAt = -1;
-  private startedAt = -1;
-  due(now: number, entranceBlocked: boolean): boolean {
+  /** True when a wave should spawn now. `intervalMs` = wait until the next wave. */
+  due(now: number, entranceBlocked: boolean, intervalMs: number): boolean {
     if (this.nextAt < 0) {
-      this.startedAt = now;
       this.nextAt = now + TRAIL.firstMs;
       return false;
     }
     if (now < this.nextAt) return false;
-    this.nextAt =
-      now +
-      (entranceBlocked ? TRAIL.retryMs : trailDifficulty((now - this.startedAt) / 1000).intervalMs);
+    this.nextAt = now + (entranceBlocked ? TRAIL.retryMs : intervalMs);
     return !entranceBlocked;
+  }
+
+  /** No waves before `until` (e.g. the calm after entering a new stage). */
+  holdUntil(until: number): void {
+    this.nextAt = Math.max(this.nextAt, until);
   }
 }
 
+const DEFAULT_MIX: HazardMix = { thorns: 0.4, rock: 0.35, sap: 0.25 };
+
 /** Natural hazards grow on the path; they do not use the giant's attack pool. */
-export function trailHazard(lane: Lane, roll: number): ObstacleSpec {
-  const kind = roll < 0.4 ? "wild-thorns" : roll < 0.75 ? "moss-rock" : "sticky-sap";
+export function trailHazard(lane: Lane, roll: number, mix: HazardMix = DEFAULT_MIX): ObstacleSpec {
+  const total = mix.thorns + mix.rock + mix.sap;
+  const r = roll * total;
+  const kind =
+    r < mix.thorns ? "wild-thorns" : r < mix.thorns + mix.rock ? "moss-rock" : "sticky-sap";
   const jumpable = kind !== "moss-rock";
   const effect = kind === "sticky-sap" ? "slow" : "end-run";
   const width = 110,

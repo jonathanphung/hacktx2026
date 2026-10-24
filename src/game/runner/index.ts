@@ -12,9 +12,16 @@ import type {
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
-import { speedAt } from "./speed";
 import { finishFireballs } from "./projectiles";
 import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
+import {
+  STAGE_BLEND_MS,
+  STAGE_CALM_MS,
+  STAGE_TUNING,
+  stageHazardInterval,
+  stageSpeed,
+  StageTracker,
+} from "./stage-tuning";
 import { createTrack } from "./track";
 import { createPickupView, RunnerView } from "./view";
 
@@ -58,6 +65,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let nextPowerupAt = -1;
   const obstacles: Obstacle[] = [];
   const trail = new TrailSpawner();
+  const stages = new StageTracker();
   const spawnObstacle = (spec: ObstacleSpec) => {
     const w = spec.width ?? RUNNER.laneSpacing - 30;
     const h = spec.height ?? 40;
@@ -122,8 +130,15 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     const dt = delta / 1000;
     const elapsed = (time - startedAt) / 1000;
     powerups.expire(time).forEach(endPowerup);
+    const entered = stages.update(elapsed);
+    if (entered) {
+      events.emit("stage-changed", { index: entered.index, id: entered.id, name: entered.name });
+      trail.holdUntil(time + STAGE_CALM_MS);
+      track.setStage(STAGE_TUNING[entered.id], STAGE_BLEND_MS);
+      track.announce(entered.name);
+    }
     speed =
-      speedAt(elapsed) * (time < slowUntil ? RUNNER.slowFactor : 1) * powerups.speedFactor(time);
+      stageSpeed(elapsed) * (time < slowUntil ? RUNNER.slowFactor : 1) * powerups.speedFactor(time);
     if (jumpQueued && time >= airborneUntil) {
       jumpQueued = false;
       jump();
@@ -145,9 +160,13 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       trail.due(
         time,
         obstacles.some((ob) => ob.view.y < 260),
+        stageHazardInterval(elapsed),
       )
     ) {
-      for (const target of naturalLanes(elapsed)) spawnObstacle(trailHazard(target, Math.random()));
+      const tuning = STAGE_TUNING[stages.current.id];
+      const count = Math.random() < tuning.doubleChance ? 2 : 1;
+      for (const target of naturalLanes(count))
+        spawnObstacle(trailHazard(target, Math.random(), tuning.mix));
     }
 
     if (time >= nextPowerupAt) {
@@ -189,6 +208,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           events.emit("game-over", {
             score: score(),
             survivedMs: time - startedAt,
+            stage: stages.current.index,
           });
           return;
         } else if (ob.spec.effect === "slow") {

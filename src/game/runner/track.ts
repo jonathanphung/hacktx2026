@@ -1,22 +1,39 @@
 import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH, LANES, type Lane } from "../../shared/types";
 import { RUNNER } from "./config";
+import { STAGE_TUNING, type StageTuning } from "./stage-tuning";
+
+type Sky = readonly [number, number, number, number];
+
+/** Blends two 0xRRGGBB colors; t in [0, 1]. */
+export function lerpColor(a: number, b: number, t: number): number {
+  const ch = (shift: number) =>
+    Math.round(((a >> shift) & 0xff) + (((b >> shift) & 0xff) - ((a >> shift) & 0xff)) * t);
+  return (ch(16) << 16) | (ch(8) << 8) | ch(0);
+}
 
 /** Three living stems. Lane centers, collisions, and scrolling remain unchanged. */
 export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) {
-  const sky = scene.add.graphics().setDepth(-2);
-  sky.fillGradientStyle(0x6966a6, 0xa48fc7, 0xbde5ce, 0xf6d6d9, 1);
-  sky.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  // Sky gradient (redrawn while blending between stages) with clouds on top.
+  const sky = scene.add.graphics().setDepth(-2.1);
+  const drawSky = (c: Sky) => {
+    sky.clear();
+    sky.fillGradientStyle(c[0], c[1], c[2], c[3], 1);
+    sky.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+  };
+  let skyNow: Sky = STAGE_TUNING.garden.sky;
+  drawSky(skyNow);
+  const clouds = scene.add.graphics().setDepth(-2);
   for (const [x, y] of [
     [95, 130],
     [1160, 240],
     [140, 510],
     [1170, 650],
   ]) {
-    sky.fillStyle(0xfdf4ff, 0.6);
-    sky.fillEllipse(x, y, 260, 65);
-    sky.fillEllipse(x - 50, y - 20, 110, 65);
-    sky.fillEllipse(x + 35, y - 25, 130, 70);
+    clouds.fillStyle(0xfdf4ff, 0.6);
+    clouds.fillEllipse(x, y, 260, 65);
+    clouds.fillEllipse(x - 50, y - 20, 110, 65);
+    clouds.fillEllipse(x + 35, y - 25, 130, 70);
   }
   for (let i = 0; i < 26; i++) {
     const x = (i * 193 + 41) % GAME_WIDTH;
@@ -84,10 +101,65 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
       .setAlpha(0),
   );
 
+  // Stage palette blend state.
+  let stemNow = 0xffffff;
+  let blend: {
+    fromSky: Sky;
+    toSky: Sky;
+    fromStem: number;
+    toStem: number;
+    t: number;
+    ms: number;
+  } | null = null;
+
+  // Stage gates: a banner with the stage name that scrolls down the track.
+  const gates: Phaser.GameObjects.Container[] = [];
+
   return {
+    /** Blends the sky and stems into a stage's palette over `ms`. */
+    setStage(tuning: StageTuning, ms: number) {
+      blend = {
+        fromSky: skyNow,
+        toSky: tuning.sky,
+        fromStem: stemNow,
+        toStem: tuning.stemTint,
+        t: 0,
+        ms,
+      };
+    },
+
+    /** Sends a stage gate down the track. It reaches the runner about when the calm ends. */
+    announce(name: string) {
+      const w = RUNNER.laneSpacing * 3 + 40;
+      const plank = scene.add.rectangle(0, 0, w, 54, 0x3b2a5c, 0.92).setStrokeStyle(4, 0xffe08a);
+      const posts = [-w / 2, w / 2].map((x) => scene.add.rectangle(x, 0, 14, 90, 0x6b4f2a));
+      const label = scene.add
+        .text(0, 0, name.toUpperCase(), {
+          fontFamily: "Courier New, monospace",
+          fontSize: "26px",
+          fontStyle: "bold",
+          color: "#ffe08a",
+        })
+        .setOrigin(0.5);
+      gates.push(scene.add.container(GAME_WIDTH / 2, -60, [...posts, plank, label]).setDepth(7));
+    },
+
     /** Scrolls the markings and speed lines for one frame at `speed` px/s. */
     update(dt: number, speed: number) {
       const dy = speed * dt;
+      if (blend) {
+        blend.t = Math.min(1, blend.t + (dt * 1000) / blend.ms);
+        const { fromSky: a, toSky: b, t } = blend;
+        skyNow = [0, 1, 2, 3].map((i) => lerpColor(a[i], b[i], t)) as unknown as Sky;
+        drawSky(skyNow);
+        stemNow = lerpColor(blend.fromStem, blend.toStem, t);
+        for (const stem of stems) stem.setTint(stemNow);
+        if (t >= 1) blend = null;
+      }
+      for (let i = gates.length - 1; i >= 0; i--) {
+        gates[i].y += dy;
+        if (gates[i].y > GAME_HEIGHT + 80) gates.splice(i, 1)[0].destroy();
+      }
       for (const stem of stems) stem.tilePositionY -= dy;
       const alpha = Phaser.Math.Clamp((speed - RUNNER.streakFromSpeed) / 250, 0, 1) * 0.22;
       for (const s of streaks) {

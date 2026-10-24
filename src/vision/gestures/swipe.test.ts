@@ -38,3 +38,25 @@ describe("SwipeDetector", () => {
     expect(det.push(66, { x: 0.3, y: 0.5 })).toBeNull();
   });
 });
+
+it("recognizes down for the lab", () => {
+  expect(run(new SwipeDetector(), [0.5, 0.3], [0.5, 0.7], 200)).toEqual(["down"]);
+});
+it("rejects diagonal ambiguity", () => {
+  expect(run(new SwipeDetector(), [0.2, 0.2], [0.7, 0.7], 200)).toEqual([]);
+});
+it("does not interpret tracking reacquisition as a swipe", () => {
+  const detector = new SwipeDetector();
+  detector.push(0, { x: 0.1, y: 0.5 });
+  expect(detector.push(600, { x: 0.9, y: 0.5 })).toBeNull();
+  expect(detector.push(633, { x: 0.9, y: 0.5 })).toBeNull();
+});
+it.each([15, 30, 60])("recognizes a deliberate swipe at %i fps", (fps) => {
+  const detector = new SwipeDetector();
+  const events = [];
+  for (let t = 0; t <= 250; t += 1000 / fps) {
+    const result = detector.push(t, { x: 0.2 + t / 500, y: 0.5 });
+    if (result) events.push(result);
+  }
+  expect(events).toEqual(["right"]);
+});

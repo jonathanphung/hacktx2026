@@ -3,27 +3,77 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vision debug</title>
+    <title>HackTX · Gesture Lab</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
-        padding: 16px;
-        background: #111;
-        color: #eee;
+        padding: 28px;
+        background: #10141d;
+        color: #edf0f6;
         font:
-          14px system-ui,
+          15px system-ui,
           sans-serif;
+        max-width: 1400px;
+        margin-inline: auto;
+      }
+      h1 {
+        margin-bottom: 8px;
+      }
+      p {
+        color: #b8c3d6;
+        line-height: 1.6;
+      }
+      a {
+        color: #61edc4;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 20px 0;
+      }
+      button,
+      .upload {
+        border: 1px solid #52627b;
+        background: #202d42;
+        color: white;
+        border-radius: 8px;
+        padding: 11px 16px;
+        cursor: pointer;
+        font: inherit;
+      }
+      button:hover,
+      .upload:hover {
+        background: #334866;
+      }
+      input {
+        max-width: 210px;
       }
       #halves {
         display: flex;
-        gap: 16px;
+        gap: 24px;
       }
       .half {
-        position: relative;
         flex: 1;
+        min-width: 0;
+        border-top: 4px solid #61edc4;
+        background: #182130;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      .saboteur {
+        border-color: #c5a1ff;
+      }
+      .stage {
+        position: relative;
       }
       .half canvas {
         width: 100%;
+        max-height: 50vh;
+        object-fit: contain;
         display: block;
       }
       .half canvas.overlay {
@@ -32,26 +82,85 @@
         height: 100%;
       }
       .label {
-        margin: 4px 0;
+        padding: 14px;
         font-weight: 600;
+        min-height: 50px;
+      }
+      #status {
+        padding: 12px 0;
+        color: #61edc4;
       }
       #log {
-        margin-top: 12px;
-        height: 220px;
+        height: 180px;
         overflow: auto;
-        font-family: ui-monospace, monospace;
-        background: #000;
-        padding: 8px;
+        font:
+          12px/1.8 ui-monospace,
+          monospace;
+        background: #080d15;
+        padding: 14px;
+        border-radius: 8px;
+      }
+      .help {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 24px;
+      }
+      small {
+        color: #9aabc3;
+      }
+      @media (max-width: 700px) {
+        body {
+          padding: 16px;
+        }
+        #halves,
+        .help {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
       }
     </style>
   </head>
   <body>
+    <small>HACKTX / VISION WORKBENCH</small>
+    <h1>Two players. One camera.</h1>
     <p>
-      Vision debug: each player's half of the camera, the tracked hand, and the input events it
-      produces. <a href="./" style="color: #8cf">Back to game</a>
+      Your mirrored left and right halves stay separate. Test gestures here before playing.
+      <a href="./">Back to game →</a>
+    </p>
+    <div class="controls">
+      <button id="start">Start camera</button><button id="stop">Stop</button
+      ><button id="rehearse">Run synthetic rehearsal</button>
+      <button id="benchmark">Benchmark real models</button>
+      <button id="record">Record landmarks</button><button id="download">Download JSON</button>
+      <label class="upload"
+        >Replay JSON <input id="upload" type="file" accept=".json,application/json"
+      /></label>
+    </div>
+    <div id="status" role="status">
+      Camera off. Start live tracking or watch the synthetic rehearsal.
+    </div>
+    <p id="metrics" role="status">
+      Performance measurements appear here. Benchmark uses real models with empty images; it does
+      not measure hand accuracy or tracking distance.
     </p>
     <div id="halves"></div>
-    <div id="log"></div>
+    <div class="help">
+      <p>
+        <strong>Runner · left half</strong><br />Swipe left / right to change lanes. Swipe up to
+        jump. Make a clear horizontal or vertical stroke; diagonal motions are ignored.<br /><small
+          >Down swipes and clockwise / counterclockwise circles are lab experiments, with no game
+          action assigned.</small
+        >
+      </p>
+      <p>
+        <strong>Saboteur · right half</strong><br />Move your palm across the three zones to aim.
+        Point up = card 1, victory ✌ = card 2, thumbs up = card 3. Close your fist to fire.<br /><small
+          >Hold selection poses for 180 ms, fist for 100 ms. Show an open palm for 120 ms to re-arm.
+          Recording saves landmarks only, locally; no video.</small
+        >
+      </p>
+    </div>
+    <div id="log" aria-label="Recognized input events"></div>
     <script type="module" src="/src/vision/debug.ts"></script>
   </body>
 </html>

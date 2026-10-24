@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
+import { jumpHeight } from "./motion";
 
 const RUN_FRAMES = 4;
 const TEX = 64;
@@ -67,9 +68,24 @@ function ensureAssets(scene: Phaser.Scene) {
   });
 }
 
+/** What the view needs each frame. Game logic owns the state; the view only draws it. */
+export interface RunnerPose {
+  x: number;
+  /** Sideways velocity in px/s (drives the lean). */
+  vx: number;
+  /** Jump progress 0..1, or null on the ground. */
+  jump: number | null;
+  slowed: boolean;
+  /** Track speed in px/s (drives the run cycle). */
+  speed: number;
+}
+
+/** How long the landing squash lasts. */
+const LAND_MS = 110;
+
 /**
- * The runner's visuals: an animated sprite plus a ground shadow. Purely cosmetic — the game
- * logic tracks lane/airborne state itself and tells the view what to show.
+ * The runner's visuals: an animated sprite plus a ground shadow, drawn from a `RunnerPose`
+ * every frame. No tweens for movement, so overlapping inputs can't fight each other.
  */
 export class RunnerView {
   readonly sprite: Phaser.GameObjects.Sprite;
@@ -77,7 +93,8 @@ export class RunnerView {
   private shield: Phaser.GameObjects.Arc;
   private crashed = false;
   private baseScale: number;
-  private jumpTweens: Phaser.Tweens.Tween[] = [];
+  private wasAirborne = false;
+  private landedAt = -Infinity;
 
   constructor(
     private scene: Phaser.Scene,
@@ -99,74 +116,52 @@ export class RunnerView {
       .setVisible(false);
   }
 
-  get x() {
-    return this.sprite.x;
-  }
+  /** Draws the pose. `time` is the game clock in ms. */
+  render(pose: RunnerPose, time: number) {
+    if (this.crashed) return;
+    const { sprite, shadow, shield } = this;
+    const airborne = pose.jump !== null;
+    const h = airborne ? jumpHeight(pose.jump!) : 0;
 
-  /** Keeps the run cycle in step with the track speed. */
-  setSpeed(pxPerSec: number) {
-    this.sprite.anims.timeScale = pxPerSec / RUNNER.baseSpeed;
-  }
+    // Takeoff / landing: swap between the run cycle and the tucked jump pose.
+    if (airborne && !this.wasAirborne) {
+      sprite.anims.pause();
+      sprite.setTexture("runner-jump");
+    } else if (!airborne && this.wasAirborne) {
+      sprite.play("runner-run");
+      this.landedAt = time;
+    }
+    this.wasAirborne = airborne;
+    sprite.anims.timeScale = pose.speed / RUNNER.baseSpeed;
 
-  moveTo(x: number, direction: -1 | 1) {
-    const duration = RUNNER.laneSwitchMs;
-    this.scene.tweens.add({ targets: [this.sprite, this.shadow, this.shield], x, duration });
-    // Lean into the move, then straighten up.
-    this.scene.tweens.add({
-      targets: this.sprite,
-      angle: direction * 14,
-      duration: duration / 2,
-      yoyo: true,
-    });
-  }
+    // Squash & stretch: stretch on the way up, squash briefly on landing.
+    let sx = 1;
+    let sy = 1;
+    if (airborne && pose.jump! < 0.25) {
+      const k = 1 - pose.jump! / 0.25;
+      sx -= 0.08 * k;
+      sy += 0.12 * k;
+    }
+    const sinceLand = time - this.landedAt;
+    if (sinceLand < LAND_MS) {
+      const k = 1 - sinceLand / LAND_MS;
+      sx += 0.14 * k;
+      sy -= 0.12 * k;
+    }
+    // Jumping = rising toward the camera: bigger and slightly up the screen.
+    const grow = 1 + 0.35 * h;
+    sprite.setScale(this.baseScale * grow * sx, this.baseScale * grow * sy);
+    sprite.setPosition(pose.x, this.groundY - 14 * h);
 
-  jump(durationMs: number) {
-    const base = this.baseScale;
-    // A buffered jump can start the frame the last one lands: cancel leftovers and reset first.
-    this.jumpTweens.forEach((tween) => tween.stop());
-    this.sprite.setScale(base).setY(this.groundY);
-    this.shadow.setScale(1).setAlpha(0.55);
-    this.sprite.setTexture("runner-jump");
-    this.sprite.anims.pause();
-    const half = durationMs / 2;
-    // Rise toward the camera (bigger, slightly up the screen); the shadow stays on the ground.
-    const rise = this.scene.tweens.add({
-      targets: this.sprite,
-      scale: base * 1.35,
-      y: this.groundY - 14,
-      duration: half,
-      ease: "Sine.easeOut",
-      yoyo: true,
-      onComplete: () => {
-        if (this.crashed) return;
-        this.sprite.setScale(base).setY(this.groundY);
-        this.sprite.play("runner-run");
-      },
-    });
-    const shrink = this.scene.tweens.add({
-      targets: this.shadow,
-      scale: 0.6,
-      alpha: 0.25,
-      duration: half,
-      ease: "Sine.easeOut",
-      yoyo: true,
-    });
-    this.jumpTweens = [rise, shrink];
-  }
+    const lean = Phaser.Math.Clamp(pose.vx * RUNNER.leanPerSpeed, -18, 18);
+    const wobble = pose.slowed ? Math.sin(time / 45) * 7 : 0;
+    sprite.setAngle(lean + wobble);
+    if (pose.slowed) sprite.setTint(0xb39ddb);
+    else sprite.clearTint();
 
-  /** Brief purple wobble when slowed (e.g. oil). */
-  slowed() {
-    this.sprite.setTint(0xb39ddb);
-    this.scene.tweens.add({
-      targets: this.sprite,
-      angle: { from: -8, to: 8 },
-      duration: 90,
-      yoyo: true,
-      repeat: 3,
-      onComplete: () => {
-        if (!this.crashed) this.sprite.setAngle(0).clearTint();
-      },
-    });
+    shadow.setPosition(pose.x, this.groundY + 6);
+    shadow.setScale(1 - 0.4 * h).setAlpha(0.55 - 0.3 * h);
+    shield.setPosition(pose.x, sprite.y);
   }
 
   setShield(on: boolean) {
@@ -181,15 +176,14 @@ export class RunnerView {
   /** Knocked down: flash red, spin and fade, with a camera shake. */
   crash() {
     this.crashed = true;
-    this.scene.tweens.killTweensOf(this.sprite);
     this.sprite.anims.stop();
     this.sprite.setTint(0xff5252);
     this.scene.cameras.main.shake(200, 0.01);
     this.scene.tweens.add({
       targets: this.sprite,
-      angle: 200,
+      angle: this.sprite.angle + 200,
       alpha: 0.4,
-      scale: this.sprite.scale * 0.8,
+      scale: this.baseScale * 0.8,
       duration: 500,
       ease: "Cubic.easeOut",
     });

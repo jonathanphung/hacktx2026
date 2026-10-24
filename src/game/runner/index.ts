@@ -11,6 +11,7 @@ import type {
 } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
+import { Spring } from "./motion";
 import { speedAt } from "./speed";
 import { createTrack } from "./track";
 import { createPickupView, RunnerView } from "./view";
@@ -39,6 +40,8 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
 
   let lane: Lane = 1;
   const runner = new RunnerView(scene, laneX(lane), RUNNER.runnerY);
+  // Sideways position is gameplay (collisions use it), so it lives here, not in the view.
+  const lateral = new Spring(laneX(lane), laneX(lane), RUNNER.laneOmega);
   const hitbox = RUNNER.hitboxSize;
 
   // All timing uses the `time` passed to update (one clock). Set on the first frame, because
@@ -67,8 +70,8 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   };
 
   const moveTo = (next: Lane) => {
-    runner.moveTo(laneX(next), next < lane ? -1 : 1);
     lane = next;
+    lateral.target = laneX(lane);
   };
 
   let jumpQueued = false;
@@ -80,7 +83,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       return;
     }
     airborneUntil = now + RUNNER.jumpMs;
-    runner.jump(RUNNER.jumpMs);
   };
 
   untilShutdown(
@@ -110,6 +112,17 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       jump();
     }
     const airborne = time < airborneUntil;
+    lateral.step(dt);
+    runner.render(
+      {
+        x: lateral.value,
+        vx: lateral.velocity,
+        jump: airborne ? 1 - (airborneUntil - time) / RUNNER.jumpMs : null,
+        slowed: time < slowUntil,
+        speed,
+      },
+      time,
+    );
 
     if (time >= nextPowerupAt) {
       nextPowerupAt = time + POWERUPS.everyMs;
@@ -121,7 +134,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       const p = pickups[i];
       p.view.y += speed * dt;
       const touched =
-        Math.abs(p.view.x - runner.x) < (POWERUPS.size + hitbox) / 2 &&
+        Math.abs(p.view.x - lateral.value) < (POWERUPS.size + hitbox) / 2 &&
         Math.abs(p.view.y - RUNNER.runnerY) < (POWERUPS.size + hitbox) / 2;
       if (touched) startPowerup(p.kind, time);
       if (touched || p.view.y > GAME_HEIGHT + POWERUPS.size) {
@@ -135,7 +148,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       ob.view.y += speed * dt;
       const hit =
         !ob.touched &&
-        Math.abs(ob.view.x - runner.x) < (ob.w + hitbox) / 2 &&
+        Math.abs(ob.view.x - lateral.value) < (ob.w + hitbox) / 2 &&
         Math.abs(ob.view.y - RUNNER.runnerY) < (ob.h + hitbox) / 2 &&
         !(ob.spec.jumpable && airborne);
       if (hit) {
@@ -154,7 +167,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           return;
         } else if (ob.spec.effect === "slow") {
           slowUntil = time + RUNNER.slowMs;
-          runner.slowed();
         }
       }
       // Solid obstacles break on contact; surfaces (slow) stay and scroll away.
@@ -166,7 +178,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     }
 
     track.scroll(speed * dt);
-    runner.setSpeed(speed);
     points += (speed * dt * powerups.scoreFactor(time)) / 10;
     events.emit("score", { score: score() });
   };

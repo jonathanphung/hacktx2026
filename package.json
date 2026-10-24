@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "generate:campaign": "node --env-file-if-exists=.env --experimental-strip-types scripts/generate-campaign.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "prettier --check .",

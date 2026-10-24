@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "title": "The Stolen Starlight",
+  "intro": [
+    {
+      "title": "A wish in the woods",
+      "text": "Jon found a fallen star beneath an ancient oak. Its fading light whispered of a kingdom hidden above the clouds.",
+      "scene": "grove"
+    },
+    {
+      "title": "One enchanted seed",
+      "text": "With a flick of his crystal staff, Jon planted a silver bean. A living staircase of leaves unfurled into the sky.",
+      "scene": "clouds"
+    },
+    {
+      "title": "The Giant awakens",
+      "text": "High above, the Giant clutched the stolen starlight. Jon must cross three enchanted realms before the last spark fades.",
+      "scene": "castle"
+    }
+  ],
+  "levels": [
+    {
+      "name": "Whispering Grove",
+      "description": "Learn the rhythm of the living vines.",
+      "theme": "grove",
+      "durationSec": 30,
+      "speedMultiplier": 0.9,
+      "spawnIntervalMs": 4500,
+      "naturalHazards": 1,
+      "hazards": [
+        "wild-thorns",
+        "sticky-sap"
+      ]
+    },
+    {
+      "name": "Cloudbound Crossing",
+      "description": "Mossy stones guard the path above the clouds.",
+      "theme": "clouds",
+      "durationSec": 35,
+      "speedMultiplier": 1,
+      "spawnIntervalMs": 3100,
+      "naturalHazards": 1,
+      "hazards": [
+        "wild-thorns",
+        "moss-rock",
+        "sticky-sap"
+      ]
+    },
+    {
+      "name": "The Starkeeper's Gate",
+      "description": "Find the open vine and reclaim the starlight.",
+      "theme": "castle",
+      "durationSec": 40,
+      "speedMultiplier": 1.1,
+      "spawnIntervalMs": 2200,
+      "naturalHazards": 2,
+      "hazards": [
+        "wild-thorns",
+        "moss-rock"
+      ]
+    }
+  ],
+  "outro": "Jon raised his staff. The stolen stars returned to the night, and the beanstalk bloomed with a thousand tiny lights."
+}

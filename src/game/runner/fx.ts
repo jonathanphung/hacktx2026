@@ -46,7 +46,15 @@ export class RunnerFx {
   }
 
   /** Dust at (x, y). `spread` = sideways burst speed; `trackSpeed` carries it down the screen. */
-  dust(x: number, y: number, count: number, spread: number, trackSpeed: number, size = 1) {
+  dust(
+    x: number,
+    y: number,
+    count: number,
+    spread: number,
+    trackSpeed: number,
+    size = 1,
+    tint = 0xc5c5e0,
+  ) {
     for (let i = 0; i < count; i++) {
       const p = this.puffs[this.nextPuff];
       this.nextPuff = (this.nextPuff + 1) % this.puffs.length;
@@ -58,7 +66,7 @@ export class RunnerFx {
       p.grow = size;
       p.img
         .setPosition(x + (Math.random() - 0.5) * 6, y)
-        .setTint(0xc5c5e0)
+        .setTint(tint)
         .setVisible(true);
     }
   }

@@ -1,6 +1,6 @@
 import type Phaser from "phaser";
 import { Emitter } from "./emitter";
-import type { StageId } from "./stages";
+import type { StageId, StageItemId } from "./stages";
 import type { Lane } from "./types";
 
 /** Any positioned game object (Rectangle, Sprite, Container, ...). */
@@ -46,6 +46,16 @@ export interface GameEvents {
   "game-over": { score: number; survivedMs: number; stage?: number };
   /** The run entered a new stage (see src/shared/stages.ts). Not emitted for the first stage. */
   "stage-changed": { index: number; id: StageId; name: string };
+  /**
+   * The current stage's key item appeared on the track, was collected, or scrolled away.
+   * Collecting it (outside the last stage) is what moves the run to the next stage.
+   */
+  "stage-item": {
+    state: "spawned" | "collected" | "missed";
+    stage: number;
+    item: StageItemId;
+    lane: Lane;
+  };
   "hand-changed": { hand: readonly string[]; selected: number; aimLane: Lane };
   "attack-fired": { attackId: string; lane: Lane };
   /** Authoritative game state, separate from vision's acknowledgement of sent input. */

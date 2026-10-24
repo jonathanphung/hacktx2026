@@ -21,7 +21,7 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
     sky.fillGradientStyle(c[0], c[1], c[2], c[3], 1);
     sky.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
   };
-  let skyNow: Sky = STAGE_TUNING.garden.sky;
+  let skyNow: Sky = STAGE_TUNING.humpty.sky;
   drawSky(skyNow);
   const clouds = scene.add.graphics().setDepth(-2);
   for (const [x, y] of [

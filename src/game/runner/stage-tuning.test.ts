@@ -3,49 +3,50 @@ import { STAGES } from "../../shared/stages";
 import { RUNNER } from "./config";
 import { MAX_SPEED, warningMs } from "./speed";
 import {
-  LAST_STAGE_RAMP_SEC,
+  STAGE_ITEM,
+  STAGE_RAMP_SEC,
   STAGE_TUNING,
   stageHazardInterval,
   stageSpeed,
-  StageTracker,
+  StageRun,
 } from "./stage-tuning";
 
-const last = STAGES[STAGES.length - 1];
-const times = Array.from({ length: 600 }, (_, i) => i * 0.5); // 0..300 s
+const ids = STAGES.map((s) => s.id);
+const secs = Array.from({ length: 120 }, (_, i) => i * 0.5); // 0..60 s in a stage
 
 describe("stage speed", () => {
-  it("starts at the base speed", () => {
-    expect(stageSpeed(0)).toBeCloseTo(RUNNER.baseSpeed);
+  it("starts the run at the base speed", () => {
+    expect(stageSpeed("humpty", 0)).toBeCloseTo(RUNNER.baseSpeed);
   });
 
-  it("never drops as the run goes on (each stage starts at or above where the last ended)", () => {
-    for (let i = 1; i < times.length; i++) {
-      expect(stageSpeed(times[i])).toBeGreaterThanOrEqual(stageSpeed(times[i - 1]) - 1e-9);
+  it("ramps up within a stage, then holds", () => {
+    for (const id of ids) {
+      for (let i = 1; i < secs.length; i++) {
+        expect(stageSpeed(id, secs[i])).toBeGreaterThanOrEqual(stageSpeed(id, secs[i - 1]) - 1e-9);
+      }
+      expect(stageSpeed(id, STAGE_RAMP_SEC)).toBeCloseTo(stageSpeed(id, 1e5));
+    }
+  });
+
+  it("each stage starts faster than the previous one can ever get (moving on is felt)", () => {
+    for (let i = 1; i < ids.length; i++) {
+      expect(stageSpeed(ids[i], 0)).toBeGreaterThan(stageSpeed(ids[i - 1], 1e5));
     }
   });
 
   it("always leaves at least minWarningMs to react, in every stage", () => {
-    for (const t of times)
-      expect(warningMs(stageSpeed(t))).toBeGreaterThanOrEqual(RUNNER.minWarningMs - 1e-6);
-  });
-
-  it("reaches top speed in the last stage and holds it", () => {
-    expect(stageSpeed(last.startsAtSec + LAST_STAGE_RAMP_SEC)).toBeCloseTo(MAX_SPEED);
-    expect(stageSpeed(1e5)).toBeCloseTo(MAX_SPEED);
-  });
-
-  it("steps up a little on entering each stage, so the change is felt", () => {
-    for (const s of STAGES.slice(1)) {
-      expect(stageSpeed(s.startsAtSec)).toBeGreaterThan(stageSpeed(s.startsAtSec - 0.001));
-    }
+    for (const id of ids)
+      for (const t of secs)
+        expect(warningMs(stageSpeed(id, t))).toBeGreaterThanOrEqual(RUNNER.minWarningMs - 1e-6);
+    expect(stageSpeed(ids[ids.length - 1], 1e5)).toBeCloseTo(MAX_SPEED);
   });
 });
 
 describe("stage hazards", () => {
-  it("get more frequent stage by stage", () => {
-    for (const s of STAGES.slice(1)) {
-      expect(stageHazardInterval(s.startsAtSec)).toBeLessThanOrEqual(
-        stageHazardInterval(s.startsAtSec - 0.001),
+  it("are more frequent in each stage than at any point in the previous one", () => {
+    for (let i = 1; i < ids.length; i++) {
+      expect(stageHazardInterval(ids[i], 0)).toBeLessThanOrEqual(
+        stageHazardInterval(ids[i - 1], 1e5),
       );
     }
   });
@@ -59,14 +60,70 @@ describe("stage hazards", () => {
   });
 });
 
-describe("StageTracker", () => {
-  it("reports each stage once, in order, and not the first", () => {
-    const tracker = new StageTracker();
-    const seen: string[] = [];
-    for (const t of times) {
-      const s = tracker.update(t);
-      if (s) seen.push(s.id);
+describe("StageRun", () => {
+  const [MIN, MAX] = STAGE_ITEM.spawnEveryMs;
+
+  /** Steps a run frame by frame and returns the times its item became due. */
+  function dueTimes(run: StageRun, fromMs: number, toMs: number, onDue?: (t: number) => void) {
+    const out: number[] = [];
+    for (let t = fromMs; t <= toMs; t += 10) {
+      if (run.itemDue(t)) {
+        out.push(t);
+        onDue?.(t);
+      }
     }
-    expect(seen).toEqual(STAGES.slice(1).map((s) => s.id));
+    return out;
+  }
+
+  it("brings out the first item 10–15 s into the stage", () => {
+    for (const roll of [0, 0.5, 0.999]) {
+      const run = new StageRun(() => roll);
+      const [first] = dueTimes(run, 1000, 40_000);
+      expect(first - 1000).toBeGreaterThanOrEqual(MIN);
+      expect(first - 1000).toBeLessThanOrEqual(MAX + 10);
+    }
+  });
+
+  it("never has two items out at once, and spawns every 10–15 s while they're missed", () => {
+    const run = new StageRun(() => 0.5);
+    const times = dueTimes(run, 0, 60_000);
+    expect(times).toHaveLength(1); // the first is still on the track: no second one
+    run.itemGone(times[0] + 2500, false);
+    const next = dueTimes(run, times[0] + 2510, 60_000);
+    expect(next[0] - times[0]).toBeGreaterThanOrEqual(MIN);
+    expect(next[0] - times[0]).toBeLessThanOrEqual(MAX + 10);
+  });
+
+  it("only moves to the next stage when the item is collected", () => {
+    const run = new StageRun(() => 0);
+    const [t] = dueTimes(run, 0, 20_000);
+    expect(run.itemGone(t + 2000, false)).toBeNull();
+    expect(run.index).toBe(0);
+    const [t2] = dueTimes(run, t + 2010, 40_000);
+    const next = run.itemGone(t2 + 2000, true);
+    expect(next?.id).toBe("wonderland");
+    expect(run.index).toBe(1);
+    expect(run.secInStage(t2 + 2000)).toBe(0);
+  });
+
+  it("goes through every tale in order and stays in the last one", () => {
+    const run = new StageRun(() => 0);
+    const seen = [run.stage.id];
+    let t = 0;
+    for (let i = 0; i < STAGES.length + 2; i++) {
+      [t] = dueTimes(run, t, t + 20_000);
+      const next = run.itemGone(t + 1000, true);
+      if (next) seen.push(next.id);
+    }
+    expect(seen).toEqual(ids);
+    expect(run.index).toBe(STAGES.length - 1);
+  });
+
+  it("retries soon when the item couldn't be placed", () => {
+    const run = new StageRun(() => 0);
+    const [t] = dueTimes(run, 0, 20_000);
+    run.spawnBlocked(t);
+    const [retry] = dueTimes(run, t + 10, t + 5000);
+    expect(retry - t).toBeLessThanOrEqual(STAGE_ITEM.retryMs + 10);
   });
 });

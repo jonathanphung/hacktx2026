@@ -14,16 +14,19 @@ import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
 import { finishFireballs } from "./projectiles";
 import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
+import { isLastStage, type StageInfo } from "../../shared/stages";
+import { pickItemLane } from "./items";
 import {
   STAGE_BLEND_MS,
   STAGE_CALM_MS,
+  STAGE_ITEM,
   STAGE_TUNING,
   stageHazardInterval,
   stageSpeed,
-  StageTracker,
+  StageRun,
 } from "./stage-tuning";
 import { createTrack } from "./track";
-import { createPickupView, RunnerView } from "./view";
+import { createPickupView, createStageItemView, RunnerView } from "./view";
 
 interface Obstacle {
   spec: ObstacleSpec;
@@ -36,6 +39,13 @@ interface Obstacle {
 
 interface Pickup {
   kind: PowerupKind;
+  view: ObstacleView;
+}
+
+/** The current stage's key item while it's on the track. */
+interface StageItem {
+  stage: StageInfo;
+  lane: Lane;
   view: ObstacleView;
 }
 
@@ -65,7 +75,9 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let nextPowerupAt = -1;
   const obstacles: Obstacle[] = [];
   const trail = new TrailSpawner();
-  const stages = new StageTracker();
+  const stages = new StageRun();
+  let stageItem: StageItem | null = null;
+  const laneOf = (x: number) => Math.round((x - laneX(1)) / RUNNER.laneSpacing + 1) as Lane;
   const spawnObstacle = (spec: ObstacleSpec) => {
     const w = spec.width ?? RUNNER.laneSpacing - 30;
     const h = spec.height ?? 40;
@@ -77,6 +89,55 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     obstacles.push({ spec, view, w, h, touched: false });
   };
   const pickups: Pickup[] = [];
+
+  const enterStage = (stage: StageInfo, time: number, first = false) => {
+    if (!first) {
+      events.emit("stage-changed", { index: stage.index, id: stage.id, name: stage.name });
+      trail.holdUntil(time + STAGE_CALM_MS);
+    }
+    track.setStage(STAGE_TUNING[stage.id], first ? 1 : STAGE_BLEND_MS);
+    track.announce(stage.name);
+  };
+
+  /** Puts the stage item in a lane where it can be reached, or retries shortly if none is clear. */
+  const spawnStageItem = (time: number) => {
+    const target = pickItemLane(obstacles.map((o) => ({ lane: laneOf(o.view.x), y: o.view.y })));
+    if (target === null) return stages.spawnBlocked(time);
+    const stage = stages.stage;
+    const view = createStageItemView(
+      scene,
+      laneX(target),
+      -STAGE_ITEM.size,
+      stage.item.id,
+      stage.item.name,
+    );
+    stageItem = { stage, lane: target, view };
+    trail.holdUntil(time + STAGE_ITEM.hazardHoldMs);
+    events.emit("stage-item", {
+      state: "spawned",
+      stage: stage.index,
+      item: stage.item.id,
+      lane: target,
+    });
+  };
+
+  const resolveStageItem = (time: number, collected: boolean) => {
+    const item = stageItem!;
+    stageItem = null;
+    item.view.destroy();
+    events.emit("stage-item", {
+      state: collected ? "collected" : "missed",
+      stage: item.stage.index,
+      item: item.stage.item.id,
+      lane: item.lane,
+    });
+    if (collected) {
+      runner.celebrate(speed);
+      if (isLastStage(item.stage.index)) points += STAGE_ITEM.finalBonus;
+    }
+    const next = stages.itemGone(time, collected);
+    if (next) enterStage(next, time);
+  };
   const powerups = new PowerupState();
   const score = () => Math.floor(points);
 
@@ -125,20 +186,16 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     now = time;
     if (startedAt < 0) {
       startedAt = time;
+      enterStage(stages.stage, time, true);
       nextPowerupAt = time + POWERUPS.everyMs;
     }
     const dt = delta / 1000;
-    const elapsed = (time - startedAt) / 1000;
     powerups.expire(time).forEach(endPowerup);
-    const entered = stages.update(elapsed);
-    if (entered) {
-      events.emit("stage-changed", { index: entered.index, id: entered.id, name: entered.name });
-      trail.holdUntil(time + STAGE_CALM_MS);
-      track.setStage(STAGE_TUNING[entered.id], STAGE_BLEND_MS);
-      track.announce(entered.name);
-    }
+    const inStage = stages.secInStage(time);
     speed =
-      stageSpeed(elapsed) * (time < slowUntil ? RUNNER.slowFactor : 1) * powerups.speedFactor(time);
+      stageSpeed(stages.stage.id, inStage) *
+      (time < slowUntil ? RUNNER.slowFactor : 1) *
+      powerups.speedFactor(time);
     if (jumpQueued && time >= airborneUntil) {
       jumpQueued = false;
       jump();
@@ -156,14 +213,27 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       time,
       dt,
     );
+    if (stages.itemDue(time)) spawnStageItem(time);
+    if (stageItem) {
+      stageItem.view.y += speed * dt;
+      const reach = (STAGE_ITEM.size + hitbox) / 2;
+      // Collected on any overlap, jumping or not, so it's never harder to grab than to dodge.
+      if (
+        Math.abs(stageItem.view.x - lateral.value) < reach &&
+        Math.abs(stageItem.view.y - RUNNER.runnerY) < reach
+      )
+        resolveStageItem(time, true);
+      else if (stageItem.view.y > GAME_HEIGHT + STAGE_ITEM.size) resolveStageItem(time, false);
+    }
+
     if (
       trail.due(
         time,
         obstacles.some((ob) => ob.view.y < 260),
-        stageHazardInterval(elapsed),
+        stageHazardInterval(stages.stage.id, inStage),
       )
     ) {
-      const tuning = STAGE_TUNING[stages.current.id];
+      const tuning = STAGE_TUNING[stages.stage.id];
       const count = Math.random() < tuning.doubleChance ? 2 : 1;
       for (const target of naturalLanes(count))
         spawnObstacle(trailHazard(target, Math.random(), tuning.mix));
@@ -208,7 +278,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           events.emit("game-over", {
             score: score(),
             survivedMs: time - startedAt,
-            stage: stages.current.index,
+            stage: stages.index,
           });
           return;
         } else if (ob.spec.effect === "slow") {

@@ -18,7 +18,7 @@ const STEM_TILE_SCALE = 0.5;
 
 /** Loads the pixel-art beanstalk tile; createTrack falls back to drawn stems if it is missing. */
 export function preloadTrackAssets(scene: Phaser.Scene) {
-  scene.load.image(STEM_FILE_KEY, `${import.meta.env.BASE_URL}assets/beanstalk/player-stem.png`);
+  scene.load.image(STEM_FILE_KEY, `${import.meta.env.BASE_URL}assets/beanstalk/player-stem-v3.png`);
 }
 
 /** Three living stems. Lane centers, collisions, and scrolling remain unchanged. */

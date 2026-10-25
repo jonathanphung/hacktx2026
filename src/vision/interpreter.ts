@@ -1,11 +1,9 @@
 import type { InputEvent } from "../shared/input";
-import type { Lane } from "../shared/types";
 import type { HandFrame } from "../shared/vision";
-import { LaneAim } from "./gestures/aim";
 import { FistTrigger } from "./gestures/fire";
 import { effectivePose } from "./gestures/hand-pose";
 import { PointTrigger } from "./gestures/point";
-import { StickyAim } from "./gestures/sticky-aim";
+import { SaboteurAim } from "./gestures/saboteur-aim";
 import { ZoneNudge } from "./gestures/zone";
 import { TargetLock } from "./gestures/target-lock";
 import { PalmFilter } from "./gestures/smoothing";
@@ -55,23 +53,10 @@ function buildInterpreter(
   const point = { runner: new PointTrigger(), saboteur: new PointTrigger() };
   const lean = new ZoneNudge();
   // Saboteur: the palm's position aims, and a swipe or point also nudges the target a lane.
-  const aimSwipe = new SwipeDetector(swipeOptions);
-  const sticky = new StickyAim();
-  let stepDirection = 0;
+  // These options apply only to P2. P1's detector and input path are unchanged.
+  const aimSwipe = new SwipeDetector({ ...swipeOptions, reverseWindowMs: 0, cooldownMs: 120 });
+  const aim = new SaboteurAim();
   const lock = new TargetLock();
-  let sentLane: Lane = 1;
-  const laneHistory: { t: number; lane: Lane }[] = [];
-  const laneAt = (t: number): Lane => {
-    let lane = laneHistory[0]?.lane ?? sentLane;
-    for (const sample of laneHistory) if (sample.t <= t) lane = sample.lane;
-    return lane;
-  };
-  const setLane = (t: number, lane: Lane) => {
-    sentLane = lane;
-    laneHistory.push({ t, lane });
-    while (laneHistory.length > 1 && t - laneHistory[1].t > 1000) laneHistory.shift();
-  };
-  const aim = new LaneAim();
   const filters = { runner: new PalmFilter(), saboteur: new PalmFilter() };
   return (f: HandFrame) => {
     const raw = f.landmarks?.[9] ?? null;
@@ -92,49 +77,31 @@ function buildInterpreter(
       return direction ?? command;
     }
     const gesture = p ? effectivePose(f.gesture, f.landmarks) : null;
+    const wasLocked = lock.locked;
     const lockedLane = lock.push(f.t, gesture, !!p, aim.current);
     if (lockedLane !== null) {
-      // Fire at the last stable target, not wherever the curling fingers dragged the palm.
-      aim.set(lockedLane);
-      if (lockedLane !== sentLane) emit({ player: "saboteur", action: "aim", lane: lockedLane });
-      setLane(f.t, lockedLane);
+      const lane = aim.set(lockedLane);
+      if (lane !== null) emit({ player: "saboteur", action: "aim", lane });
     }
     if (lock.locked) {
       aimSwipe.push(f.t, null);
       point.saboteur.push(f.t, null);
+      aim.resetMotion();
     } else {
-      const held = sticky.push(f.t, p ? p.x : null);
-      let lane = aim.push(p ? aimPosition(p.x, settings.aim) : null);
-      // While a step is held, the palm may only carry the target further the way the step
-      // went (a long slide); drift back toward the lane under the hand is ignored.
-      if (held && lane !== null && (lane - sentLane) * stepDirection <= 0) {
-        aim.set(sentLane);
-        lane = null;
-      }
-      if (lane !== null) {
-        setLane(f.t, lane);
-        emit({ player: "saboteur", action: "aim", lane });
-      }
+      if (wasLocked) aim.resumePosition();
       const flick = aimSwipe.push(f.t, raw);
       const pointed = point.saboteur.push(f.t, f.landmarks);
-      const step =
-        flick === "left" || flick === "right" ? flick : pointed === "up" ? null : pointed;
-      if (step) {
-        // Step from the lane aimed when the stroke began, never past where the palm position
-        // already took the target, so a fast slide across lanes isn't counted twice.
-        const from = flick ? laneAt(f.t - swipeOptions.windowMs) : sentLane;
-        const next = (
-          step === "left" ? Math.min(sentLane, from - 1) : Math.max(sentLane, from + 1)
-        ) as number;
-        const target = Math.min(2, Math.max(0, next)) as Lane;
-        if (flick) point.saboteur.disarm();
-        else aimSwipe.push(f.t, null);
-        if (target !== sentLane) emit({ player: "saboteur", action: "aim", lane: target });
-        aim.set(target);
-        setLane(f.t, target);
-        stepDirection = step === "left" ? -1 : 1;
-        sticky.engage();
-      }
+      const swiped = flick === "left" || flick === "right";
+      const step = swiped ? flick : pointed === "left" || pointed === "right" ? pointed : null;
+      if (swiped) point.saboteur.disarm();
+      else if (step) aimSwipe.push(f.t, null);
+      const lane = aim.push(
+        f.t,
+        p ? aimPosition(p.x, settings.aim) : null,
+        step,
+        !swiped && step !== null,
+      );
+      if (lane !== null) emit({ player: "saboteur", action: "aim", lane });
     }
     if (fist.push(f.t, gesture)) emit({ player: "saboteur", action: "fire" });
     return null;

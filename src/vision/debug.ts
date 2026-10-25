@@ -248,7 +248,7 @@ controls.get("start")!.onclick = async () => {
       (timing) => {
         performanceStats.push(timing);
         const s = performanceStats.summary();
-        metrics.textContent = `LIVE · ${s.fps.toFixed(1)} processed fps · runner capture → control p50/p95 ${s.p50.toFixed(0)}/${s.p95.toFixed(0)} ms · runner/saboteur model ${s.runnerMs.toFixed(0)}/${s.saboteurMs.toFixed(0)} ms · hands visible ${(s.runnerCoverage * 100).toFixed(0)}% / ${(s.saboteurCoverage * 100).toFixed(0)}% · ${timing.backends.runner} + ${timing.backends.saboteur}`;
+        metrics.textContent = `LIVE · ${s.cameraFps ? `${s.cameraFps.toFixed(0)} camera fps · ` : ""}${s.fps.toFixed(1)} processed fps · runner capture → control p50/p95 ${s.p50.toFixed(0)}/${s.p95.toFixed(0)} ms · runner/saboteur model ${s.runnerMs.toFixed(0)}/${s.saboteurMs.toFixed(0)} ms · hands visible ${(s.runnerCoverage * 100).toFixed(0)}% / ${(s.saboteurCoverage * 100).toFixed(0)}% · ${timing.backends.runner} + ${timing.backends.saboteur}`;
       },
       (message) => {
         if (current === generation) status.textContent = message;

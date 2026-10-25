@@ -67,7 +67,11 @@ export async function startVision(
   signal?.throwIfAborted();
   onStatus?.("Waiting for camera permission…");
   const video = await openCamera(signal);
-  onStatus?.("Camera ready. Loading runner model…");
+  const cameraTrack = (video.srcObject as MediaStream).getTracks()[0];
+  const cameraFps = cameraTrack?.getSettings?.().frameRate;
+  onStatus?.(
+    `Camera ready${cameraFps ? ` (${cameraFps.toFixed(0)} reported fps)` : ""}. Loading runner model…`,
+  );
   const trackers = {} as Record<PlayerId, AsyncTracker>;
   try {
     signal?.throwIfAborted();
@@ -105,6 +109,7 @@ export async function startVision(
   const latest: Partial<Record<PlayerId, { result: TimedResult; age: number }>> = {};
   let running = true;
   let raf = 0;
+  let latestCameraFrame = -1;
   const stop = () => {
     if (!running) return;
     running = false;
@@ -148,6 +153,7 @@ export async function startVision(
           onTiming?.({
             t,
             roundTripMs: age,
+            cameraFps,
             runnerMs: runner.result.inferenceMs,
             saboteurMs: saboteur.result.inferenceMs,
             runnerHand: !!runner.result.landmarks,
@@ -162,10 +168,16 @@ export async function startVision(
         trackers[player].close();
         console.error(`[vision] ${player} tracking stopped`, error);
       },
+      () => {
+        // If a camera frame arrived while inference was busy, use the latest frame now
+        // instead of waiting another whole camera interval. This is not a frame queue.
+        if (stopWatching && latestCameraFrame >= 0) infer(player, latestCameraFrame);
+      },
     );
   };
   // Where supported, inference follows actual camera frames; otherwise poll once per animation frame.
   const stopWatching = watchCameraFrames(video, (frameKey) => {
+    latestCameraFrame = frameKey;
     for (const player of ["runner", "saboteur"] as const) infer(player, frameKey);
   });
   const tick = () => {

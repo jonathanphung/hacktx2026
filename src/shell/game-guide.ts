@@ -6,7 +6,12 @@ export const POWERUP_GUIDE: Record<
 > = {
   shield: { name: "SHIELD", effect: "Blocks one hit", color: 0x6ae6ff, symbol: "⬡" },
   slowmo: { name: "SLOW TIME", effect: "Slows the track", color: 0xffdf6a, symbol: "⌛" },
-  double: { name: "2× SCORE", effect: "Doubles points", color: 0x9cffb1, symbol: "2×" },
+  double: {
+    name: "SLOW DRAIN",
+    effect: "Tale points drain half as fast",
+    color: 0x9cffb1,
+    symbol: "½",
+  },
 };
 
 /** Text and shape agree with collision semantics, never the obstacle's artwork or name. */

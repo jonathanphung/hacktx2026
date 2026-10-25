@@ -36,7 +36,7 @@ const LESSONS = [
   [
     "JON · POWER-UPS",
     "Collect the shield",
-    "Move onto the glowing pickup’s stem. Shields block one hit; hourglasses slow time; 2× doubles points.",
+    "Move onto the glowing pickup’s stem. Shields block one hit; hourglasses slow time; ½ slows the points drain.",
     "Pickups have bright halos and names",
   ],
   [

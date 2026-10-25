@@ -450,3 +450,7 @@ retain their intentional full-screen/on-track presentation.
 Camera alignment: camera-mode HUD panels now share the camera's 1% outer inset
 and 24% width (26% expanded). Camera borders use border-box sizing so score,
 tale/clues and feedback align exactly with the video edges without resizing it.
+
+Camera previews now appear only during gameplay, including its pause menu, and
+hide on title, opening cinematic and results screens. Removed the camera toolbar
+and its collapse/resize handlers; both previews keep their fixed aligned size.

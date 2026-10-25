@@ -42,6 +42,9 @@ body {
 #facecam[hidden] {
   display: none;
 }
+#stage:not(.run-active) #facecam {
+  display: none;
+}
 #facecam.expanded {
   width: 34%;
   max-width: 460px;

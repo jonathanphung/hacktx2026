@@ -36,7 +36,8 @@ export const RUNNER = {
   /** Speed lines start fading in above this track speed (px/s). */
   streakFromSpeed: 340,
   /** Mud/sap reduce lateral responsiveness, never the world's travel speed. */
-  slowFactor: 0.65,
+  slowFactor: 0.3,
+  snareDodgeGapMs: 550,
   slowMs: 2000,
   blockGraceMs: 400,
 };

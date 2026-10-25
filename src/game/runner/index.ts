@@ -10,7 +10,7 @@ import type {
   PowerupKind,
   World,
 } from "../../shared/world";
-import { withObstacleCue } from "./obstacle-cue";
+import { Snare } from "./snare";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
@@ -73,7 +73,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let now = -1;
   let startedAt = -1;
   let airborneUntil = 0;
-  let slowUntil = 0;
+  const snare = new Snare();
   let points = 0;
   let speed = RUNNER.baseSpeed;
   let over = false;
@@ -108,7 +108,9 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       y = -h;
     const view =
       spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
-    const labelled = withObstacleCue(scene, view, spec).setDepth(spec.effect === "slow" ? 2 : 3);
+    const labelled = scene.add
+      .container(view.x, view.y, [view.setPosition(0, 0)])
+      .setDepth(spec.effect === "slow" ? 2 : 3);
     obstacles.push({ spec, view: labelled, w, h, touched: false });
     events.emit("obstacle-spawned", { kind: spec.kind, lane: spec.lane });
   };
@@ -123,7 +125,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       trail.holdUntil(time + STAGE_CALM_MS);
     }
     track.setStage(STAGE_TUNING[stage.id], first ? 1 : STAGE_BLEND_MS);
-    track.announce(stage.name);
   };
 
   /** Puts the stage item in a lane where it can be reached, or retries shortly if none is clear. */
@@ -190,6 +191,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   };
 
   const moveTo = (next: Lane) => {
+    if (!snare.allowDodge(now)) return;
     events.emit("runner-action", { action: next < lane ? "left" : "right" });
     lane = next;
     lateral.target = laneX(lane);
@@ -242,13 +244,13 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       jump();
     }
     const airborne = time < airborneUntil;
-    lateral.step(dt, RUNNER.laneOmega * (time < slowUntil ? RUNNER.slowFactor : 1));
+    lateral.step(dt, RUNNER.laneOmega * snare.movementFactor(time));
     runner.render(
       {
         x: lateral.value,
         vx: lateral.velocity,
         jump: airborne ? 1 - (airborneUntil - time) / jumpMs() : null,
-        slowed: time < slowUntil,
+        slowed: snare.active(time),
         speed,
       },
       time,
@@ -335,7 +337,10 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           });
           return;
         } else if (ob.spec.effect === "slow") {
-          slowUntil = time + RUNNER.slowMs * relics.slowFactor;
+          const durationMs = RUNNER.slowMs * relics.slowFactor;
+          snare.apply(time, durationMs);
+          lateral.velocity *= RUNNER.slowFactor;
+          events.emit("runner-slowed", { durationMs });
         }
       }
       // Solid obstacles break on contact; surfaces (slow) stay and scroll away.

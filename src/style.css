@@ -2219,3 +2219,163 @@ body {
   background-position: center top;
   image-rendering: pixelated;
 }
+
+/* Run layout: two quiet side columns and a clear central climb. */
+.run-horizon {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 23%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, #e5edfbed 0%, #e5edfb88 38%, #e5edfb00 100%);
+}
+.run-sidebar {
+  position: absolute;
+  top: 7%;
+  width: 21%;
+  display: grid;
+  gap: 0.9cqw;
+  align-content: start;
+  z-index: 4;
+  pointer-events: none;
+}
+.run-left {
+  left: 2.5%;
+}
+.run-right {
+  right: 2.5%;
+}
+#stage.run-active .run-sidebar > * {
+  position: static;
+  inset: auto;
+  transform: none;
+  translate: none;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+  box-shadow: none;
+}
+#stage.run-active .run-sidebar .hud-score,
+#stage.run-active .run-sidebar .hud-level,
+#stage.run-active .run-sidebar .hud-giant,
+#stage.run-active .run-sidebar .hud-jon,
+#stage.run-active .run-sidebar .giant-rotation {
+  padding: 1cqw 1.2cqw;
+  border: 1px solid #d5c9dc44;
+  border-radius: 0.7cqw;
+  background: #25223bd9;
+  color: #f9edce;
+  text-align: left;
+}
+#stage.run-active .run-sidebar .hud-score span {
+  display: block;
+  font-size: 0.8cqw;
+  color: #c7b8d4;
+  letter-spacing: 0.14em;
+  margin: 0 0 0.5cqw;
+}
+#stage.run-active .run-sidebar .hud-score strong {
+  font-size: 3.2cqw;
+  line-height: 1;
+}
+#stage.run-active .run-sidebar .hud-level strong {
+  display: block;
+  font-size: 1.15cqw;
+}
+#stage.run-active .run-sidebar .hud-level > span {
+  float: none;
+  display: block;
+  font-size: 0.95cqw;
+  color: #c9bbd7;
+  margin: 0.5cqw 0 1cqw;
+}
+#stage.run-active .run-sidebar .spell-word {
+  justify-content: flex-start;
+  margin: 0.5cqw 0 0;
+}
+#stage.run-active .run-sidebar .spell-letter {
+  width: 2cqw;
+  height: 2.3cqw;
+  font-size: 1.3cqw;
+  float: none;
+}
+#stage.run-active .run-sidebar .hud-relics {
+  font-size: 0.8cqw;
+  margin-top: 0.7cqw;
+}
+#stage.run-active .run-sidebar h2 {
+  font-size: 1cqw;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+#stage.run-active .run-sidebar .cooldown-label {
+  font-size: 1.1cqw;
+  color: #a8d9ca;
+  margin: 0.6cqw 0 0;
+}
+#stage.run-active .run-sidebar .hud-discovery {
+  text-align: left;
+  border-color: #e2ca89;
+  padding: 0.9cqw;
+  background: #3e354fe8;
+}
+#stage.run-active .run-sidebar .hud-discovery span {
+  float: none;
+}
+#stage.run-active .run-sidebar .hud-feedback {
+  font-size: 0.95cqw;
+  padding: 0.8cqw;
+  border-radius: 0.5cqw;
+  border-width: 1px;
+}
+#stage.run-active .run-sidebar .hud-jon {
+  display: none;
+}
+#stage.run-active .run-sidebar .hud-jon:has(.powerup-badge),
+#stage.run-active .run-sidebar .hud-jon:has(.hud-snare:not([hidden])) {
+  display: block;
+}
+#stage.run-active .run-sidebar .hud-jon > h2 {
+  display: none;
+}
+#stage.run-active .run-sidebar .hud-snare {
+  color: #ffd294;
+  font-size: 1.1cqw;
+  font-weight: bold;
+  margin: 0.5cqw 0;
+}
+#stage.run-active #pause-toggle,
+#stage.run-active #banner,
+#stage.run-active .facecam-header {
+  display: none !important;
+}
+#stage.run-active .run-sidebar .ai-status {
+  background: none;
+  border: none;
+  color: #b1dacc;
+  padding: 0.3cqw;
+  font-size: 0.85cqw;
+}
+#stage.run-active .run-sidebar .giant-rotation h3 {
+  font-size: 0.8cqw;
+  letter-spacing: 0.12em;
+  color: #c7b8d4;
+}
+#stage.run-active .run-sidebar .giant-rotation li {
+  padding: 0.7cqw;
+  border-radius: 0.4cqw;
+}
+#stage.run-active .run-sidebar .giant-rotation strong {
+  font-size: 1.1cqw;
+}
+#stage.run-active .run-sidebar .giant-rotation small {
+  font-size: 0.75cqw;
+}
+#stage.run-active #facecam,
+#stage.run-active #facecam.expanded {
+  left: 2.5%;
+  width: 21%;
+  max-width: none;
+  bottom: 5%;
+}

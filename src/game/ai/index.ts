@@ -19,6 +19,7 @@ export function installAi(scene: Phaser.Scene, world: World): void {
   const { difficulty } = getMatch(),
     profile = DIFFICULTY[difficulty];
   const badge = mountShell(scene, "ai-status");
+  document.querySelector(".story-hud .run-right")?.prepend(badge);
   badge.textContent = `AI ${role === "runner" ? "Jon" : "Giant"} · ${difficulty} · connecting`;
   let tactics = { ...DEFAULT_TACTICS },
     nextThink = -1,

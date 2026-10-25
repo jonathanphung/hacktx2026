@@ -5,6 +5,7 @@ import { installHud } from "../shell/hud";
 import { installRunner } from "./runner";
 import { preloadRunnerAssets } from "./runner/view";
 import { installSaboteur } from "./saboteur";
+import { installCombatPreview } from "../shell/combat-preview";
 import { installAi } from "./ai";
 
 /**
@@ -27,6 +28,8 @@ export class GameScene extends Phaser.Scene {
     installHud(this, events);
     installAi(this, world);
     installSaboteur(this, world);
+    if (import.meta.env.DEV && new URLSearchParams(location.search).has("combat-preview"))
+      installCombatPreview(this, world);
 
     // Dev-only handle so agents/devtools can drive and inspect a run, e.g.
     // __game.world.spawnObstacle({ kind: "test", lane: 1, jumpable: false, effect: "end-run" })

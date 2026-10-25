@@ -28,6 +28,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   let aimLane: Lane = 1;
   let now = -1;
   let nextFire = 0;
+  let cooldownFactor = 1;
   let over = false;
   const pending: {
     id: string;
@@ -101,14 +102,17 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   const cast = (lane: Lane) => {
     const id = inventory.take(now);
     if (!id) return;
-    nextFire = now + 1700;
+    nextFire = now + 1700 * cooldownFactor;
     glow.setAlpha(GLOW_LOCK_ALPHA);
     scene.tweens.add({ targets: glow, alpha: GLOW_ALPHA, duration: 300 });
     publish("cast-result", {
       accepted: true,
       attackId: id,
       lane,
-      remainingMs: Math.max(1700, inventory.cards.length ? 0 : inventory.wait(now)),
+      remainingMs: Math.max(
+        1700 * cooldownFactor,
+        inventory.cards.length ? 0 : inventory.wait(now),
+      ),
     });
     const warning = scene.add.rectangle(
       world.laneX(lane),
@@ -129,6 +133,18 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     pending.push({ id, lane: lane, landsAt: now + SABOTEUR.warningMs, warning, hand });
   };
   let bufferedFire: Lane | null = null;
+  untilShutdown(
+    scene,
+    world.events.on("powerup", ({ kind, active }) => {
+      if (kind !== "giant-slow" || over) return;
+      const factor = active ? 1.25 : 1;
+      if (factor === cooldownFactor) return;
+      nextFire = now + (Math.max(0, nextFire - now) * factor) / cooldownFactor;
+      inventory.setCooldownFactor(now, factor);
+      cooldownFactor = factor;
+      announce();
+    }),
+  );
 
   untilShutdown(
     scene,

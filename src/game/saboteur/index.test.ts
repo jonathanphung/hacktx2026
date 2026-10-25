@@ -359,3 +359,29 @@ it("casts in the displayed rotation over a full lap and ignores blocked extra fi
     events.emit("shutdown", undefined);
   }
 });
+
+it("Giant Slow extends the actual pending refill by 25% and restores normal timing on expiry", () => {
+  const { events, world, fire } = setup();
+  const results: GameEvents["cast-result"][] = [];
+  world.events.on("cast-result", (result) => results.push(result));
+  try {
+    events.emit("update", 1000);
+    fire();
+    events.emit("update", 2000);
+    world.events.emit("powerup", { kind: "giant-slow", active: true, durationMs: 8000 });
+    world.events.emit("powerup", { kind: "giant-slow", active: true, durationMs: 8000 });
+    events.emit("update", 4000);
+    fire();
+    expect(results.at(-1)).toMatchObject({ accepted: false, remainingMs: 500 });
+    events.emit("update", 4500);
+    fire();
+    expect(results.at(-1)).toMatchObject({ accepted: true, remainingMs: 3750 });
+    events.emit("update", 5000);
+    world.events.emit("powerup", { kind: "giant-slow", active: false, durationMs: 0 });
+    events.emit("update", 7600);
+    fire();
+    expect(results.at(-1)).toMatchObject({ accepted: true, remainingMs: 3000 });
+  } finally {
+    events.emit("shutdown", undefined);
+  }
+});

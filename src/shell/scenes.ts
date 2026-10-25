@@ -100,6 +100,10 @@ export class TitleScene extends Phaser.Scene {
       <p class="start-hint">Click to begin, press Enter, or move either player’s hand · Esc pauses during play</p>
       <p class="camera-hint">Share one webcam. Keep one hand visible in your half.</p>`;
     screen.append(content);
+    if (import.meta.env.DEV && new URLSearchParams(location.search).has("combat-preview")) {
+      this.time.delayedCall(0, () => this.scene.start("game"));
+      return;
+    }
     const mode = content.querySelector<HTMLSelectElement>('[aria-label="Play mode"]')!;
     const difficulty = content.querySelector<HTMLSelectElement>('[aria-label="AI difficulty"]')!;
     mode.value = getMatch().mode;

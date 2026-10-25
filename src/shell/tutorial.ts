@@ -12,7 +12,7 @@ import { createGiantHand } from "../game/saboteur/giant-hand";
 import { onMenuMotion } from "./menu-motion";
 import { mountShell } from "./presentation";
 import { installPause } from "./pause";
-import { POWERUP_GUIDE } from "./game-guide";
+import { POWERUP_GUIDE, powerupIcon } from "./game-guide";
 
 const LESSONS = [
   [
@@ -36,7 +36,7 @@ const LESSONS = [
   [
     "JON · POWER-UPS",
     "Collect the shield",
-    "Move onto the glowing pickup’s stem. Shields block one hit; hourglasses slow time; ½ slows the points drain.",
+    "Move onto the glowing pickup’s stem. Shields block one hit; hourglasses slow time; ½ slows the points drain; Blast clears threats; Giant Slow delays casts.",
     "Pickups have bright halos and names",
   ],
   [
@@ -54,7 +54,7 @@ const LESSONS = [
   [
     "GIANT · PLAN AHEAD",
     "Drop the next object in rotation",
-    "Barrier → Hurdle → Oil → Mud → Fireball, then repeat. Your next drop is a Hurdle. Aim, then close your fist again.",
+    "Barrier → Rolling Log → Oil → Mud → Fireball, then repeat. Your next drop is a Rolling Log. Aim, then close your fist again.",
     "Open your palm between fists · Space also works",
   ],
   [
@@ -106,7 +106,7 @@ export class TutorialScene extends Phaser.Scene {
       <aside class="practice-guide"><h2>READ THE MAGIC</h2><p class="jump-key">↑ JUMP · low logs, thorns, oil, sap</p><p class="dodge-key">↔ DODGE · walls, rocks, mud, fireballs</p>${Object.values(
         POWERUP_GUIDE,
       )
-        .map((p) => `<p><b>${p.symbol} ${p.name}</b><br>${p.effect}</p>`)
+        .map((p) => `<p><b>${powerupIcon(p)} ${p.name}</b><br>${p.effect}</p>`)
         .join("")}</aside>
       <button class="practice-skip" type="button">Skip practice → story</button>`;
     const feedback = ui.querySelector<HTMLElement>(".practice-feedback")!;
@@ -208,8 +208,8 @@ export class TutorialScene extends Phaser.Scene {
                   waiting = false;
                   complete(
                     lesson === 5
-                      ? "Barrier dropped. Next in rotation: Hurdle."
-                      : "Hurdle dropped. Oil is next; the preview lets you plan.",
+                      ? "Barrier dropped. Next in rotation: Rolling Log."
+                      : "Rolling Log dropped. Oil is next; the preview lets you plan.",
                   );
                 },
               });

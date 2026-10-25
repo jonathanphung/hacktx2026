@@ -4,7 +4,7 @@
 
 ## Play
 
-[**Play Jon and the Beanstalk in your browser**](https://jonathanphung.github.io/jonandthebeanstalk/)
+[**Play Jon and the Beanstalk in your browser**](https://www.jonandthebeanstalk.tech/)
 
 Grab a friend, stand in front of one laptop webcam, and allow camera access. No extra controllers needed. The in-game tutorial walks you through the gestures.
 
@@ -15,7 +15,7 @@ Grab a friend, stand in front of one laptop webcam, and allow camera access. No 
 
 Playing alone? Choose AI Jon or an AI Giant on Easy, Normal, or Hard difficulty.
 
-No webcam? [Play with the keyboard](https://jonathanphung.github.io/jonandthebeanstalk/?novision): **A / D** to move Jon, **W** to jump, **J / K / L** to aim as the Giant, and **Space** to drop an obstacle. **Esc** pauses the game.
+No webcam? [Play with the keyboard](https://www.jonandthebeanstalk.tech/?novision): **A / D** to move Jon, **W** to jump, **J / K / L** to aim as the Giant, and **Enter** to drop an obstacle. **Esc** pauses the game.
 
 ## The story
 

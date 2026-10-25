@@ -22,6 +22,8 @@ export interface StageTuning {
   sky: readonly [number, number, number, number];
   /** Tint multiplied over the beanstalk stems (0xffffff = unchanged). */
   stemTint: number;
+  /** Optional stage-specific beanstalk texture. */
+  stemTexture?: string;
 }
 
 export const STAGE_TUNING: Record<StageId, StageTuning> = {
@@ -41,7 +43,8 @@ export const STAGE_TUNING: Record<StageId, StageTuning> = {
     doubleChance: 0.25,
     mix: { thorns: 0.35, rock: 0.25, sap: 0.4 },
     sky: [0x5b3c88, 0x2f8f9d, 0xf2a7c3, 0xffd6e8],
-    stemTint: 0xffd6f5,
+    stemTint: 0xffffff,
+    stemTexture: "beanstalk-alice",
   },
   // Cinderella: midnight blue and silver at the ball.
   cinderella: {

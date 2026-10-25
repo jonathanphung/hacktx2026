@@ -32,10 +32,18 @@ export class MenuMotion {
 }
 
 const listeners = new Set<{ motion: MenuMotion; start: () => void }>();
+const frameListeners = new Set<(frame: HandFrame) => void>();
+export function onStoryFrame(fn: (frame: HandFrame) => void): () => void {
+  frameListeners.add(fn);
+  return () => {
+    frameListeners.delete(fn);
+  };
+}
 let stopVision: (() => void) | undefined;
 export function installMenuMotion(vision: Pick<VisionHandle, "onFrame">): () => void {
   stopVision?.();
   const stop = vision.onFrame((frame) => {
+    for (const fn of [...frameListeners]) fn(frame);
     for (const entry of [...listeners]) if (entry.motion.push(frame)) entry.start();
   });
   stopVision = stop;

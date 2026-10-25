@@ -1,3 +1,4 @@
+import { pixelTowerArt } from "./pixel-story";
 import { STAGES, STORY_LETTERS } from "../shared/stages";
 
 export interface StoryBeat {
@@ -101,9 +102,7 @@ export const letterMarkup = (count: number) =>
 export const taleLabel = (index: number) => STAGES[index].name;
 export const acceptsMessage = (value: string) => value.trim().toUpperCase() === STORY_LETTERS;
 
-export function towerArt(freed = false): string {
-  return `<svg viewBox="0 0 800 260" aria-hidden="true"><rect width="800" height="260" fill="#252040"/><circle cx="560" cy="60" r="40" fill="#e8d8b5"/><path d="M0 235q140-60 270 0t270 0 270 0v25H0" fill="#67567d"/><path d="M300 260V65h25V45h30v20h30V45h30v20h30V45h30v20h25v195" fill="#8b7b9f" stroke="#b9a6c7" stroke-width="4"/><path d="M345 180v-62q55-70 110 0v62z" fill="#231d38"/><g class="claude-companion"><path d="m369 160 6-29q25-20 50 0l6 29z" fill="#db9c78"/><path d="m375 132-3-22 20 13m14 0 21-13-3 24" fill="#db9c78"/><circle cx="389" cy="141" r="3" fill="#2c233b"/><circle cx="411" cy="141" r="3" fill="#2c233b"/><path d="M382 158h36l-4 10h-28z" fill="#b4e5d3"/><path d="m410 166 11 23" stroke="#b4e5d3" stroke-width="8"/></g><g class="cell-bars${freed ? " cell-open" : ""}" stroke="#d7c8e4" stroke-width="6"><path d="M355 105v75m23-90v90m23-95v95m23-90v90m23-75v75m-96-26h102"/></g><path d="M365 260v-37q35-45 70 0v37" fill="#463452"/><path d="M210 270q95-100 30-230" stroke="#8cb98a" stroke-width="14" fill="none"/><g class="story-sparks" fill="#ffeab5"><circle cx="160" cy="100" r="4"/><circle cx="620" cy="160" r="5"/></g></svg>`;
-}
+export const towerArt = pixelTowerArt;
 
 const objects = [
   `<path d="M230 215v-50h340v50" fill="#9b6580"/><path d="M230 190h340m-270-25v25m110-25v25m110-25v25m-160 0v25m110-25v25" stroke="#dba6a3" stroke-width="3"/><ellipse cx="400" cy="122" rx="37" ry="49" fill="#fff1d5"/><path d="m385 111 9-8m15 8 9-8m-32 32q14 14 28-2" fill="none" stroke="#724754" stroke-width="4"/>`,

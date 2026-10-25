@@ -2,60 +2,75 @@ import type Phaser from "phaser";
 import { untilShutdown } from "../shared/emitter";
 import { playCue } from "./audio";
 import { mountShell } from "./presentation";
-import { acceptsMessage, letterMarkup, towerArt } from "./story";
+import { letterMarkup, towerArt } from "./story";
+import { onStoryFrame } from "./menu-motion";
+import { StoryPalmHold } from "./story-controls";
 
-/** Reaching the tower is not victory: the collected message must open the cell. */
+/** The six earned clues form the spell; holding either palm casts it without typing. */
 export function unlockCell(scene: Phaser.Scene, onUnlocked: () => void): void {
-  const screen = mountShell(scene, "tale-cutscene rescue-lock");
+  const screen = mountShell(scene, "tale-cutscene rescue-lock pixel-rescue");
   screen.setAttribute("role", "dialog");
   screen.setAttribute("aria-modal", "true");
   screen.setAttribute("aria-label", "Claude's tower cell");
-  screen.innerHTML = `<div class="tale-frame"><div class="tale-art">${towerArt()}</div><div class="tale-copy"><p class="tale-kicker">THE TOP OF THE TOWER</p><h1>Claude is on the other side.</h1><p class="tale-dialogue">Xen’s badge reveals the final letter: X. Six clues, in the order you found them. Speak their message to break the lock.</p><div class="spell-word" aria-label="Your collected clues">${letterMarkup(6)}</div><form class="rescue-form"><label for="cell-message">Enter the hidden message</label><div><input id="cell-message" name="message" type="text" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="cell-feedback" required/><button class="story-button" type="submit">Unlock the cell</button></div><p id="cell-feedback" role="status" aria-live="polite">Claude: “Jon? Is that you?”</p></form></div></div>`;
-  const form = screen.querySelector<HTMLFormElement>("form")!;
-  const input = screen.querySelector<HTMLInputElement>("input")!;
+  screen.innerHTML = `<div class="tale-frame"><div class="tale-art">${towerArt()}</div><div class="tale-copy"><p class="tale-kicker">SIX CLUES · ONE PROMISE</p><h1>Bring Claude home.</h1><p class="tale-dialogue">Your treasures spell the message that opens this cell. Hold an open palm toward the camera to cast it.</p><div class="spell-word" aria-label="Your collected clues">${letterMarkup(6)}</div><div class="rescue-cast"><progress max="1" value="0" aria-label="Open palm spell charge"></progress><p class="rescue-feedback" role="status" aria-live="polite">Either player · Open hand · Hold for one second</p><button class="story-button" type="button">Cast the collected spell</button><small>No camera? Click to cast. No typing needed.</small></div></div></div>`;
   const button = screen.querySelector<HTMLButtonElement>("button")!;
-  const feedback = screen.querySelector<HTMLElement>("#cell-feedback")!;
-  let unlocked = false;
+  const feedback = screen.querySelector<HTMLElement>(".rescue-feedback")!;
+  const progress = screen.querySelector<HTMLProgressElement>("progress")!;
+  const hold = new StoryPalmHold();
+  let unlocked = false,
+    disposed = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    if (unlocked) return;
-    if (!acceptsMessage(input.value)) {
-      input.setAttribute("aria-invalid", "true");
-      feedback.textContent =
-        "The lock flickers, but holds. Read your six clues from left to right and try again.";
-      playCue("blocked");
-      input.focus();
-      input.select();
-      return;
-    }
+  let offFrames = () => {};
+  const cleanup = () => {
+    disposed = true;
+    offFrames();
+    window.removeEventListener("keydown", onKey, true);
+    clearTimeout(timer);
+  };
+  const cast = () => {
+    if (unlocked || disposed) return;
     unlocked = true;
-    input.removeAttribute("aria-invalid");
-    input.disabled = button.disabled = true;
+    offFrames();
+    button.disabled = true;
+    progress.value = 1;
     screen.classList.add("rescue-unlocked");
     screen.querySelector(".tale-art")!.innerHTML = towerArt(true);
-    feedback.textContent = "The message shines. The bars rise. Claude is free!";
+    feedback.textContent = "The spell takes hold. Claude is free!";
     playCue("victory");
     timer = setTimeout(() => {
-      window.removeEventListener("keydown", onKey, true);
+      cleanup();
       screen.remove();
       onUnlocked();
-    }, 1800);
+    }, 1600);
+  };
+  const armAt = performance.now() + 900;
+  offFrames = onStoryFrame((frame) => {
+    if (unlocked || disposed || performance.now() < armAt) return;
+    const result = hold.push(frame);
+    progress.value = result.progress;
+    screen.querySelectorAll<HTMLElement>(".spell-letter").forEach((letter, i) => {
+      letter.classList.toggle("spell-charging", result.progress >= (i + 1) / 6);
+    });
+    // Announce state changes rather than every inference frame.
+    const text =
+      result.progress > 0
+        ? "Keep your palm open…"
+        : "Either player · Open hand · Hold for one second";
+    if (feedback.textContent !== text) feedback.textContent = text;
+    if (result.complete) cast();
   });
   const onKey = (event: KeyboardEvent) => {
+    if (event.code === "Tab") {
+      event.preventDefault();
+      button.focus();
+    }
     if (event.code === "Escape") {
       event.preventDefault();
       event.stopImmediatePropagation();
     }
-    if (event.code === "Tab") {
-      event.preventDefault();
-      (document.activeElement === input ? button : input).focus();
-    }
   };
   window.addEventListener("keydown", onKey, true);
-  untilShutdown(scene, () => {
-    clearTimeout(timer);
-    window.removeEventListener("keydown", onKey, true);
-  });
-  input.focus();
+  button.addEventListener("click", cast);
+  button.focus();
+  untilShutdown(scene, cleanup);
 }

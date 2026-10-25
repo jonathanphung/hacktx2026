@@ -1,3 +1,4 @@
+import { onStoryAdvance } from "./story-controls";
 import { playCue, pauseMusic } from "./audio";
 import type Phaser from "phaser";
 import { untilShutdown } from "../shared/emitter";
@@ -43,7 +44,7 @@ export function installPause(scene: Phaser.Scene): void {
   heading.id = "pause-title";
   heading.textContent = "A moment among the clouds";
   const description = document.createElement("p");
-  description.textContent = "Game paused. Jon and the giant can catch their breath.";
+  description.textContent = "Wave either hand to resume, or use the Resume button.";
   const resume = document.createElement("button");
   resume.type = "button";
   resume.textContent = "Resume · Esc";
@@ -61,15 +62,17 @@ export function installPause(scene: Phaser.Scene): void {
   };
   let countdown: ReturnType<typeof setTimeout> | undefined;
   let counting = false;
+  let stopResumeMotion = () => {};
   const resetCountdown = () => {
     clearTimeout(countdown);
     counting = false;
     resume.disabled = false;
     resume.textContent = "Resume · Esc";
     heading.textContent = "A moment among the clouds";
-    description.textContent = "Game paused. Jon and the giant can catch their breath.";
+    description.textContent = "Wave either hand to resume, or use the Resume button.";
   };
   const beginResume = () => {
+    stopResumeMotion();
     counting = true;
     resume.disabled = true;
     let seconds = 3;
@@ -102,6 +105,9 @@ export function installPause(scene: Phaser.Scene): void {
     if (ended || storyActive) return;
     if (counting) {
       resetCountdown();
+      stopResumeMotion = onStoryAdvance(() => {
+        if (paused && !counting) beginResume();
+      });
       return;
     }
     if (paused) {
@@ -109,6 +115,9 @@ export function installPause(scene: Phaser.Scene): void {
       return;
     }
     paused = true;
+    stopResumeMotion = onStoryAdvance(() => {
+      if (paused && !counting) beginResume();
+    });
     pauseMusic(true);
     playCue("pause");
     overlay.hidden = false;
@@ -136,6 +145,7 @@ export function installPause(scene: Phaser.Scene): void {
     trigger.hidden = active;
     pauseMusic(active);
     if (active) {
+      stopResumeMotion();
       clock.pause(scene.game.loop.time);
       scene.scene.pause();
     } else {
@@ -145,6 +155,7 @@ export function installPause(scene: Phaser.Scene): void {
   };
   scene.events.on("shell-story-pause", storyPause);
   untilShutdown(scene, () => {
+    stopResumeMotion();
     resetCountdown();
     scene.events.off("shell-story-pause", storyPause);
     scene.events.emit = emit;
@@ -154,6 +165,7 @@ export function installPause(scene: Phaser.Scene): void {
   });
   // Prevent pausing the short transition after a fatal collision.
   scene.events.once("shell-run-ended", () => {
+    stopResumeMotion();
     resetCountdown();
     ended = true;
     trigger.disabled = true;

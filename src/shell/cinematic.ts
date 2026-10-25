@@ -290,7 +290,7 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
       return;
     }
     if (event.repeat) return;
-    if (["Escape", "Enter", "Space"].includes(event.code)) {
+    if (["Escape", "Enter"].includes(event.code)) {
       event.preventDefault();
       event.stopImmediatePropagation();
       if (event.code === "Escape") finish();

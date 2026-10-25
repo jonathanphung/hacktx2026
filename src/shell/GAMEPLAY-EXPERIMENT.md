@@ -3,7 +3,7 @@
 A review branch for playtesting onboarding and visual changes together.
 
 - Start normally and choose **Learn to play · practice grove**. Webcam events or
-  A/D/W and J/K/L/Space work. Practice is a separate scene with safe retries, no
+  A/D/W and J/K/L/Enter work. Practice is a separate scene with safe retries, no
   lives or score loss. Learn dodging, a timed jump, a shield pickup, giant aiming,
   casting a Barrier and then the next object (a Hurdle). Practice can be skipped;
   either route continues into the existing story cinematic.

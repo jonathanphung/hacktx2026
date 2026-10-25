@@ -49,13 +49,13 @@ const LESSONS = [
     "GIANT · CAST",
     "Close your fist to drop",
     "Aim at any stem, then make a fist. The hand winds up before the obstacle drops.",
-    "Space also works",
+    "Enter also works",
   ],
   [
     "GIANT · PLAN AHEAD",
     "Drop the next object in rotation",
     "Barrier → Rolling Log → Oil → Mud → Fireball, then repeat. Your next drop is a Rolling Log. Aim, then close your fist again.",
-    "Open your palm between fists · Space also works",
+    "Open your palm between fists · Enter also works",
   ],
   [
     "BOTH PLAYERS · READY",

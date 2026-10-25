@@ -29,7 +29,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
     <div class="hud-feedback" role="status"></div><aside class="hud-discovery" role="status" hidden><strong></strong><span></span></aside>
     <section class="hud-jon"><div class="hud-powerups"></div><p class="hud-snare" hidden></p><h2>JON</h2><small>Swipe / A / D: dodge · Up / W: jump</small><p class="obstacle-legend"><span>↑ JUMP: low obstacles</span><span>↔ DODGE: tall / blocked</span></p></section>
-    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><p class="giant-debuff" hidden>COOLDOWN ×1.25</p><div class="hud-cards"></div><small>J/K/L: aim · Space: drop</small></section>`;
+    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><p class="giant-debuff" hidden>COOLDOWN ×1.25</p><div class="hud-cards"></div><small>J/K/L: aim · Enter: drop</small></section>`;
   const left = document.createElement("div"),
     right = document.createElement("div");
   left.className = "run-sidebar run-left";

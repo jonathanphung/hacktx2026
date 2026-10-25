@@ -2,7 +2,7 @@ import { inputBus, type InputEvent } from "../shared/input";
 
 /**
  * Keyboard controls that produce the same events as gestures, so everyone can build and test
- * without a webcam. Runner: A / D / W. Saboteur: J / K / L aim, Space drops the random obstacle.
+ * without a webcam. Runner: A / D / W. Saboteur: J / K / L aim, Enter drops the random obstacle.
  */
 const KEYS: Record<string, InputEvent> = {
   KeyA: { player: "runner", action: "left" },
@@ -11,7 +11,7 @@ const KEYS: Record<string, InputEvent> = {
   KeyJ: { player: "saboteur", action: "aim", lane: 0 },
   KeyK: { player: "saboteur", action: "aim", lane: 1 },
   KeyL: { player: "saboteur", action: "aim", lane: 2 },
-  Space: { player: "saboteur", action: "fire" },
+  Enter: { player: "saboteur", action: "fire" },
 };
 
 export function installKeyboard(): void {

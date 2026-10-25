@@ -789,6 +789,7 @@ body {
   position: absolute;
   top: 9%;
   width: 24%;
+  box-sizing: border-box;
   max-width: none;
   border: 2px solid #ffffff55;
   border-radius: 8px;
@@ -2405,11 +2406,20 @@ body {
 #stage.run-active:has(#facecam:not([hidden])) .run-sidebar {
   top: 48%;
   bottom: 3%;
-  width: 27%;
+  width: 24%;
   gap: 0.5cqw;
   overflow-y: auto;
   scrollbar-width: thin;
   pointer-events: auto;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-left {
+  left: 1%;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-right {
+  right: 1%;
+}
+#stage.run-active:has(#facecam.expanded:not([hidden])) .run-sidebar {
+  width: 26%;
 }
 #stage.run-active:has(#facecam:not([hidden])) .run-sidebar .hud-score strong {
   font-size: 2cqw;

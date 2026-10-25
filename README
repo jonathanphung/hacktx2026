@@ -446,3 +446,7 @@ all nested badges/cards fit their column and long feedback wraps. This keeps
 status, clues and controls outside the three central beanstalk lanes, including
 when split cameras are expanded. Story/pause overlays and scrolling tale gates
 retain their intentional full-screen/on-track presentation.
+
+Camera alignment: camera-mode HUD panels now share the camera's 1% outer inset
+and 24% width (26% expanded). Camera borders use border-box sizing so score,
+tale/clues and feedback align exactly with the video edges without resizing it.

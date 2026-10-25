@@ -6,6 +6,7 @@ import { POWERUP_GUIDE } from "../../shell/game-guide";
 import { RunnerFx } from "./fx";
 import { preloadTrackAssets } from "./track";
 import { jumpHeight } from "./motion";
+import { pickupTexture, preloadPickupAssets } from "./pickup-assets";
 
 const RUN_FRAMES = 16;
 const RUN_VARIANTS = ["", "-left", "-right", "-slow", "-slow-left", "-slow-right"];
@@ -16,6 +17,7 @@ const FIGURE = 48;
 
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   preloadTrackAssets(scene);
+  preloadPickupAssets(scene);
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
   for (const variant of RUN_VARIANTS) {
     scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
@@ -259,32 +261,18 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
   const { color, name } = POWERUP_GUIDE[kind];
   const r = POWERUPS.size / 2;
   const glow = scene.add.circle(0, 0, r + 11, color, 0.25);
-  const coin = scene.add.circle(0, 0, r + 3, 0x201a32).setStrokeStyle(3, color);
-  const icon = scene.add.graphics().lineStyle(3, color).fillStyle(color);
-  if (kind === "shield") {
-    icon
-      .beginPath()
-      .moveTo(-12, -13)
-      .lineTo(12, -13)
-      .lineTo(10, 3)
-      .lineTo(0, 14)
-      .lineTo(-10, 3)
-      .closePath()
-      .strokePath();
-    icon.lineBetween(-5, 0, -1, 5).lineBetween(-1, 5, 7, -5);
-  } else if (kind === "slowmo") {
-    icon.lineBetween(-12, -13, 12, -13).lineBetween(-12, 13, 12, 13);
-    icon.lineBetween(-9, -12, 9, 12).lineBetween(9, -12, -9, 12);
-    icon.fillTriangle(-7, 10, 7, 10, 0, 3);
-  }
-  const multiplier = scene.add
-    .text(0, 0, kind === "double" ? "2×" : "", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "23px",
-      fontStyle: "bold",
-      color: "#9cffb1",
-    })
-    .setOrigin(0.5);
+  const icon = scene.add.image(0, 0, pickupTexture(scene, kind));
+  const scale = POWERUPS.size / Math.max(icon.width, icon.height);
+  icon.setScale(scale);
+  // Float the artwork only so scrolling and collection stay aligned.
+  scene.tweens.add({
+    targets: icon,
+    y: -4,
+    duration: 850,
+    ease: "Sine.easeInOut",
+    yoyo: true,
+    repeat: -1,
+  });
   const label = scene.add
     .text(0, r + 12, name, {
       fontFamily: "Courier New, monospace",
@@ -295,7 +283,7 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
       padding: { x: 6, y: 3 },
     })
     .setOrigin(0.5, 0);
-  const view = scene.add.container(x, y, [glow, coin, icon, multiplier, label]).setDepth(5);
+  const view = scene.add.container(x, y, [glow, icon, label]).setDepth(5);
   scene.tweens.add({
     targets: glow,
     scale: 1.25,
@@ -304,7 +292,7 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
     yoyo: true,
     repeat: -1,
   });
-  view.once("destroy", () => scene.tweens.killTweensOf(glow));
+  view.once("destroy", () => scene.tweens.killTweensOf([glow, icon]));
   return view;
 }
 

@@ -26,7 +26,7 @@ export function addBeanstalks(parent: HTMLElement): void {
     <g fill="#e5b3df"><circle cx="160" cy="260" r="9"/><circle cx="170" cy="250" r="9"/><circle cx="180" cy="260" r="9"/><circle cx="170" cy="270" r="9"/></g><circle fill="#ffdfa0" cx="170" cy="260" r="6"/>
     </svg>`;
   // The pixel-art beanstalk tiles down both edges, behind the clouds and fairies.
-  const tile = `${import.meta.env.BASE_URL}assets/beanstalk/stem-tile.png`;
+  const tile = `${import.meta.env.BASE_URL}assets/beanstalk/player-stem.png`;
   for (const side of ["left", "right"]) {
     const vine = document.createElement("div");
     vine.className = `beanstalk-vine ${side}`;

@@ -2141,3 +2141,81 @@ body {
   font-size: 1.5cqw;
   letter-spacing: 0.12em;
 }
+
+.mode-controls {
+  display: flex;
+  justify-content: center;
+  gap: 1.5cqw;
+  margin: 2.5cqw auto 1cqw;
+}
+.mode-controls label {
+  display: grid;
+  gap: 0.5cqw;
+  text-align: left;
+  color: #635075;
+  font-size: 0.9cqw;
+  font-weight: bold;
+}
+.mode-controls select {
+  padding: 0.9cqw 1.2cqw;
+  min-width: 17cqw;
+  border: 1px solid #9783aa;
+  border-radius: 0.5cqw;
+  background: #fff8e7;
+  color: #43314f;
+  font:
+    1.2cqw "Courier New",
+    monospace;
+}
+.mode-controls [hidden],
+.story-content .role-cards[hidden] {
+  display: none;
+}
+.mode-hint {
+  font-size: 1cqw;
+  line-height: 1.6;
+  margin: 1cqw auto 2cqw;
+  color: #635075;
+}
+.ai-status {
+  position: absolute;
+  left: 2%;
+  top: 9%;
+  z-index: 3;
+  border-radius: 0.5cqw;
+  background: #211b36dc;
+  color: #c9e8d9;
+  padding: 0.5cqw 0.7cqw;
+  font:
+    0.8cqw "Courier New",
+    monospace;
+  pointer-events: none;
+}
+
+/* One attack forecast, one compact control strip; no duplicate inventory cards. */
+.story-hud .hud-giant .hud-cards {
+  display: none;
+}
+.giant-rotation {
+  top: auto;
+  bottom: 13%;
+  right: 1%;
+  width: 21%;
+}
+.giant-rotation p {
+  display: none;
+}
+.story-hud .obstacle-legend {
+  display: none;
+}
+.story-hud[data-mode="giant"] .hud-jon {
+  opacity: 0.8;
+}
+.story-hud[data-mode="jon"] .hud-giant {
+  opacity: 0.8;
+}
+.beanstalk-vine {
+  background-size: 300% auto;
+  background-position: center top;
+  image-rendering: pixelated;
+}

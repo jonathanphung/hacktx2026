@@ -15,20 +15,12 @@ showBanner(
 export function mountWebcamCorners(
   vision: Pick<VisionHandle, "previews"> & Partial<Pick<VisionHandle, "onFrame">>,
 ): void {
-  const statuses = new Map<PlayerId, HTMLElement>();
   const visible = new Map<PlayerId, boolean>();
   for (const player of PLAYERS) {
     const corner = document.getElementById(`cam-${player}`);
     if (!corner) continue;
-    const status = document.createElement("div");
-    status.className = "cam-status";
-    status.setAttribute("role", "status");
-    status.textContent = vision.onFrame
-      ? "Raise one hand in your half"
-      : "Layout preview · Camera off";
-    corner.replaceChildren(vision.previews[player], status);
+    corner.replaceChildren(vision.previews[player]);
     corner.dataset.ready = "false";
-    statuses.set(player, status);
     visible.set(player, false);
   }
   const dock = document.getElementById("facecam");
@@ -43,9 +35,6 @@ export function mountWebcamCorners(
     const detected = !!frame.landmarks?.length;
     if (visible.get(frame.player) === detected) return;
     visible.set(frame.player, detected);
-    const status = statuses.get(frame.player);
-    if (status)
-      status.textContent = detected ? "Hand detected · Ready" : "Hand missing · Raise one hand";
     const corner = document.getElementById(`cam-${frame.player}`);
     if (corner) corner.dataset.ready = String(detected);
     const banner = document.getElementById("banner");

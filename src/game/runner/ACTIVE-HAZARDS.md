@@ -64,9 +64,22 @@ ramp from 4.5 to 1.7 seconds, subject to entrance, story and spawn-safety holds.
 The mixed-wave guard now compares conservative contact-time windows, not just
 whether obstacles are near the top. It prevents a fast fireball closing the last
 escape stem while older slower rocks are still dangerous, and treats frozen
-threats conservatively. Powerups keep their 8-second spawn cadence but draw from
-a shuffled bag: each five-spawn cycle contains Shield, Slow Time, Slow Drain,
-Blast and Giant Slow exactly once. Collection still requires reaching the stem.
+threats conservatively. Powerups start after 5 seconds of active play, then target one drop every 7 seconds
+(previously every 8 seconds: about 14% more drops). Blast and Giant Slow occupy the
+first two slots in random order. Each five-drop cycle still contains Shield, Slow
+Time, Slow Drain, Blast and Giant Slow exactly once, with no identical consecutive
+drops across cycle boundaries. Effects and durations are unchanged.
+
+Drops prefer stems without obstacles in their top 330 pixels. When every stem is
+blocked, retry after 750 ms without consuming a pickup or accumulating catch-up
+drops. Collection still requires reaching the stem. The combat sandbox now uses
+the same automatic pickup schedule; its manual buttons bypass these limits for
+testing. A link opens an ordinary match for balance playtesting.
+
+Same-kind spawns are at least 14 seconds apart; the longest timed effects last
+8 seconds. This prevents immediate same-kind drops, although mixed effects can
+still overlap. Travel and collection timing vary, so human win rates and effect
+uptime still need playtesting.
 
 Simulation tests cover both fast attacks across 30/60/120 fps, all stage speed
 bands and Slow Time, plus the mixed-speed and frozen-triple-lane regressions.

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { POWERUPS } from "./config";
-import { PowerupState, PowerupBag, POWERUP_KINDS } from "./powerups";
+import {
+  PowerupState,
+  PowerupBag,
+  PowerupDrops,
+  POWERUP_DURATION,
+  POWERUP_KINDS,
+} from "./powerups";
 
 describe("PowerupState", () => {
   it("is active for its duration, then expires once", () => {
@@ -70,4 +76,62 @@ it("spawns every pickup once per five-drop cycle even with extreme random values
       expect([...kinds].sort()).toEqual([...POWERUP_KINDS].sort());
     }
   }
+});
+
+describe("bounded pickup frequency", () => {
+  it("introduces Blast and Giant Slow first, then avoids consecutive repeats across cycles", () => {
+    for (const rng of [() => 0, () => 0.2, () => 0.999999]) {
+      const bag = new PowerupBag(rng);
+      const drops = Array.from({ length: 200 }, () => bag.next());
+      expect(drops.slice(0, 2).sort()).toEqual(["blast", "giant-slow"]);
+      for (let i = 1; i < drops.length; i++) expect(drops[i]).not.toBe(drops[i - 1]);
+    }
+  });
+
+  it("starts five seconds into play and targets seven seconds between drops", () => {
+    const drops = new PowerupDrops(() => 0);
+    expect(drops.next(1000, [])).toBeNull();
+    expect(drops.next(5999, [])).toBeNull();
+    expect(drops.next(6000, [])).not.toBeNull();
+    expect(drops.next(12999, [])).toBeNull();
+    expect(drops.next(13000, [])).not.toBeNull();
+  });
+
+  it("retries blocked lanes without consuming the opening pickups", () => {
+    const drops = new PowerupDrops(() => 0);
+    drops.next(0, []);
+    expect(
+      drops.next(5000, [
+        { lane: 0, y: 100 },
+        { lane: 1, y: 100 },
+        { lane: 2, y: 100 },
+      ]),
+    ).toBeNull();
+    expect(drops.next(5749, [])).toBeNull();
+    const first = drops.next(5750, [
+      { lane: 0, y: 100 },
+      { lane: 1, y: 100 },
+    ]);
+    expect(first?.lane).toBe(2);
+    const second = drops.next(12750, []);
+    expect([first?.kind, second?.kind].sort()).toEqual(["blast", "giant-slow"]);
+  });
+
+  it("never releases catch-up bursts after a delayed frame", () => {
+    const drops = new PowerupDrops(() => 0);
+    drops.next(0, []);
+    expect(drops.next(90000, [])).not.toBeNull();
+    expect(drops.next(90000, [])).toBeNull();
+    expect(drops.next(90016, [])).toBeNull();
+    expect(drops.next(96999, [])).toBeNull();
+    expect(drops.next(97000, [])).not.toBeNull();
+  });
+
+  it("keeps every timed effect shorter than the earliest same-kind repeat", () => {
+    // No consecutive identical drops means at least two seven-second intervals.
+    const earliestRepeat = 2 * POWERUPS.everyMs;
+    expect(Math.max(...Object.values(POWERUP_DURATION))).toBeLessThan(earliestRepeat);
+    expect(earliestRepeat - POWERUPS.shieldMs).toBeGreaterThanOrEqual(6000);
+    expect(earliestRepeat - POWERUPS.giantSlowMs).toBeGreaterThanOrEqual(6000);
+  });
 });

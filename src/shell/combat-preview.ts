@@ -8,7 +8,13 @@ import { SABOTEUR } from "../game/saboteur/config";
 /** Local review controls use real spawns and pickups. This installer is stripped from production. */
 export function installCombatPreview(scene: Phaser.Scene, world: World) {
   const panel = mountShell(scene, "combat-preview");
-  panel.innerHTML = `<strong>COMBAT PLAYTEST · UNLIMITED TRIES</strong><span>Hands or A/D/W to move. Pickups appear on your current stem.</span><div><button data-attack="fireball">Launch fireball</button><button data-attack="hurdle">Roll log</button><button data-attack="barrier">Place wall</button><button data-pickup="blast">✹ Blast pickup</button><button data-pickup="giant-slow">◷ Giant Slow pickup</button><button data-pickup="slowmo">⌛ Time Slow pickup</button></div>`;
+  panel.innerHTML = `<strong>COMBAT PLAYTEST · UNLIMITED TRIES</strong><span>Automatic pickups use normal timing. Manual buttons bypass drop limits.</span><div><button data-attack="fireball">Launch fireball</button><button data-attack="hurdle">Roll log</button><button data-attack="barrier">Place wall</button><button data-pickup="blast">✹ Blast pickup</button><button data-pickup="giant-slow">◷ Giant Slow pickup</button><button data-pickup="slowmo">⌛ Time Slow pickup</button></div>`;
+  const normal = document.createElement("a");
+  const url = new URL(location.href);
+  url.searchParams.delete("combat-preview");
+  normal.href = url.href;
+  normal.textContent = "Play normal match →";
+  panel.append(normal);
   let busy = false;
   panel.querySelectorAll<HTMLButtonElement>("[data-attack]").forEach((button) =>
     button.addEventListener("click", () => {

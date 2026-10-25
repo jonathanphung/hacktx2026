@@ -42,9 +42,11 @@ export const RUNNER = {
   blockGraceMs: 400,
 };
 
-/** Powerup tuning. One random powerup spawns in a random lane every `everyMs`. */
+/** Pickups start early, then keep a bounded cadence and prefer clear lanes. */
 export const POWERUPS = {
-  everyMs: 8000,
+  firstMs: 5000,
+  everyMs: 7000,
+  retryMs: 750,
   size: 44,
   /** Shield lasts until it absorbs a hit, or this long. */
   shieldMs: 8000,

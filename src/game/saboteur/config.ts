@@ -1,6 +1,7 @@
+import { GIANT_WINDUP_MS } from "../../shared/combat";
 export const SABOTEUR = {
-  warningMs: 400,
-  fireCooldownMs: 4000,
+  warningMs: GIANT_WINDUP_MS,
+  fireCooldownMs: 3000,
   /** A fire this close to the cooldown ending is held and cast the moment it ends. */
   fireBufferMs: 300,
 };

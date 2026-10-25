@@ -1,3 +1,4 @@
+import { GIANT_RELEASE_Y } from "../../shared/combat";
 import type Phaser from "phaser";
 import { untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
@@ -18,7 +19,7 @@ const GLOW_LOCK_ALPHA = 0.4;
 const GLOW_EASE_MS = 40;
 const MARKER_EASE_MS = 70;
 
-/** Player 2: aims the next obstacle in a repeating rotation and drops it every four seconds into the runner's world. */
+/** Player 2: aims the next obstacle in a repeating rotation and drops it every three seconds into the runner's world. */
 export function installSaboteur(scene: Phaser.Scene, world: World): void {
   const rotation = new AttackRotation();
   const inventory = new GiantInventory(() => rotation.next());
@@ -87,7 +88,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     .setDepth(8);
 
   const announce = () => {
-    preview(inventory.cards, rotation.peek(4));
+    preview(inventory.cards, rotation.peek(1));
     world.events.emit("hand-changed", {
       hand: [...inventory.cards],
       selected: 0,
@@ -110,7 +111,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     });
     const warning = scene.add.rectangle(
       world.laneX(lane),
-      40,
+      GIANT_RELEASE_Y,
       80,
       80,
       ATTACK_BY_ID.get(id)!.color,

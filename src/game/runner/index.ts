@@ -14,6 +14,7 @@ import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
 import { RelicPowers } from "./relics";
+import { absorbProtection } from "./protection";
 import { hasEscapeLane } from "./spawn-safety";
 import { finishFireballs } from "./projectiles";
 import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
@@ -233,16 +234,13 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     powerups.expire(time).forEach(endPowerup);
     runner.setShield(powerups.isActive("shield", time) || relics.wardReady(time));
     const inStage = stages.secInStage(time);
-    speed =
-      stageSpeed(stages.stage.id, inStage) *
-      (time < slowUntil ? RUNNER.slowFactor : 1) *
-      powerups.speedFactor(time);
+    speed = stageSpeed(stages.stage.id, inStage) * powerups.speedFactor(time);
     if (jumpQueued && time >= airborneUntil) {
       jumpQueued = false;
       jump();
     }
     const airborne = time < airborneUntil;
-    lateral.step(dt);
+    lateral.step(dt, RUNNER.laneOmega * (time < slowUntil ? RUNNER.slowFactor : 1));
     runner.render(
       {
         x: lateral.value,
@@ -320,13 +318,11 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         });
         if (time < safeUntil) {
           // A blocked hit cannot immediately chain into another fatal collision.
-        } else if (powerups.absorbHit(time)) {
-          endPowerup("shield");
+        } else if (powerups.isActive("shield", time) || relics.wardReady(time)) {
+          const source = absorbProtection(powerups, relics, time);
+          if (source === "pickup") endPowerup("shield");
           runner.shieldBlocked();
-          safeUntil = time + 800;
-        } else if (relics.absorb(time)) {
-          runner.shieldBlocked();
-          safeUntil = time + 800;
+          safeUntil = time + RUNNER.blockGraceMs;
         } else if (ob.spec.effect === "end-run") {
           over = true;
           runner.crash();

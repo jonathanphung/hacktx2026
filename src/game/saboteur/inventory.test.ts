@@ -12,8 +12,8 @@ describe("giant FIFO inventory", () => {
     expect(stock.cards).toEqual(["0", "1", "2"]);
     expect(stock.take(0)).toBe("0");
     expect(stock.take(1700)).toBe("1");
-    expect(stock.update(3999)).toBe(false);
-    expect(stock.update(4000)).toBe(true);
+    expect(stock.update(2999)).toBe(false);
+    expect(stock.update(3000)).toBe(true);
     expect(stock.cards).toEqual(["2", "3"]);
   });
   it("never catches up a backlog with a burst or exceeds capacity", () => {

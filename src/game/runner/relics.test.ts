@@ -14,9 +14,9 @@ describe("permanent tale rewards", () => {
     expect(powers.slowFactor).toBe(0.75);
     powers.collect(0);
     expect(powers.absorb(0)).toBe(true);
-    expect(powers.absorb(21999)).toBe(false);
-    expect(powers.absorb(22000)).toBe(true);
-    powers.collect(23000);
+    expect(powers.absorb(34999)).toBe(false);
+    expect(powers.absorb(35000)).toBe(true);
+    powers.collect(36000);
     expect(powers.scoreFactor).toBe(1.15);
     expect(powers.absorb(23000)).toBe(false);
     expect(new RelicPowers().count).toBe(0);

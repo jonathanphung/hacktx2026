@@ -11,7 +11,7 @@ export const REWARDS = [
   ["Feather Step", "Jumps last 10% longer."],
   ["Curious Reach", "Collect treasures and pickups from 18px farther away."],
   ["Glass Resolve", "Slow effects wear off 25% sooner."],
-  ["Tidal Ward", "Absorb one hit. Recharges every 22 seconds."],
+  ["Tidal Ward", "Absorb one hit. Recharges every 35 seconds."],
   ["Brave Heart", "Earn 15% more score."],
   ["Last Clue", "The final piece of the cell’s message is revealed."],
 ] as const;

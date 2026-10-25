@@ -12,7 +12,7 @@ export const RUNNER = {
    */
   baseSpeed: 260,
   /**
-   * Shortest time an obstacle is on screen before it reaches the runner, at top speed.
+   * Shortest combined hand telegraph and obstacle travel time before contact, at top speed.
    * This caps the speed; see speed.ts. Budget for a dodge (2026-10-24):
    * - hand starts moving -> runner fully in the new lane: ~325 ms for a typical 250 ms swipe,
    *   ~450 ms for a slow one. Measured through the real vision interpreter + game at 29 fps,
@@ -35,8 +35,10 @@ export const RUNNER = {
   jumpBufferMs: 150,
   /** Speed lines start fading in above this track speed (px/s). */
   streakFromSpeed: 340,
-  slowFactor: 0.5,
+  /** Mud/sap reduce lateral responsiveness, never the world's travel speed. */
+  slowFactor: 0.65,
   slowMs: 2000,
+  blockGraceMs: 400,
 };
 
 /** Powerup tuning. One random powerup spawns in a random lane every `everyMs`. */

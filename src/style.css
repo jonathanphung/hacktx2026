@@ -262,8 +262,23 @@ body {
   overflow: hidden;
 }
 .beanstalk-art svg {
+  position: relative;
   width: 100%;
   height: 100%;
+}
+.beanstalk-vine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8cqw;
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+}
+.beanstalk-vine.left {
+  left: -0.5cqw;
+}
+.beanstalk-vine.right {
+  right: -0.5cqw;
 }
 .story-content {
   position: relative;
@@ -1905,4 +1920,224 @@ body {
 }
 .pixel-hand {
   z-index: 5;
+}
+
+/* Cinematic camera: depth layers slide at different speeds; every moving part uses transforms. */
+.pixel-camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.pixel-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.pixel-layer > svg:not(.pixel-actor) {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+.pixel-world > .pixel-actor {
+  left: 0;
+  top: 0;
+  transform-origin: center;
+  will-change: transform;
+}
+.pixel-cloud-drift {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 200%;
+  height: 100%;
+  animation: pixel-cloud-drift 90s linear infinite;
+}
+.pixel-cloud-drift svg {
+  position: absolute;
+  top: 0;
+  width: 50%;
+  height: 100%;
+}
+.pixel-cloud-drift svg:last-child {
+  left: 50%;
+}
+@keyframes pixel-cloud-drift {
+  to {
+    transform: translateX(-50%);
+  }
+}
+.pixel-twinkle rect {
+  animation: pixel-twinkle 2.4s steps(2, jump-none) infinite;
+}
+@keyframes pixel-twinkle {
+  50% {
+    opacity: 0.25;
+  }
+}
+.pixel-letterbox {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  background: #0a0814;
+  z-index: 6;
+  pointer-events: none;
+}
+.pixel-letterbox.top {
+  top: 0;
+}
+.pixel-letterbox.bottom {
+  bottom: 0;
+}
+.pixel-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, #0a081855 100%);
+}
+.pixel-flash {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  background: #fff6dc;
+  opacity: 0;
+  pointer-events: none;
+}
+.pixel-story-label {
+  z-index: 8;
+}
+.pixel-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.pixel-dialogue {
+  min-height: 2.6em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pixel-cloud-drift,
+  .pixel-twinkle rect {
+    animation: none;
+  }
+}
+
+/* Story effects: wisp, shadow, alarm bubble, particles, shock rings, spell letters, dawn. */
+.pixel-dawn-sky {
+  opacity: 0;
+}
+.pixel-sun-body {
+  opacity: 0;
+}
+.pixel-world > .pixel-orb,
+.pixel-world > .pixel-shadow,
+.pixel-world > .pixel-bubble,
+.pixel-world > .pixel-letter {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  opacity: 0;
+  will-change: transform, opacity;
+}
+.pixel-orb {
+  width: 3.4%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fffbe0 0 22%, #ffe08a 40%, #ffe08a00 72%);
+  box-shadow: 0 0 1.6cqw #ffe08acc;
+}
+.pixel-shadow {
+  width: 22%;
+  height: 4.5%;
+  border-radius: 50%;
+  background: #0a0618aa;
+}
+.pixel-bubble {
+  padding: 0.25cqw 0.7cqw;
+  background: #fff6dc;
+  color: #b3262c;
+  border: 0.18cqw solid #211b36;
+  font-size: 2.2cqw;
+  font-family: "Courier New", monospace;
+  box-shadow: 0.2cqw 0.2cqw 0 #211b36;
+}
+.pixel-letter {
+  font-family: "Courier New", monospace;
+  font-weight: 900;
+  font-size: 3.6cqw;
+  color: #fff6dc;
+  text-shadow:
+    0 0 0.8cqw #ffe08a,
+    0.2cqw 0.2cqw 0 #6b477d;
+}
+.pixel-particle {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.pixel-ring {
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  border: 0.3cqw solid #fff6dc;
+  border-radius: 50%;
+  box-sizing: border-box;
+  will-change: transform, opacity;
+}
+.pixel-dark {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: #120a2a;
+  opacity: 0;
+  pointer-events: none;
+}
+.pixel-grade {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  background: linear-gradient(#ffb36a66, #ff8fa800 70%);
+  mix-blend-mode: soft-light;
+  opacity: 0;
+  pointer-events: none;
+}
+.pixel-title-card {
+  position: absolute;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-content: center;
+  gap: 1.6cqw;
+  text-align: center;
+  opacity: 0;
+  pointer-events: none;
+  color: #fff6dc;
+  font-family: "Courier New", monospace;
+  text-shadow:
+    0.3cqw 0.3cqw 0 #211b36,
+    0 0 2cqw #ffb45e;
+}
+.pixel-title-card strong {
+  font-size: 7cqw;
+  letter-spacing: 0.3em;
+}
+.pixel-title-card span {
+  font-size: 1.5cqw;
+  letter-spacing: 0.12em;
 }

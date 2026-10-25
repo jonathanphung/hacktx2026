@@ -4,9 +4,28 @@ The opening and ending now use a fixed pixel stage, the shipped Jon sprite sheet
 the game's vine/sleeve/panel palette, a pixel companion and the same giant-hand
 silhouette as gameplay. Actor positions are snapped to the pixel grid. Running
 frames play only while walking; climbing uses the existing jump sprite. The
-opening lasts four 3.3-second beats and the ending three. No large camera zooms
-or smooth vector actors remain in these sequences. The rescue/victory tower uses
-matching pixel scenery and layered cell bars.
+opening lasts five 4.6-second beats and the ending four, slow enough to read each line. The film
+is a set of continuous keyframed curves (`story-timeline.ts`, `easing.ts`) sampled every display
+frame, so nothing snaps to a grid or cuts: actors, camera and effects all move with sub-pixel
+`transform`s. The camera pans and zooms with easing across parallax layers (sky, drifting
+clouds, far hills, near hills, and the world with the tower and the pixel beanstalk); it is
+clamped so the painted stage's edge never shows. Sparks, shards, dust, shock rings and
+fireworks are pure functions of time (`story-effects.ts`), drawn from a fixed pool.
+
+Opening: a glowing wisp leads Jon and Claude through the woods; it vanishes, Claude's "!"
+pops up, the ground trembles and the giant's shadow creeps over them while the sky darkens;
+the hand drops in, the film freezes ~110 ms (hit-stop) on the grab with a flash, sparks, a
+shock ring and screen shake; a whip-pan follows Claude to the tower where the cell door
+slams shut; a whip-pan back follows Jon's run and leap up the stalk.
+
+Ending: the six clue letters H-A-C-K-T-X orbit Claude's cell faster and tighter under a
+building rumble, then slam together and shatter the lock (hit-stop, white flash, shards,
+double shock ring, camera punch). Jon and Claude leap onto the stalk and slide down it with a
+spark trail, landing in a dust burst. The giant's hand lowers to wave a grudging goodbye. The
+sun rises, the sky turns to dawn, fireworks burst over the valley as the pair walk home, and
+a "THE END" card closes the film. Cinema bars slide in and out, text types on, and stars
+twinkle. Inspired by Geometry Dash's editor-style camera triggers (move, zoom, shake).
+The rescue/victory tower uses matching pixel scenery and layered cell bars.
 
 Scenes play automatically. Waving either hand advances a beat after a 900 ms
 entry grace period, using a fresh movement baseline each time. Continue and Skip
@@ -32,6 +51,8 @@ With the development server running:
 - `/?novision&story-preview=opening`: opening, then return to title.
 - `/?novision&story-preview=ending`: ending, then return to title.
 - `/?novision&story-preview=rescue`: spell gate, then ending.
+- Add `&story-at=5470` (ms, development only) to freeze the film on one moment, e.g. the
+  grab at 5445 ms.
 
 Remove `novision` to test real hands. Review routes are development-only and do
 not bypass progression in the production game.

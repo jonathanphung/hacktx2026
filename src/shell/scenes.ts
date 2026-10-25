@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { getMatch, setMatch, type MatchMode, type Difficulty } from "../shared/match";
 import { untilShutdown } from "../shared/emitter";
 import { inputBus } from "../shared/input";
 import { onMenuMotion } from "./menu-motion";
@@ -43,11 +44,23 @@ function installStart(
     }
   };
   const onEnter = (event: KeyboardEvent) => {
+    if (event.target instanceof HTMLElement && event.target.closest("select, input")) return;
+    if (event.target instanceof HTMLButtonElement && event.target !== button) return;
     if (event.code !== "Enter" || event.repeat) return;
     event.preventDefault();
     if (keyboardStart) go();
   };
-  if (keyboardStart) untilShutdown(scene, onMenuMotion(go));
+  if (keyboardStart)
+    untilShutdown(
+      scene,
+      onMenuMotion(() => {
+        if (!(
+          document.activeElement instanceof HTMLElement &&
+          document.activeElement.closest(".mode-controls")
+        ))
+          go();
+      }),
+    );
   button.disabled = false;
   button.addEventListener("click", go);
   window.addEventListener("keydown", onEnter);
@@ -55,6 +68,11 @@ function installStart(
   untilShutdown(
     scene,
     inputBus.on("input", (e) => {
+      if (
+        document.activeElement instanceof HTMLElement &&
+        document.activeElement.closest(".mode-controls")
+      )
+        return;
       if (keyboardStart && e.player === "runner" && e.action === "jump") go();
     }),
   );
@@ -73,15 +91,43 @@ export class TitleScene extends Phaser.Scene {
     content.innerHTML = `<p class="story-eyebrow">AN ENCHANTED TALE FOR TWO</p>
       <h1>Jon and the Beanstalk</h1>
       <p class="story-subtitle">Claude is missing. Follow the clues. Bring your companion home.</p>
-      <div class="role-cards">
+      <div class="mode-controls"><label>Play mode<select aria-label="Play mode"><option value="duo">Two players</option><option value="jon">Play as Jon · AI Giant</option><option value="giant">Play as Giant · AI Jon</option></select></label><label class="difficulty-control">Opponent<select aria-label="AI difficulty"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label></div><p class="mode-hint"></p><div class="role-cards">
         <section class="role-card"><span class="role-number">PLAYER ONE · LEFT SIDE</span><h2>Jon the Wizard</h2><p>Dodge the giant’s tricks.<br>Keep your adventure alive.</p><strong>Swipe left / right to dodge<br>Swipe up to jump</strong><small>A / D / W · Jump low traps; dodge walls</small></section>
         <section class="role-card giant"><span class="role-number">PLAYER TWO · RIGHT SIDE</span><h2>Be the Giant</h2><p>Guard your kingdom in the clouds.<br>Send obstacles into Jon’s path.</p><strong>Move your hand to aim<br>Close your fist to fire</strong><small>J / K / L: aim · Space: drop next · Stock grows every 2 tales</small></section>
       </div>
-      <button class="story-button" type="button" data-primary>Learn to play · practice grove</button>
-      <button class="story-secondary" type="button" data-secondary>Skip practice · Play story</button>
+      <button class="story-button" type="button" data-primary>Start adventure</button>
+      <button class="story-secondary" type="button" data-secondary>Practice controls</button>
       <p class="start-hint">Click to begin, press Enter, or move either player’s hand · Esc pauses during play</p>
       <p class="camera-hint">Share one webcam. Keep one hand visible in your half.</p>`;
     screen.append(content);
+    const mode = content.querySelector<HTMLSelectElement>('[aria-label="Play mode"]')!;
+    const difficulty = content.querySelector<HTMLSelectElement>('[aria-label="AI difficulty"]')!;
+    mode.value = getMatch().mode;
+    difficulty.value = getMatch().difficulty;
+    const updateMode = () => {
+      setMatch(mode.value as MatchMode, difficulty.value as Difficulty);
+      content.querySelector<HTMLElement>(".difficulty-control")!.hidden = mode.value === "duo";
+      content.querySelector(".mode-hint")!.textContent =
+        mode.value === "duo"
+          ? "Share one camera, or use A/D/W and J/K/L + Space."
+          : mode.value === "jon"
+            ? "You control Jon on the left. The AI giant guards the climb."
+            : "You control the giant on the right. Stop AI Jon before he reaches Claude.";
+      content.querySelector<HTMLElement>(".role-cards")!.hidden = true;
+      content.querySelector(".camera-hint")!.textContent =
+        mode.value === "duo"
+          ? "One camera, two players. Keyboard controls also work."
+          : mode.value === "jon"
+            ? "Your controls: left half of the camera, or A / D / W."
+            : "Your controls: right half of the camera, or J / K / L + Space.";
+      content.querySelector(".start-hint")!.textContent =
+        "Enter or click to begin · Esc pauses during play";
+      content.querySelector(".story-eyebrow")!.textContent =
+        mode.value === "duo" ? "AN ENCHANTED TALE FOR TWO" : "ONE PLAYER · ONE RESCUE";
+    };
+    mode.addEventListener("change", updateMode);
+    difficulty.addEventListener("change", updateMode);
+    updateMode();
     // Local review routes avoid completing all six stages just to inspect the ending.
     const preview = new URLSearchParams(location.search).get("story-preview");
     if (
@@ -106,8 +152,8 @@ export class TitleScene extends Phaser.Scene {
       secondary.addEventListener("click", () => this.scene.start("tutorial"));
       this.time.delayedCall(0, () => primary.click());
     } else {
-      installStart(this, primary, "tutorial");
-      installStart(this, secondary, "game", false);
+      installStart(this, primary, "game");
+      secondary.addEventListener("click", () => this.scene.start("tutorial"));
     }
   }
 }
@@ -122,7 +168,8 @@ export class GameOverScene extends Phaser.Scene {
     stage?: number;
     outcome?: "caught" | "escaped";
   }) {
-    const victory = result.outcome === "escaped";
+    const giantPlayer = getMatch().mode === "giant";
+    const victory = giantPlayer ? result.outcome !== "escaped" : result.outcome === "escaped";
     const showResult = () => {
       installShellAudio();
       const screen = mountShell(this, "story-screen game-over-screen");
@@ -135,7 +182,7 @@ export class GameOverScene extends Phaser.Scene {
       <button class="story-button" type="button" disabled>Catch your breath…</button>
       <p class="start-hint">Click replay, press Enter, or move either player’s hand for another adventure</p>`;
 
-      if (victory) {
+      if (victory && !giantPlayer) {
         screen.classList.add("festival-victory");
         content.querySelector(".story-eyebrow")!.textContent = "RESCUE COMPLETE";
         content.querySelector("h1")!.textContent = "Claude is free!";
@@ -156,6 +203,24 @@ export class GameOverScene extends Phaser.Scene {
           screen.append(spark);
         }
       }
+      if (giantPlayer) {
+        content.querySelector(".story-results div:first-child span")!.textContent = "JON'S SCORE";
+        content.querySelector(".story-results div:last-child span")!.textContent = victory
+          ? "TIME TO CATCH"
+          : "TIME";
+        content.querySelector("h1")!.textContent = victory
+          ? "You stopped Jon."
+          : "Jon reached the tower.";
+        content.querySelector(".story-subtitle")!.textContent = victory
+          ? "The giant holds the beanstalk. Ready for another round?"
+          : "AI Jon recovered the message. Try a different tactic next time.";
+      }
+      const changeMode = document.createElement("button");
+      changeMode.type = "button";
+      changeMode.className = "story-secondary";
+      changeMode.textContent = "Change mode";
+      changeMode.addEventListener("click", () => this.scene.start("title"));
+      content.append(changeMode);
       content.querySelector("#result-score")!.textContent = String(result.score);
       content.querySelector("#result-time")!.textContent =
         `${(result.survivedMs / 1000).toFixed(1)}s`;
@@ -166,7 +231,7 @@ export class GameOverScene extends Phaser.Scene {
         installStart(this, button);
       });
     };
-    if (victory) unlockCell(this, () => playCinematic(this, true, showResult));
+    if (victory && !giantPlayer) unlockCell(this, () => playCinematic(this, true, showResult));
     else showResult();
   }
 }

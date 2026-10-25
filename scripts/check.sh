@@ -8,6 +8,7 @@ cd "$(dirname "$0")/.."
 echo "==> format";    npm run --silent lint
 echo "==> typecheck"; npm run --silent typecheck
 echo "==> tests";     npm run --silent test
+echo "==> AI server"; node --experimental-strip-types --test scripts/ai-server.node-test.mjs
 echo "==> build";     npm run --silent build
 
 echo "check.sh: OK"

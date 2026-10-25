@@ -3,6 +3,8 @@ import { defineConfig } from "vite";
 export default defineConfig(({ command }) => ({
   // GitHub Pages serves the site from /jonandthebeanstalk/.
   base: command === "build" ? "/jonandthebeanstalk/" : "/",
+  server: { proxy: { "/api/ai": "http://127.0.0.1:8787" } },
+  preview: { proxy: { "/api/ai": "http://127.0.0.1:8787" } },
   build: {
     chunkSizeWarningLimit: 2000, // Phaser alone is ~1.2 MB
     rolldownOptions: {

@@ -1,4 +1,5 @@
 import { GIANT_RELEASE_Y } from "../../shared/combat";
+import { acceptsPlayerInput } from "../../shared/match";
 import type Phaser from "phaser";
 import { untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
@@ -134,6 +135,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     inputBus.on("input", (e) => {
       if (scene.sys?.isPaused()) return;
       if (e.player !== "saboteur") return;
+      if (!acceptsPlayerInput(e.player, e.source)) return;
       if (over) {
         if (e.action === "fire") reject("game-over");
         return;

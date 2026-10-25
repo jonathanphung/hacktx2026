@@ -341,6 +341,13 @@ function drawStageItem(g: Phaser.GameObjects.Graphics, item: StageItemId) {
       }
       g.fillStyle(0x4dd0e1).fillCircle(0, -9, 3);
       break;
+    case "badge":
+      g.lineStyle(5, 0xffdf85).strokeRoundedRect(-22, -25, 44, 52, 6);
+      g.fillStyle(0x502b82).fillRoundedRect(-20, -23, 40, 48, 5);
+      g.lineStyle(6, 0xffefb4).lineBetween(-10, -10, 10, 10).lineBetween(10, -10, -10, 10);
+      g.lineStyle(4, 0xa7e9e2).lineBetween(-9, -25, -15, -37).lineBetween(9, -25, 15, -37);
+      g.fillStyle(0xffdf85).fillRect(-13, 17, 26, 3);
+      break;
     case "hood": // Red Riding Hood's cloak: hood over a flowing cape
       g.fillStyle(ink).fillTriangle(-20, 22, 20, 22, 0, -14).fillCircle(0, -10, 13);
       g.fillStyle(0xd32f2f).fillTriangle(-17, 20, 17, 20, 0, -11).fillCircle(0, -10, 11);

@@ -5,11 +5,12 @@ import { GAME_HEIGHT, type Lane } from "../../shared/types";
 import { saboteurBus, type GameEvents, type World } from "../../shared/world";
 import { ATTACK_BY_ID, ATTACKS } from "./attacks";
 import { SABOTEUR } from "./config";
+import { GiantInventory } from "./inventory";
 
 import { createGiantHand } from "./giant-hand";
 
 const GLOW_WIDTH = 160;
-const GLOW_ALPHA = 0.14;
+const GLOW_ALPHA = 0.22;
 const GLOW_LOCK_ALPHA = 0.4;
 /** Time constants (ms) for the aim indicators gliding between lanes. */
 const GLOW_EASE_MS = 40;
@@ -20,7 +21,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   // One physical obstacle per throw: double-wall is intentionally outside this pool.
   const pool = ATTACKS.filter((attack) => attack.id !== "double-wall");
   const draw = () => pool[Math.floor(Math.random() * pool.length)].id;
-  let nextAttack = draw();
+  const inventory = new GiantInventory(draw);
   let aimLane: Lane = 1;
   let now = -1;
   let nextFire = 0;
@@ -62,7 +63,12 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
       const next = Math.min(...pending.map((attack) => attack.landsAt));
       return { state: "queued", remainingMs: Math.max(0, next - time), aimLane };
     }
-    if (time < nextFire) return { state: "cooldown", remainingMs: nextFire - time, aimLane };
+    const remainingMs = Math.max(
+      0,
+      nextFire - time,
+      inventory.cards.length ? 0 : inventory.wait(time),
+    );
+    if (remainingMs > 0) return { state: "cooldown", remainingMs, aimLane };
     return { state: "ready", remainingMs: 0, aimLane };
   }
   const reject = (reason: "cooldown" | "starting" | "game-over", remainingMs = 0) =>
@@ -73,12 +79,15 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   marker.setDepth(10);
   // The target lane lights up the instant aim changes; the marker above eases over after it.
   const glow = scene.add
-    .rectangle(world.laneX(aimLane), GAME_HEIGHT / 2, GLOW_WIDTH, GAME_HEIGHT, 0xff5252, GLOW_ALPHA)
+    // Keep fill opaque: object alpha alone controls the idle/cast pulse. Applying both
+    // fillAlpha and alpha multiplied them after the first cast and hid the aiming lane.
+    .rectangle(world.laneX(aimLane), GAME_HEIGHT / 2, GLOW_WIDTH, GAME_HEIGHT, 0xff5252, 1)
+    .setAlpha(GLOW_ALPHA)
     .setDepth(8);
 
   const announce = () => {
     world.events.emit("hand-changed", {
-      hand: nextFire > 0 && now < nextFire ? [] : [nextAttack],
+      hand: [...inventory.cards],
       selected: 0,
       aimLane,
     });
@@ -86,15 +95,16 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   };
 
   const cast = (lane: Lane) => {
-    const id = nextAttack;
-    nextFire = now + SABOTEUR.fireCooldownMs;
+    const id = inventory.take(now);
+    if (!id) return;
+    nextFire = now + 1700;
     glow.setAlpha(GLOW_LOCK_ALPHA);
     scene.tweens.add({ targets: glow, alpha: GLOW_ALPHA, duration: 300 });
     publish("cast-result", {
       accepted: true,
       attackId: id,
       lane,
-      remainingMs: SABOTEUR.fireCooldownMs,
+      remainingMs: Math.max(1700, inventory.cards.length ? 0 : inventory.wait(now)),
     });
     const warning = scene.add.rectangle(
       world.laneX(lane),
@@ -130,11 +140,15 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
         // Marker and glow glide toward the new lane each frame (see update) instead of snapping.
       } else if (e.action === "fire") {
         if (now < 0) return reject("starting");
-        if (now < nextFire) {
+        const readyAt = Math.max(
+          nextFire,
+          inventory.cards.length ? now : now + inventory.wait(now),
+        );
+        if (now < readyAt) {
           // Gestures land a little early as often as a little late: hold a fire that arrives
           // just before the cooldown ends and cast it the moment it does, at the lane aimed.
-          if (nextFire - now <= SABOTEUR.fireBufferMs) bufferedFire = aimLane;
-          else return reject("cooldown", nextFire - now);
+          if (readyAt - now <= SABOTEUR.fireBufferMs) bufferedFire = aimLane;
+          else return reject("cooldown", readyAt - now);
           return;
         }
         cast(aimLane);
@@ -154,11 +168,8 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     marker.x += (target - marker.x) * (1 - Math.exp(-dt / MARKER_EASE_MS));
     const wasCooling = nextFire > 0 && now < nextFire;
     now = time;
-    if (wasCooling && now >= nextFire) {
-      nextAttack = draw();
-      announce();
-    }
-    if (bufferedFire !== null && now >= nextFire) {
+    if (inventory.update(now) || (wasCooling && now >= nextFire)) announce();
+    if (bufferedFire !== null && now >= nextFire && inventory.cards.length) {
       const lane = bufferedFire;
       bufferedFire = null;
       cast(lane);
@@ -182,5 +193,12 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   scene.events.on("update", update);
   untilShutdown(scene, () => scene.events.off("update", update));
 
+  untilShutdown(
+    scene,
+    world.events.on("stage-changed", ({ index }) => {
+      inventory.grow(index);
+      announce();
+    }),
+  );
   announce();
 }

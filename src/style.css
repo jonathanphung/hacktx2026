@@ -1010,3 +1010,698 @@ body {
 .intro-screen[data-theme="castle"] .intro-narration {
   color: #3c3b42;
 }
+
+/* The six-letter storybook: local vector scenery and quiet, looping animation. */
+.tale-cutscene {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  display: grid;
+  place-items: center;
+  background: #131022ed;
+  color: #fff1d8;
+  font-family: "Courier New", monospace;
+  container-type: inline-size;
+}
+.tale-frame {
+  width: 80%;
+  border: 2px solid #d8b780;
+  background: #211831;
+  box-shadow:
+    0 0 0 0.6cqw #624975,
+    0 2cqw 8cqw #070610aa;
+  animation: tale-arrive 450ms ease-out;
+}
+.tale-art {
+  height: 18cqw;
+  overflow: hidden;
+  border-bottom: 2px solid #d8b780;
+}
+.tale-art svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.tale-copy {
+  padding: 1.3cqw 3cqw 1.8cqw;
+}
+.tale-kicker {
+  font-size: 0.8cqw;
+  letter-spacing: 0.3em;
+  color: #c9a8de;
+  margin: 0 0 0.7cqw;
+}
+.spell-word {
+  display: flex;
+  justify-content: center;
+  gap: 0.5cqw;
+}
+.spell-letter {
+  display: inline-grid;
+  place-items: center;
+  width: 2.6cqw;
+  height: 2.9cqw;
+  border: 1px solid #8e77aa;
+  color: #887b9b;
+  background: #2f2642;
+  font-weight: bold;
+  font-size: 1.7cqw;
+}
+.spell-letter.restored {
+  color: #3a2758;
+  background: #ffe6a3;
+  border-color: #fff2ca;
+  box-shadow: 0 0 1.2cqw #ffe19d33;
+}
+.tale-speaker {
+  color: #a5e3d6;
+  font-size: 0.9cqw;
+  letter-spacing: 0.18em;
+  margin: 1cqw 0 0.4cqw;
+}
+.tale-copy h1 {
+  font-size: 2.25cqw;
+  line-height: 1.15;
+  margin: 0 0 0.8cqw;
+  letter-spacing: -0.04em;
+}
+.tale-dialogue {
+  font-size: 1.2cqw;
+  line-height: 1.6;
+  margin: 0;
+  min-height: 4cqw;
+}
+.tale-reward {
+  color: #f2cc88;
+  font-size: 0.9cqw;
+  margin: 0.8cqw 0 1cqw;
+}
+.tale-controls {
+  display: flex;
+  align-items: center;
+  gap: 1.5cqw;
+}
+.tale-controls small {
+  margin-left: auto;
+  font-size: 0.8cqw;
+  color: #cbb9d6;
+}
+.tale-skip {
+  border: 0;
+  background: none;
+  color: #d6c4e3;
+  text-decoration: underline;
+  font:
+    1cqw "Courier New",
+    monospace;
+  cursor: pointer;
+}
+.tale-cutscene button:focus-visible {
+  outline: 2px solid #a4ffe1;
+  outline-offset: 4px;
+}
+.story-relic {
+  transform-origin: 400px 140px;
+  animation: relic-float 3s ease-in-out infinite;
+  filter: drop-shadow(0 10px 10px #21132755);
+}
+.story-clouds {
+  animation: cloud-drift 8s ease-in-out infinite alternate;
+}
+.story-sparks {
+  animation: spark-glow 2s ease-in-out infinite alternate;
+}
+.hud-level .spell-word {
+  margin-top: 0.5cqw;
+}
+.hud-level .spell-letter {
+  width: 1.5cqw;
+  height: 1.7cqw;
+  font-size: 1.1cqw;
+}
+.hud-relics {
+  display: block;
+  max-width: 28cqw;
+  font-size: 0.65cqw;
+  margin-top: 0.5cqw;
+  line-height: 1.5;
+}
+.hud-cards {
+  display: flex;
+  gap: 0.4cqw;
+  flex-wrap: wrap;
+}
+.hud-card {
+  flex: 1;
+  min-width: 6cqw;
+}
+.victory-badge {
+  height: 11cqw;
+  width: 36cqw;
+  margin: 0 auto 1cqw;
+  border: 2px solid #dfbd87;
+  overflow: hidden;
+}
+.victory-badge svg {
+  width: 100%;
+  height: 100%;
+}
+.victory-spell {
+  margin-bottom: 1cqw;
+}
+.festival-victory {
+  background: radial-gradient(ellipse at center, #fff2c8, #cdb5e4 70%);
+  overflow: hidden;
+}
+.festival-victory .story-content {
+  z-index: 2;
+}
+.festival-confetti {
+  position: absolute;
+  top: -10%;
+  left: calc(var(--i) * 4.2%);
+  width: 0.45cqw;
+  height: 1cqw;
+  background: #ffe1a1;
+  animation: festival-fall calc(3s + var(--i) * 0.08s) linear infinite;
+  animation-delay: calc(var(--i) * -0.27s);
+}
+.festival-confetti:nth-child(3n) {
+  background: #9773bd;
+}
+.festival-confetti:nth-child(3n + 1) {
+  background: #73bfaa;
+}
+@keyframes tale-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(1cqw);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes relic-float {
+  50% {
+    transform: translateY(-7px) rotate(-2deg);
+  }
+}
+@keyframes cloud-drift {
+  to {
+    transform: translateX(25px);
+  }
+}
+@keyframes spark-glow {
+  to {
+    opacity: 0.35;
+  }
+}
+@keyframes festival-fall {
+  to {
+    transform: translateY(70cqw) rotate(400deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tale-frame,
+  .story-relic,
+  .story-clouds,
+  .story-sparks,
+  .festival-confetti {
+    animation: none;
+  }
+  .festival-confetti {
+    display: none;
+  }
+}
+
+.rescue-form {
+  margin-top: 1cqw;
+}
+.rescue-form label {
+  display: block;
+  color: #c4e9dc;
+  font-size: 1cqw;
+  margin-bottom: 0.6cqw;
+}
+.rescue-form > div {
+  display: flex;
+  gap: 1cqw;
+}
+.rescue-form input {
+  min-width: 0;
+  flex: 1;
+  padding: 0.8cqw 1cqw;
+  border: 2px solid #a891bd;
+  background: #120d23;
+  color: #fff2c9;
+  font:
+    bold 1.8cqw "Courier New",
+    monospace;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+}
+.rescue-form input:focus {
+  outline: 2px solid #b7f4d8;
+  outline-offset: 2px;
+}
+.rescue-form input[aria-invalid="true"] {
+  border-color: #f1a59d;
+}
+.rescue-form [role="status"] {
+  font-size: 1cqw;
+  line-height: 1.5;
+  min-height: 2.6cqw;
+  color: #e6c88d;
+}
+.rescue-lock .spell-word {
+  margin: 1cqw 0;
+}
+.cell-open {
+  animation: cell-lift 1.6s ease-in-out forwards;
+}
+.rescue-unlocked .tale-frame {
+  box-shadow: 0 0 5cqw #bce4c980;
+}
+.claude-companion {
+  animation: claude-breathe 2.5s ease-in-out infinite;
+  transform-origin: 400px 160px;
+}
+@keyframes cell-lift {
+  to {
+    transform: translateY(-95px);
+    opacity: 0;
+  }
+}
+@keyframes claude-breathe {
+  50% {
+    transform: translateY(-2px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .claude-companion {
+    animation: none;
+  }
+  .cell-open {
+    animation: none;
+    opacity: 0;
+  }
+}
+
+/* Compact play HUD: the center of the track stays clear. */
+.story-hud .hud-score {
+  left: 2%;
+  top: 2%;
+  transform: none;
+  padding: 0.45cqw 1cqw;
+  border: 1px solid #c8b186;
+  box-shadow: none;
+}
+.story-hud .hud-score span {
+  display: inline;
+  font-size: 0.8cqw;
+  margin-right: 0.8cqw;
+}
+.story-hud .hud-score strong {
+  font-size: 1.8cqw;
+}
+.story-hud .hud-level {
+  top: 1.5%;
+  width: 30%;
+  border: 0;
+  border-radius: 0.6cqw;
+  background: #211b36e8;
+  padding: 0.6cqw 1cqw;
+  text-align: center;
+}
+.story-hud .hud-level > span {
+  float: none;
+  display: block;
+  font-size: 0.8cqw;
+  margin-top: 0.2cqw;
+  color: #c6b4d2;
+}
+.story-hud .hud-level strong {
+  font-size: 1cqw;
+}
+.story-hud .hud-relics {
+  font-size: 0.7cqw;
+}
+.story-hud .hud-jon,
+.story-hud .hud-giant {
+  border: 1px solid #a791b5;
+  border-radius: 0.6cqw;
+  box-shadow: none;
+  padding: 0.7cqw;
+  bottom: 3%;
+  background: #211b36e8;
+}
+.story-hud .hud-jon {
+  max-width: 20%;
+}
+.story-hud .hud-giant {
+  width: 21%;
+}
+.story-hud h2 {
+  font-size: 1.1cqw;
+  margin-bottom: 0.4cqw;
+}
+.story-hud small {
+  font-size: 0.75cqw;
+}
+.story-hud .hud-card {
+  min-width: 0;
+  padding: 0.5cqw;
+  gap: 0.25cqw;
+  box-shadow: none;
+  border: 1px solid #947ba7;
+  border-radius: 0.3cqw;
+}
+.story-hud .hud-card strong {
+  font-size: 0.85cqw;
+}
+.story-hud .hud-card:not(:first-child) small {
+  display: none;
+}
+.hud-discovery {
+  position: absolute;
+  top: 13%;
+  left: 2%;
+  translate: none;
+  width: 25%;
+  padding: 0.7cqw 1cqw;
+  box-sizing: border-box;
+  border: 1px solid #f0d899;
+  border-radius: 0.6cqw;
+  background: #28213eea;
+  color: #ffe8ac;
+  text-align: left;
+  animation: tale-arrive 250ms ease-out;
+}
+.hud-discovery[hidden] {
+  display: none;
+}
+.hud-discovery strong {
+  display: block;
+  font-size: 1.05cqw;
+}
+.hud-discovery span {
+  display: block;
+  font-size: 0.85cqw;
+  margin-top: 0.3cqw;
+  color: #c9e4d8;
+}
+
+/* Continuous opening and ending cinematics, with camera and actor timelines. */
+.film-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 125;
+  background: #080911;
+  color: #fff0d2;
+  font-family: "Courier New", monospace;
+  container-type: inline-size;
+  overflow: hidden;
+}
+.film-world {
+  position: absolute;
+  inset: 9% 0 18%;
+  overflow: hidden;
+}
+.film-world > svg {
+  width: 100%;
+  height: 100%;
+}
+.film-letterbox {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 2;
+  background: #080911;
+}
+.film-top {
+  top: 0;
+  height: 9%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 3cqw;
+  font-size: 0.9cqw;
+  letter-spacing: 0.2em;
+}
+.film-top button {
+  background: none;
+  color: #c5bbd0;
+  border: 1px solid #796b8e;
+  padding: 0.4cqw 0.7cqw;
+  font:
+    0.85cqw "Courier New",
+    monospace;
+  cursor: pointer;
+}
+.film-top button:focus-visible {
+  outline: 2px solid #b3efda;
+  outline-offset: 3px;
+}
+.film-bottom {
+  bottom: 0;
+  height: 18%;
+  padding: 0.7cqw 7cqw;
+  box-sizing: border-box;
+  text-align: center;
+}
+.film-speaker {
+  color: #a7dfd0;
+  font-size: 0.8cqw;
+  letter-spacing: 0.2em;
+  margin: 0 0 0.5cqw;
+}
+.film-caption {
+  margin: 0;
+  font-size: 1.25cqw;
+  line-height: 1.5;
+}
+.film-bottom progress {
+  position: absolute;
+  bottom: 0.4cqw;
+  left: 7%;
+  width: 86%;
+  height: 2px;
+  accent-color: #bda1d3;
+  opacity: 0.5;
+}
+.film-camera {
+  transform-origin: 650px 260px;
+  animation: film-pan 20s ease-in-out forwards;
+}
+.film-clouds {
+  animation: film-clouds 20s linear forwards;
+}
+.film-stars {
+  animation: spark-glow 3s ease-in-out infinite alternate;
+}
+.film-opening .film-giant {
+  animation: giant-kidnap 20s ease-in-out forwards;
+}
+.film-opening .film-claude {
+  animation: claude-capture 20s ease-in-out forwards;
+}
+.film-opening .film-jon {
+  animation: jon-climb 20s ease-in-out forwards;
+}
+.film-opening .film-tower .claude-companion {
+  animation: captive-appear 20s linear forwards;
+}
+.film-magic {
+  opacity: 0;
+  animation: magic-trail 20s ease-in-out forwards;
+}
+.film-ending .film-giant {
+  display: none;
+}
+.film-ending .film-camera {
+  animation: home-pan 21s ease-in-out forwards;
+}
+.film-ending .film-claude {
+  animation: claude-return 21s ease-in-out forwards;
+}
+.film-ending .film-jon {
+  animation: jon-return 21s ease-in-out forwards;
+}
+.film-ending .film-tower .claude-companion {
+  display: none;
+}
+.film-ending .film-magic {
+  animation: magic-trail 8s ease-in-out infinite alternate;
+}
+@keyframes film-pan {
+  0%,
+  20% {
+    transform: scale(1.02);
+  }
+  65% {
+    transform: translateX(-45px) scale(1.08);
+  }
+  100% {
+    transform: translate(-95px, 45px) scale(1.18);
+  }
+}
+@keyframes film-clouds {
+  to {
+    transform: translateX(-70px);
+  }
+}
+@keyframes giant-kidnap {
+  0%,
+  17% {
+    transform: translateY(-410px);
+  }
+  25%,
+  36% {
+    transform: translateY(0);
+  }
+  47%,
+  100% {
+    transform: translate(300px, -480px);
+  }
+}
+@keyframes claude-capture {
+  0%,
+  25% {
+    transform: none;
+  }
+  36% {
+    transform: translate(230px, -80px) rotate(-12deg);
+    opacity: 1;
+  }
+  48%,
+  100% {
+    transform: translate(410px, -300px) scale(0.6);
+    opacity: 0;
+  }
+}
+@keyframes captive-appear {
+  0%,
+  48% {
+    opacity: 0;
+  }
+  52%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes jon-climb {
+  0%,
+  40% {
+    transform: none;
+  }
+  60% {
+    transform: translateX(200px);
+  }
+  80% {
+    transform: translate(360px, -100px);
+  }
+  100% {
+    transform: translate(410px, -210px);
+  }
+}
+@keyframes magic-trail {
+  0%,
+  60% {
+    opacity: 0;
+  }
+  75%,
+  100% {
+    opacity: 0.8;
+  }
+}
+@keyframes home-pan {
+  from {
+    transform: translate(-100px, 40px) scale(1.15);
+  }
+  to {
+    transform: translate(20px, 0) scale(1);
+  }
+}
+@keyframes claude-return {
+  0%,
+  10% {
+    transform: translate(410px, -230px) scale(0.65);
+  }
+  35% {
+    transform: translate(220px, -80px);
+  }
+  55%,
+  70% {
+    transform: translateX(20px);
+  }
+  100% {
+    transform: translate(-300px, 90px) scale(1.3);
+  }
+}
+@keyframes jon-return {
+  0%,
+  50% {
+    transform: none;
+  }
+  70% {
+    transform: translateX(60px);
+  }
+  100% {
+    transform: translate(-260px, 90px) scale(1.3);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .film-camera,
+  .film-clouds,
+  .film-stars,
+  .film-screen .film-giant,
+  .film-screen .film-claude,
+  .film-screen .film-jon,
+  .film-screen .film-magic,
+  .film-screen .claude-companion,
+  .hud-discovery {
+    animation: none;
+  }
+  .film-opening .film-giant {
+    transform: translateY(-200px);
+  }
+  .film-ending .film-magic {
+    opacity: 0.5;
+  }
+}
+
+.story-hud .hud-feedback {
+  top: 30%;
+  left: 14%;
+  max-width: 22%;
+  font-size: 0.9cqw;
+  padding: 0.5cqw 0.7cqw;
+  box-shadow: none;
+  border-width: 1px;
+}
+
+#sound-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6cqw;
+  cursor: default;
+  border: 1px solid #a995b6;
+  border-radius: 0.6cqw;
+  background: #211b36ed;
+  font:
+    0.85cqw "Courier New",
+    monospace;
+  padding: 0.5cqw 0.7cqw;
+  box-shadow: none;
+}
+#sound-toggle input {
+  width: 8cqw;
+  min-width: 55px;
+  accent-color: #ba9fe0;
+  cursor: pointer;
+}
+#sound-toggle input:focus-visible {
+  outline: 2px solid #a4e8d5;
+  outline-offset: 3px;
+}

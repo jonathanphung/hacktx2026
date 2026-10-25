@@ -63,12 +63,20 @@ export const STAGE_TUNING: Record<StageId, StageTuning> = {
   },
   // Little Red Riding Hood: the dark woods at dusk.
   redhood: {
-    speed: [0.97, 1],
+    speed: [0.97, 0.985],
     hazardEveryMs: [2000, 1800],
     doubleChance: 0.7,
     mix: { thorns: 0.45, rock: 0.4, sap: 0.15 },
     sky: [0x1f2d1f, 0x3a2a2a, 0x7a3b2e, 0x2e3d2a],
     stemTint: 0xc8b8a8,
+  },
+  xen: {
+    speed: [0.99, 1],
+    hazardEveryMs: [1800, 1700],
+    doubleChance: 0.7,
+    mix: { thorns: 0.35, rock: 0.35, sap: 0.3 },
+    sky: [0x171137, 0x472475, 0x975fb5, 0xf2c880],
+    stemTint: 0xf4d6ff,
   },
 };
 
@@ -112,6 +120,7 @@ export function stageHazardInterval(stage: StageId, secInStage: number): number 
  */
 export class StageRun {
   index = 0;
+  complete = false;
   /** Game-clock ms when the current stage began (-1 until the first update). */
   enteredAt = -1;
   itemOnTrack = false;
@@ -129,6 +138,7 @@ export class StageRun {
 
   /** True when the stage item should appear now. Call `spawnBlocked` if it can't. */
   itemDue(now: number): boolean {
+    if (this.complete) return false;
     if (this.enteredAt < 0) {
       this.enteredAt = now;
       this.schedule(now);
@@ -148,7 +158,11 @@ export class StageRun {
   /** The item left the track. Returns the new stage if collecting it advanced the run. */
   itemGone(now: number, collected: boolean): StageInfo | null {
     this.itemOnTrack = false;
-    if (!collected || isLastStage(this.index)) return null;
+    if (!collected || this.complete) return null;
+    if (isLastStage(this.index)) {
+      this.complete = true;
+      return null;
+    }
     this.index++;
     this.enteredAt = now;
     this.schedule(now);

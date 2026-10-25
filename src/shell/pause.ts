@@ -26,6 +26,7 @@ export function installPause(scene: Phaser.Scene): void {
   const clock = new PlayClock();
   let paused = false;
   let ended = false;
+  let storyActive = false;
   const trigger = document.createElement("button");
   trigger.id = "pause-toggle";
   trigger.type = "button";
@@ -46,6 +47,7 @@ export function installPause(scene: Phaser.Scene): void {
   const resume = document.createElement("button");
   resume.type = "button";
   resume.textContent = "Resume · Esc";
+  resume.setAttribute("aria-live", "polite");
   panel.append(heading, description, resume);
   overlay.append(panel);
   stage.append(trigger, overlay);
@@ -57,24 +59,66 @@ export function installPause(scene: Phaser.Scene): void {
     if (event === "update" && typeof args[0] === "number") args[0] = clock.time(args[0]);
     return emit.call(this, event, ...args);
   };
+  let countdown: ReturnType<typeof setTimeout> | undefined;
+  let counting = false;
+  const resetCountdown = () => {
+    clearTimeout(countdown);
+    counting = false;
+    resume.disabled = false;
+    resume.textContent = "Resume · Esc";
+    heading.textContent = "A moment among the clouds";
+    description.textContent = "Game paused. Jon and the giant can catch their breath.";
+  };
+  const beginResume = () => {
+    counting = true;
+    resume.disabled = true;
+    let seconds = 3;
+    heading.textContent = "Wands ready. Giant ready.";
+    description.textContent = "Get into position · Esc cancels the countdown";
+    const tick = () => {
+      if (ended || storyActive) {
+        resetCountdown();
+        return;
+      }
+      if (seconds === 0) {
+        resetCountdown();
+        paused = false;
+        overlay.hidden = true;
+        trigger.hidden = false;
+        clock.resume(scene.game.loop.time);
+        scene.scene.resume();
+        pauseMusic(false);
+        playCue("resume");
+        trigger.focus();
+        return;
+      }
+      resume.textContent = String(seconds--);
+      playCue("ready");
+      countdown = setTimeout(tick, 1000);
+    };
+    tick();
+  };
   const toggle = () => {
-    if (ended) return;
-    paused = !paused;
-    pauseMusic(paused);
-    playCue(paused ? "pause" : "resume");
-    overlay.hidden = !paused;
-    trigger.hidden = paused;
-    if (paused) {
-      clock.pause(scene.game.loop.time);
-      scene.scene.pause();
-      resume.focus();
-    } else {
-      clock.resume(scene.game.loop.time);
-      scene.scene.resume();
-      trigger.focus();
+    if (ended || storyActive) return;
+    if (counting) {
+      resetCountdown();
+      return;
     }
+    if (paused) {
+      beginResume();
+      return;
+    }
+    paused = true;
+    pauseMusic(true);
+    playCue("pause");
+    overlay.hidden = false;
+    trigger.hidden = true;
+    clock.pause(scene.game.loop.time);
+    scene.scene.pause();
+    resume.focus();
   };
   const onKey = (event: KeyboardEvent) => {
+    if (storyActive) return;
     if (event.code === "Escape" && !event.repeat) {
       event.preventDefault();
       event.stopImmediatePropagation();
@@ -87,7 +131,22 @@ export function installPause(scene: Phaser.Scene): void {
   trigger.addEventListener("click", toggle);
   resume.addEventListener("click", toggle);
   window.addEventListener("keydown", onKey, true);
+  const storyPause = (active: boolean) => {
+    storyActive = active;
+    trigger.hidden = active;
+    pauseMusic(active);
+    if (active) {
+      clock.pause(scene.game.loop.time);
+      scene.scene.pause();
+    } else {
+      clock.resume(scene.game.loop.time);
+      scene.scene.resume();
+    }
+  };
+  scene.events.on("shell-story-pause", storyPause);
   untilShutdown(scene, () => {
+    resetCountdown();
+    scene.events.off("shell-story-pause", storyPause);
     scene.events.emit = emit;
     window.removeEventListener("keydown", onKey, true);
     trigger.remove();
@@ -95,6 +154,7 @@ export function installPause(scene: Phaser.Scene): void {
   });
   // Prevent pausing the short transition after a fatal collision.
   scene.events.once("shell-run-ended", () => {
+    resetCountdown();
     ended = true;
     trigger.disabled = true;
   });

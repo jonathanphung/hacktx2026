@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 function audioFixture() {
+  const clock = { now: 0 };
   const tones: { start: ReturnType<typeof vi.fn>; stop: ReturnType<typeof vi.fn> }[] = [];
   const gains: {
     gain: {
@@ -15,6 +16,8 @@ function audioFixture() {
     type = "";
     title = "";
     textContent = "";
+    value = "80";
+    append = vi.fn();
     setAttribute = vi.fn();
     closest() {
       return null;
@@ -25,7 +28,9 @@ function audioFixture() {
     append = vi.fn();
   class Context {
     state = "running";
-    currentTime = 0;
+    get currentTime() {
+      return clock.now;
+    }
     destination = {};
     resume = vi.fn(async () => {});
     createGain() {
@@ -58,9 +63,12 @@ function audioFixture() {
   }
   vi.stubGlobal("window", window);
   vi.stubGlobal("HTMLElement", Button);
-  vi.stubGlobal("document", { createElement: () => button, getElementById: () => ({ append }) });
+  vi.stubGlobal("document", {
+    createElement: (tag: string) => (tag === "input" ? button : new Button()),
+    getElementById: () => ({ append }),
+  });
   vi.stubGlobal("AudioContext", Context);
-  return { button, window, append, tones, gains };
+  return { button, window, append, tones, gains, clock };
 }
 
 describe("shell sound effects", () => {
@@ -97,17 +105,41 @@ describe("shell sound effects", () => {
     expect(fixture.tones).toHaveLength(3);
     expect(fixture.tones.every((t) => t.stop.mock.calls.length === 1)).toBe(true);
   });
+  it("changes musical themes without cutting active notes or multiplying schedulers", async () => {
+    vi.useFakeTimers();
+    const fixture = audioFixture();
+    const { installShellAudio, startMusic, setMusicStage, stopMusic } = await import("./audio");
+    installShellAudio();
+    fixture.window.dispatchEvent(new Event("pointerdown"));
+    startMusic();
+    const firstCount = fixture.tones.length;
+    setMusicStage(1);
+    expect(fixture.tones.every((t) => t.stop.mock.calls.length === 1)).toBe(true);
+    fixture.clock.now = 0.8;
+    vi.advanceTimersByTime(200);
+    expect(fixture.tones.length).toBeGreaterThan(firstCount);
+    fixture.clock.now = 4;
+    vi.advanceTimersByTime(200);
+    setMusicStage(5);
+    expect(vi.getTimerCount()).toBe(1);
+    expect(fixture.tones.every((t) => t.stop.mock.calls.length === 1)).toBe(true);
+    stopMusic();
+    expect(vi.getTimerCount()).toBe(0);
+  });
   it("mute silences the master output and prevents new cues", async () => {
     const fixture = audioFixture();
     const { installShellAudio, playCue } = await import("./audio");
     installShellAudio();
     fixture.window.dispatchEvent(new Event("pointerdown"));
     playCue("pickup");
-    fixture.button.dispatchEvent(new Event("click"));
+    fixture.button.value = "0";
+    fixture.button.dispatchEvent(new Event("input"));
     playCue("chapter");
     expect(fixture.tones).toHaveLength(3);
     expect(fixture.gains[0].gain.setValueAtTime).toHaveBeenLastCalledWith(0, 0);
-    fixture.button.dispatchEvent(new Event("click"));
+    fixture.button.value = "50";
+    fixture.button.dispatchEvent(new Event("input"));
+    expect(fixture.gains[0].gain.setValueAtTime).toHaveBeenLastCalledWith(0.5, 0);
     playCue("chapter");
     expect(fixture.tones).toHaveLength(7);
   });
@@ -121,5 +153,27 @@ describe("shell sound effects", () => {
     playCue("dodge");
     expect(fixture.tones).toHaveLength(2);
     expect(fixture.append).toHaveBeenCalledOnce();
+  });
+  it("supports scrolling volume and M restoring the chosen level", async () => {
+    const fixture = audioFixture();
+    const { installShellAudio } = await import("./audio");
+    installShellAudio();
+    fixture.button.value = "40";
+    fixture.button.dispatchEvent(new Event("input"));
+    const wheel = new Event("wheel", { cancelable: true });
+    Object.defineProperty(wheel, "deltaY", { value: -100 });
+    fixture.button.dispatchEvent(wheel);
+    expect(wheel.defaultPrevented).toBe(true);
+    expect(fixture.button.value).toBe("45");
+    const mute = () => {
+      const event = new Event("keydown");
+      Object.defineProperty(event, "code", { value: "KeyM" });
+      fixture.window.dispatchEvent(event);
+    };
+    mute();
+    expect(fixture.button.value).toBe("0");
+    mute();
+    expect(fixture.button.value).toBe("45");
+    expect(fixture.gains[0].gain.setValueAtTime).toHaveBeenLastCalledWith(0.45, 0);
   });
 });

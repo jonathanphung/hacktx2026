@@ -106,17 +106,20 @@ describe("StageRun", () => {
     expect(run.secInStage(t2 + 2000)).toBe(0);
   });
 
-  it("goes through every tale in order and stays in the last one", () => {
+  it("goes through the five tales and completes only when Xen’s badge is collected", () => {
     const run = new StageRun(() => 0);
     const seen = [run.stage.id];
     let t = 0;
     for (let i = 0; i < STAGES.length + 2; i++) {
+      if (run.complete) break;
       [t] = dueTimes(run, t, t + 20_000);
       const next = run.itemGone(t + 1000, true);
       if (next) seen.push(next.id);
     }
     expect(seen).toEqual(ids);
     expect(run.index).toBe(STAGES.length - 1);
+    expect(run.complete).toBe(true);
+    expect(run.itemDue(t + 1e6)).toBe(false);
   });
 
   it("retries soon when the item couldn't be placed", () => {

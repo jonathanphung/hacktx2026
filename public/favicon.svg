@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Jon the wizard</title>
+  <rect width="64" height="64" rx="14" fill="#292039"/>
+  <g shape-rendering="crispEdges">
+    <path d="M12 64V54h8v-6h24v6h8v10" fill="#9b77cc"/>
+    <path d="M20 54h8v6h8v-6h8v10H20" fill="#604088"/>
+    <path d="M27 43h10v12H27" fill="#c88e68"/>
+    <path d="M16 23h32v15h-4v7h-7v4H27v-4h-7v-7h-4" fill="#efbd91"/>
+    <path d="M16 26h5v12h-5m27-12h5v12h-5" fill="#d69f79"/>
+    <path d="M12 20h4v-8h8V8h16v4h8v8h4v13h-8V23h-8v-4h-8v4h-8v10h-8" fill="#17191e"/>
+    <path d="M20 12h16v4H24v4h-8v-4h4m20 4h8v4h-8" fill="#41424b"/>
+    <path d="M24 30h5v5h-5m11-5h5v5h-5" fill="#292039"/>
+    <path d="M25 30h2v2h-2m11-2h2v2h-2" fill="#fff4da"/>
+    <path d="M28 40h8v3h-8" fill="#a05e53"/>
+    <path d="M16 54h4v6h-4m28-6h4v6h-4" fill="#efd586"/>
+    <path d="M53 10h4v4h4v4h-4v4h-4v-4h-4v-4h4" fill="#abefdc"/>
+  </g>
+</svg>

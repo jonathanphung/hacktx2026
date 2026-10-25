@@ -47,3 +47,25 @@ describe("single-player decisions", () => {
     expect(() => parseTactics({ ...DEFAULT_TACTICS, preferredLane: 9 })).toThrow();
   });
 });
+
+it("uses individual hazard speed for jump timing, preserving legacy snapshots and frozen threats", () => {
+  const obstacle = { lane: 1 as const, y: 430, height: 24, jumpable: true, lethal: true };
+  const state = { ...scene, speed: 100, obstacles: [obstacle] };
+  expect(runnerDecision(state, DEFAULT_TACTICS, "normal", () => 0.3)).toBeNull();
+  expect(
+    runnerDecision(
+      { ...state, obstacles: [{ ...obstacle, speed: 500 }] },
+      DEFAULT_TACTICS,
+      "normal",
+      () => 0.3,
+    )?.action,
+  ).toBe("jump");
+  expect(
+    runnerDecision(
+      { ...state, obstacles: [{ ...obstacle, speed: 0 }] },
+      DEFAULT_TACTICS,
+      "normal",
+      () => 0.3,
+    ),
+  ).toBeNull();
+});

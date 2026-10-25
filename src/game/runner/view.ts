@@ -17,6 +17,11 @@ const FIGURE = 48;
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   preloadTrackAssets(scene);
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
+  for (const kind of ["blast", "giant-slow"])
+    scene.load.svg(`pickup-${kind}`, `${import.meta.env.BASE_URL}assets/pickups/${kind}.svg`, {
+      width: 96,
+      height: 96,
+    });
   for (const variant of RUN_VARIANTS) {
     scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
   }
@@ -285,7 +290,13 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
       color: "#9cffb1",
     })
     .setOrigin(0.5);
-  const view = scene.add.container(x, y, [glow, coin, icon, multiplier]).setDepth(5);
+  const art =
+    kind === "blast" || kind === "giant-slow"
+      ? scene.add.image(0, 0, `pickup-${kind}`).setDisplaySize(36, 36)
+      : null;
+  const view = scene.add
+    .container(x, y, [glow, coin, icon, multiplier, ...(art ? [art] : [])])
+    .setDepth(5);
   scene.tweens.add({
     targets: glow,
     scale: 1.25,

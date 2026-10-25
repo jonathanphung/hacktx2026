@@ -1,7 +1,7 @@
 import { createObstacleView } from "../obstacle-view";
 import type { AttackDef } from "../../../shared/attacks";
 
-/** A burning projectile aimed straight down one lane. Dodge rather than jump. */
+/** A launched projectile that accelerates down its fixed lane. Dodge rather than jump. */
 export const fireball: AttackDef = {
   id: "fireball",
   name: "Fireball",

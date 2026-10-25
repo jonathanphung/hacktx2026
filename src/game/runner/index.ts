@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { TalePots } from "./score";
+import { TalePots, SCORE } from "./score";
 import { acceptsPlayerInput } from "../../shared/match";
 import { type Emitter, untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
@@ -14,7 +14,10 @@ import type {
 import { Snare } from "./snare";
 import { withObstacleCue } from "./obstacle-cue";
 import { POWERUPS, RUNNER } from "./config";
-import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
+import { POWERUP_DURATION, POWERUP_KINDS, PowerupState, PowerupBag } from "./powerups";
+import { HazardMotion, crossesRunner, hazardSpeed } from "./active-hazards";
+import { detonate } from "./blast";
+import { explosion, jumpReward } from "./combat-fx";
 import { Spring } from "./motion";
 import { RelicPowers } from "./relics";
 import { absorbProtection } from "./protection";
@@ -42,6 +45,7 @@ interface Obstacle {
   h: number;
   /** Already touched the runner: effects apply once per obstacle. */
   touched: boolean;
+  motion: HazardMotion;
 }
 
 interface Pickup {
@@ -84,7 +88,8 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   const trail = new TrailSpawner();
   const stages = new StageRun();
   const relics = new RelicPowers();
-  let safeUntil = 0;
+  const preview = import.meta.env.DEV && new URLSearchParams(location.search).has("combat-preview");
+  let safeUntil = preview ? Infinity : 0;
   const jumpMs = () => RUNNER.jumpMs * relics.jumpFactor;
   let stageItem: StageItem | null = null;
   const laneOf = (x: number) => Math.round((x - laneX(1)) / RUNNER.laneSpacing + 1) as Lane;
@@ -98,7 +103,14 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           y: o.view.y,
           jumpable: o.spec.jumpable,
           lethal: o.spec.effect === "end-run",
+          height: o.h,
+          minSpeed: o.motion.velocity,
+          maxSpeed: Math.max(
+            o.motion.velocity,
+            hazardSpeed(o.spec.kind, 10000, speed, powerups.speedFactor(now)),
+          ),
         })),
+        { speed, timeScale: powerups.speedFactor(now) },
       )
     ) {
       waiting.push(spec);
@@ -111,10 +123,28 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     const view =
       spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
     const labelled = withObstacleCue(scene, view, spec).setDepth(spec.effect === "slow" ? 2 : 3);
-    obstacles.push({ spec, view: labelled, w, h, touched: false });
+    obstacles.push({
+      spec,
+      view: labelled,
+      w,
+      h,
+      touched: false,
+      motion: new HazardMotion(spec.kind),
+    });
     events.emit("obstacle-spawned", { kind: spec.kind, lane: spec.lane });
   };
   const pickups: Pickup[] = [];
+  if (import.meta.env.DEV) {
+    const previewPickup = (kind: PowerupKind) => {
+      if (!preview || !POWERUP_KINDS.includes(kind)) return;
+      pickups.push({
+        kind,
+        view: createPickupView(scene, laneX(lane), RUNNER.runnerY - 140, kind),
+      });
+    };
+    scene.events.on("dev-pickup", previewPickup);
+    untilShutdown(scene, () => scene.events.off("dev-pickup", previewPickup));
+  }
 
   const enterStage = (stage: StageInfo, time: number, first = false) => {
     if (!first) {
@@ -179,10 +209,21 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     if (next) enterStage(next, time);
   };
   const powerups = new PowerupState();
+  const powerupBag = new PowerupBag();
   const score = () => pots.score;
 
   const startPowerup = (kind: PowerupKind, time: number) => {
+    if (kind === "blast") {
+      detonate(obstacles, waiting, (x, y) => explosion(scene, x, y));
+      events.emit("powerup", { kind, active: true, durationMs: 0 });
+      events.emit("powerup", { kind, active: false, durationMs: 0 });
+      return;
+    }
     powerups.activate(kind, time);
+    if (kind === "slowmo") {
+      safeUntil = Math.max(safeUntil, time + 450);
+      explosion(scene, laneX(1), RUNNER.runnerY, 0xffdf6a);
+    }
     if (kind === "shield") runner.setShield(true);
     events.emit("powerup", { kind, active: true, durationMs: POWERUP_DURATION[kind] });
   };
@@ -257,7 +298,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       time,
       dt,
     );
-    if (stages.itemDue(time)) spawnStageItem(time);
+    if (!preview && stages.itemDue(time)) spawnStageItem(time);
     if (stageItem) {
       stageItem.view.y += speed * dt;
       const reach = (STAGE_ITEM.size + hitbox) / 2 + relics.reach;
@@ -273,6 +314,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     }
 
     if (
+      !preview &&
       trail.due(
         time,
         obstacles.some((ob) => ob.view.y < 260),
@@ -285,9 +327,9 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         spawnObstacle(trailHazard(target, Math.random(), tuning.mix));
     }
 
-    if (time >= nextPowerupAt) {
+    if (!preview && time >= nextPowerupAt) {
       nextPowerupAt = time + POWERUPS.everyMs;
-      const kind = pick(POWERUP_KINDS);
+      const kind = powerupBag.next();
       const view = createPickupView(scene, laneX(pick(LANES)), -POWERUPS.size, kind);
       pickups.push({ kind, view });
     }
@@ -306,12 +348,22 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
 
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const ob = obstacles[i];
-      ob.view.y += speed * dt;
-      const hit =
-        !ob.touched &&
+      const previousY = ob.view.y;
+      const hazardScale = powerups.speedFactor(time);
+      const frozen = powerups.hazardsFrozen(time);
+      ob.view.y = ob.motion.advance(
+        ob.view.y,
+        dt,
+        stageSpeed(stages.stage.id, inStage) * hazardScale,
+        hazardScale,
+        frozen,
+      );
+      (ob.view as Phaser.GameObjects.Container).setAlpha(frozen ? 0.65 : 1);
+      const inBand =
         Math.abs(ob.view.x - lateral.value) < (ob.w + hitbox) / 2 &&
-        Math.abs(ob.view.y - RUNNER.runnerY) < (ob.h + hitbox) / 2 &&
-        !(ob.spec.jumpable && airborne);
+        crossesRunner(previousY, ob.view.y, ob.h);
+      ob.motion.noteJump(inBand, airborne);
+      const hit = !ob.touched && inBand && !(ob.spec.jumpable && airborne);
       if (hit) {
         ob.touched = true;
         events.emit("runner-hit", {
@@ -343,6 +395,12 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           lateral.velocity *= RUNNER.slowFactor;
           events.emit("runner-slowed", { durationMs });
         }
+      }
+      const bonus = ob.motion.cleanJumpPoints(ob.view.y, ob.h, ob.touched);
+      if (bonus) {
+        const awarded = Math.min(bonus, Math.max(0, SCORE.potStart - pots.pot));
+        pots.pot += awarded;
+        if (awarded >= 1) jumpReward(scene, lateral.value, RUNNER.runnerY, Math.floor(awarded));
       }
       // Solid obstacles break on contact; surfaces (slow) stay and scroll away.
       const smashed = hit && ob.spec.effect === "end-run" && ob.spec.kind !== "fireball";
@@ -376,6 +434,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         lane: laneOf(o.view.x),
         y: o.view.y,
         height: o.h,
+        speed: o.motion.velocity,
         jumpable: o.spec.jumpable,
         lethal: o.spec.effect === "end-run",
       })),

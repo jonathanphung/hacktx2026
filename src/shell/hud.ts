@@ -1,4 +1,4 @@
-import { POWERUP_GUIDE } from "./game-guide";
+import { POWERUP_GUIDE, powerupIcon } from "./game-guide";
 import { STAGES } from "../shared/stages";
 import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
@@ -25,7 +25,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
     <div class="hud-feedback" role="status"></div><aside class="hud-discovery" role="status" hidden><strong></strong><span></span></aside>
     <section class="hud-jon"><div class="hud-powerups"></div><p class="hud-snare" hidden></p><h2>JON</h2><small>Swipe / A / D: dodge · Up / W: jump</small><p class="obstacle-legend"><span>↑ JUMP: low obstacles</span><span>↔ DODGE: tall / blocked</span></p></section>
-    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Space: drop</small></section>`;
+    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><p class="giant-debuff" hidden>COOLDOWN ×1.25</p><div class="hud-cards"></div><small>J/K/L: aim · Space: drop</small></section>`;
   const left = document.createElement("div"),
     right = document.createElement("div");
   left.className = "run-sidebar run-left";
@@ -122,7 +122,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
       const badge = document.createElement("div");
       badge.className = "powerup-badge";
       badge.style.setProperty("--power-color", `#${guide.color.toString(16)}`);
-      badge.innerHTML = `<b aria-hidden="true">${guide.symbol}</b><span><strong>${guide.name}</strong><small>${guide.effect}</small></span><em></em><progress max="1" aria-label="${guide.name} remaining"></progress>`;
+      badge.innerHTML = `<b aria-hidden="true">${powerupIcon(guide)}</b><span><strong>${guide.name}</strong><small>${guide.effect}</small></span><em></em><progress max="1" aria-label="${guide.name} remaining"></progress>`;
       badge.dataset.kind = kind;
       panel.append(badge);
     }
@@ -205,6 +205,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   untilShutdown(
     scene,
     events.on("powerup", ({ kind, active, durationMs }) => {
+      if (kind === "giant-slow") hud.querySelector<HTMLElement>(".giant-debuff")!.hidden = !active;
       if (active) {
         activePowerups.add(kind);
         powerupUntil.set(kind, gameTime + durationMs);
@@ -215,9 +216,9 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
       }
       renderPowerups();
       powerupTimers(gameTime);
-      if (!active) playCue("expire");
+      if (!active && kind !== "blast") playCue("expire");
       if (active) {
-        playCue("pickup");
+        playCue(kind === "blast" ? "attack" : "pickup");
         announce(`${POWERUP_GUIDE[kind].name} · ${POWERUP_GUIDE[kind].effect}`, true);
       }
     }),

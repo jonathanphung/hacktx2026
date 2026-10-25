@@ -26,3 +26,18 @@ describe("giant FIFO inventory", () => {
     expect(stock.capacity).toBe(3);
   });
 });
+
+it("applies exactly 1.25x recharge to pending and future cooldowns without stacking refreshes", () => {
+  const stock = new GiantInventory(() => "fireball");
+  stock.take(1000);
+  stock.setCooldownFactor(2000, 1.25);
+  expect(stock.wait(2000)).toBe(2500); // 2000ms left becomes 2500ms.
+  stock.setCooldownFactor(2000, 1.25);
+  expect(stock.wait(2000)).toBe(2500);
+  expect(stock.update(4499)).toBe(false);
+  expect(stock.update(4500)).toBe(true);
+  stock.take(4500);
+  expect(stock.wait(4500)).toBe(3750);
+  stock.setCooldownFactor(5000, 1);
+  expect(stock.wait(5000)).toBe(2600);
+});

@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import { Emitter } from "./emitter";
 import type { StageId, StageItemId } from "./stages";
 import type { Lane } from "./types";
+import type { MatchSnapshot } from "./match";
 
 /** Any positioned game object (Rectangle, Sprite, Container, ...). */
 export type ObstacleView = Phaser.GameObjects.GameObject & Phaser.GameObjects.Components.Transform;
@@ -31,6 +32,8 @@ export interface World {
   laneX(lane: Lane): number;
   /** Current scroll speed in px/second. */
   readonly speed: number;
+  /** Read-only observations for a single-player opponent. */
+  snapshot?(): MatchSnapshot;
   /** Spawns an obstacle at the top of the lane; it scrolls toward the runner. */
   spawnObstacle(spec: ObstacleSpec): void;
 }

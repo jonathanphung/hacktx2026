@@ -12,7 +12,7 @@ export type InputEvent =
   | { player: "saboteur"; action: "cycle" }
   | { player: "saboteur"; action: "select"; slot: number };
 
-export type InputSource = "vision" | "keyboard";
+export type InputSource = "vision" | "keyboard" | "ai";
 
 interface InputEvents {
   input: InputEvent & { source: InputSource };

@@ -45,11 +45,6 @@ body {
 #stage:not(.run-active) #facecam {
   display: none;
 }
-/* Single-player games show the human's preview, never an empty AI camera. */
-#stage:has(.story-hud[data-mode="jon"]) #cam-saboteur,
-#stage:has(.story-hud[data-mode="giant"]) #cam-runner {
-  display: none;
-}
 #facecam.expanded {
   width: 34%;
   max-width: 460px;

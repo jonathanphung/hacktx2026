@@ -247,7 +247,13 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
       }
       playObstacle(kind);
       if (effect !== "slow") playCue("end");
-      announce(effect === "slow" ? "JON SLOWED!" : "JON CAUGHT!");
+      announce(
+        kind === "oil" || kind === "mud"
+          ? "SLIPPING! STEER BACK!"
+          : effect === "slow"
+            ? "JON SLOWED!"
+            : "JON CAUGHT!",
+      );
     }),
   );
   untilShutdown(

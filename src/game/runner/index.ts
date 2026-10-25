@@ -12,6 +12,7 @@ import type {
   World,
 } from "../../shared/world";
 import { Snare } from "./snare";
+import { spillLane } from "./spill";
 import { withObstacleCue } from "./obstacle-cue";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState, PowerupBag } from "./powerups";
@@ -392,7 +393,12 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         } else if (ob.spec.effect === "slow") {
           const durationMs = RUNNER.slowMs * relics.slowFactor;
           snare.apply(time, durationMs);
-          lateral.velocity *= RUNNER.slowFactor;
+          if (ob.spec.kind === "oil" || ob.spec.kind === "mud") {
+            // Change the spring target rather than teleporting; counter-steering stays available.
+            lane = spillLane(laneOf(lateral.value), lateral.velocity);
+            lateral.target = laneX(lane);
+            lateral.velocity = Math.sign(lateral.target - lateral.value) * RUNNER.laneSpacing * 1.6;
+          } else lateral.velocity *= RUNNER.slowFactor;
           events.emit("runner-slowed", { durationMs });
         }
       }

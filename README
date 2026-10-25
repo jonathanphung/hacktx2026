@@ -467,3 +467,10 @@ AI timing. Rolling attacks now start at 1.25x (fireball) / 1.15x (log) road spee
 and accelerate to 1.75x / 1.45x, retaining the shared minimum warning-time cap.
 Latest travel-driven log grain replaces the older timer animation; the fireball
 keeps its revolving core alongside the new flame trail.
+
+Oil and mud now slide Jon smoothly into one neighboring lane on an unblocked
+hit, following lateral momentum in the center and always pushing inward at the
+edges. Steering can immediately counter the slide; the existing brief snare still
+limits rapid dodge spam. Each spill pushes once, shields block it, and oil remains
+jumpable. Natural sap retains its snare without a lane push. The HUD warns
+SLIPPING! STEER BACK! Tests cover edge safety and both center-lane directions.

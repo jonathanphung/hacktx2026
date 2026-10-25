@@ -1885,6 +1885,9 @@ body {
 .pixel-hand {
   z-index: 5;
 }
+.pixel-opening .pixel-jon {
+  z-index: 6;
+}
 
 /* Cinematic camera: depth layers slide at different speeds; every moving part uses transforms. */
 .pixel-camera {

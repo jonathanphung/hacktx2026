@@ -788,7 +788,7 @@ body {
 #facecam .cam {
   position: absolute;
   top: 9%;
-  width: 29%;
+  width: 24%;
   max-width: none;
   border: 2px solid #ffffff55;
   border-radius: 8px;
@@ -796,7 +796,7 @@ body {
   box-shadow: 0 6px 20px #0008;
 }
 #facecam.expanded .cam {
-  width: 31%;
+  width: 26%;
 }
 #facecam .cam.left {
   left: 1%;
@@ -2382,7 +2382,7 @@ body {
 }
 /* Keep the original two camera corners; place status below them when visible. */
 #stage.run-active:has(#facecam:not([hidden])) .run-sidebar {
-  top: 54%;
+  top: 48%;
   bottom: 3%;
   width: 27%;
   gap: 0.5cqw;

@@ -226,8 +226,29 @@ export class GameOverScene extends Phaser.Scene {
         `${(result.survivedMs / 1000).toFixed(1)}s`;
       screen.append(content);
       const button = content.querySelector("button")!;
-      this.time.delayedCall(800, () => {
+      // Let players lower their hands after a fatal collision before gesture replay arms.
+      const cameraDeath =
+        result.outcome !== "escaped" &&
+        !new URLSearchParams(location.search).has("novision") &&
+        !document.getElementById("facecam")?.hidden;
+      const replayDelay = cameraDeath ? 2000 : 800;
+      if (cameraDeath) {
+        let seconds = 2;
+        button.textContent = `Catch your breath · ${seconds}s`;
+        const hint = content.querySelector(".start-hint")!;
+        hint.textContent = "Lower your hands. Replay unlocks in a moment.";
+        this.time.addEvent({
+          delay: 1000,
+          repeat: 0,
+          callback: () => {
+            button.textContent = `Catch your breath · ${--seconds}s`;
+          },
+        });
+      }
+      this.time.delayedCall(replayDelay, () => {
         button.textContent = victory ? "Begin a new story" : "Play again";
+        content.querySelector(".start-hint")!.textContent =
+          "Click replay, press Enter, or move either player’s hand for another adventure";
         installStart(this, button);
       });
     };

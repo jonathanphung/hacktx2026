@@ -434,3 +434,9 @@ HUD follow-up: constrain side-column grid items and wrap tale titles; use six
 bounded columns for HACKTX clue boxes. Restore the original split camera corners,
 expanded camera sizing and camera header. When cameras are visible, status panels
 sit below them rather than overlapping their video.
+
+During a run, Esc opens Resume and Home screen actions; returning home also
+cancels any resume countdown. After a camera-mode death, replay is disabled for
+two seconds with a visible countdown before keyboard, click or hand input arms.
+Keyboard-only replay and victory timing stay unchanged. Split cameras are now
+24% of the stage width (26% expanded), with status panels below them.

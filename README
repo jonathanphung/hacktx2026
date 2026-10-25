@@ -290,3 +290,17 @@ The ending dialogue and result text are now shorter and more restrained.
 All 189 tests and full checks pass, including progressive tempo, unique obstacle
 sounds, short shatter duration, and theme changes without cutting notes or adding
 extra schedulers.
+
+## Persistent aim lane and volume control
+
+The red aiming lane now uses one alpha channel, with an opaque fill and a 22%
+idle opacity. Previously the cast tween multiplied object alpha by fill alpha,
+reducing visibility after the first drop. It remains visible through cooldowns,
+repeated casts and stage changes.
+
+Sound On/Off is replaced by a 0–100% volume slider. Drag it, use arrow keys, or
+scroll over it in 5% increments. M mutes/restores the last chosen level. All music
+and effects share the same master gain. Cinematic audio cleanup is idempotent so
+an old scene cannot stop the next scene's music a second time. A live browser
+analyser confirmed nonzero output after intro completion and theme change, and
+zero output at 0% volume. The production preview is rebuilt under /hacktx2026/.

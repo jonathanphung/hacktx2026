@@ -51,7 +51,10 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
   const start = performance.now();
   const duration = ending ? 21000 : 20000;
   let timer: ReturnType<typeof setInterval> | undefined;
+  let cleaned = false;
   const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
     clearInterval(timer);
     window.removeEventListener("keydown", onKey, true);
     stopMusic();

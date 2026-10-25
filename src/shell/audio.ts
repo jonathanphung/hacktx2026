@@ -88,6 +88,8 @@ const SOUNDS: Record<Cue, Sound> = {
 };
 let context: AudioContext | undefined;
 let output: GainNode | undefined;
+let volume = 0.8;
+let rememberedVolume = volume;
 let muted = false,
   installed = false;
 const lastPlayed = new Map<Cue, number>();
@@ -224,38 +226,55 @@ export function playCue(cue: Cue): void {
   });
 }
 
-/** One persistent mute control; audio unlocks only following a user interaction. */
+/** One persistent slider controls the whole mix; M restores the previous level. */
 export function installShellAudio(): void {
   if (installed) return;
   installed = true;
-  const button = document.createElement("button");
-  button.id = "sound-toggle";
-  button.type = "button";
-  button.title = "Toggle sound (M)";
+  const wrapper = document.createElement("label");
+  wrapper.id = "sound-toggle";
+  wrapper.title = "Drag or scroll to adjust volume · M mutes";
+  const caption = document.createElement("span");
+  const slider = document.createElement("input");
+  slider.type = "range";
+  slider.min = "0";
+  slider.max = "100";
+  slider.step = "1";
+  slider.setAttribute("aria-label", "Volume");
   const render = () => {
-    button.textContent = muted ? "Sound: off" : "Sound: on";
-    button.setAttribute("aria-label", muted ? "Enable sound" : "Mute sound");
-    button.setAttribute("aria-pressed", String(muted));
-    if (context && output) output.gain.setValueAtTime(muted ? 0 : 1, context.currentTime);
+    muted = volume === 0;
+    slider.value = String(Math.round(volume * 100));
+    caption.textContent = `Volume ${slider.value}%`;
+    slider.setAttribute("aria-valuetext", `${slider.value} percent`);
+    if (context && output) output.gain.setValueAtTime(volume, context.currentTime);
   };
   const unlock = () => {
     try {
       if (!context) {
         context = new AudioContext();
         output = context.createGain();
-        output.gain.value = muted ? 0 : 1;
+        output.gain.value = volume;
         output.connect(context.destination);
       }
       if (context.state === "suspended") void context.resume().catch(() => {});
     } catch {
-      /* Audio remains optional on unsupported browsers. */
+      /* Audio is optional on unsupported browsers. */
     }
   };
-  button.addEventListener("click", () => {
-    muted = !muted;
+  const change = (value: number) => {
+    volume = Math.max(0, Math.min(1, Number.isFinite(value) ? value : volume));
+    if (volume > 0) rememberedVolume = volume;
     render();
     unlock();
-  });
+  };
+  slider.addEventListener("input", () => change(Number(slider.value) / 100));
+  slider.addEventListener(
+    "wheel",
+    (event) => {
+      event.preventDefault();
+      if (event.deltaY) change(volume + (event.deltaY < 0 ? 0.05 : -0.05));
+    },
+    { passive: false },
+  );
   window.addEventListener("pointerdown", unlock, { capture: true });
   window.addEventListener(
     "keydown",
@@ -268,11 +287,14 @@ export function installShellAudio(): void {
         event.target.closest("input, textarea, [contenteditable]")
       )
         return;
-      muted = !muted;
-      render();
+      if (volume > 0) {
+        rememberedVolume = volume;
+        change(0);
+      } else change(rememberedVolume || 0.8);
     },
     { capture: true },
   );
   render();
-  document.getElementById("stage")?.append(button);
+  wrapper.append(caption, slider);
+  document.getElementById("stage")?.append(wrapper);
 }

@@ -1680,3 +1680,28 @@ body {
   box-shadow: none;
   border-width: 1px;
 }
+
+#sound-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6cqw;
+  cursor: default;
+  border: 1px solid #a995b6;
+  border-radius: 0.6cqw;
+  background: #211b36ed;
+  font:
+    0.85cqw "Courier New",
+    monospace;
+  padding: 0.5cqw 0.7cqw;
+  box-shadow: none;
+}
+#sound-toggle input {
+  width: 8cqw;
+  min-width: 55px;
+  accent-color: #ba9fe0;
+  cursor: pointer;
+}
+#sound-toggle input:focus-visible {
+  outline: 2px solid #a4e8d5;
+  outline-offset: 3px;
+}

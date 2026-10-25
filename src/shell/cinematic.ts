@@ -49,7 +49,7 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
     ending ? "Claude's rescue cinematic" : "Claude's kidnapping cinematic",
   );
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
-  const layers = pixelLayers(false, `${import.meta.env.BASE_URL}assets/beanstalk/stem-tile-sm.png`);
+  const layers = pixelLayers(false, `${import.meta.env.BASE_URL}assets/beanstalk/player-stem.png`);
   const dawnSky = pixelLayers(true).sky;
   const particles = Array.from({ length: 150 }, () => '<i class="pixel-particle"></i>').join("");
   const rings = Array.from({ length: 3 }, () => '<i class="pixel-ring"></i>').join("");

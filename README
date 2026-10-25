@@ -325,3 +325,54 @@ minimum gap and growing FIFO capacity. Only the next attack is revealed in both
 HUDs. Permanent jump/reach/score bonuses remain. All 222 tests and full checks
 pass, including shared-charge consumption, near-ready ward prevention, slow
 movement, refill timing, drop reaction budget, and escape-lane protection.
+
+## Local single-player with live Gemini tactics
+
+Choose Two players, Play as Jon (AI Giant), or Play as Giant (AI Jon) from the
+simplified title screen. Single-player exposes Easy / Normal / Hard. The chosen
+mode survives replay, and Change mode returns to the selector. Only the human's
+side accepts keyboard/camera inputs; practice still teaches both sides. Giant
+matches report catching Jon as a win and reaching the tower as a loss, without
+asking the giant player to solve the rescue textbox.
+
+Gemini supplies a validated tactical plan about every ten seconds (tracking,
+prediction/ambush, preferred lane, aggression and jump preference). A local
+controller executes normal legal inputs, never frame-by-frame API calls. It uses
+delayed observations: Easy 480ms/18% mistakes, Normal 300ms/8%, Hard 180ms/2.5%.
+Normal game cooldowns, obstacle placement, physics and shield rules still apply.
+AI Jon avoids hazards and seeks treasures. AI Giant aims and fires through the
+existing queue. Pause, game over and shutdown stop actions and abort requests.
+Slow/unavailable Gemini requests keep a local opponent running; the badge shows
+whether current tactics came from Gemini or are offline.
+
+Run with Node 22.18+ (Node 24 also works):
+
+1. Put GEMINI_API_KEY in ignored .env. GEMINI_MODEL defaults to
+   gemini-3.5-flash-lite. Never use a VITE_ variable for the key.
+2. Run npm run ai:server, then npm run dev. Vite proxies /api/ai to the loopback
+   server on port 8787, including the production preview. The local server binds
+   to 127.0.0.1 and permits the normal local dev/preview origins.
+3. For deployment, GitHub Pages cannot run the server. Host the endpoint separately
+   behind appropriate access controls, configure its allowed origins, and set the
+   public VITE_AI_ENDPOINT URL before building. Until then, the static build uses
+   local fallback opponents. The backend includes bounded payload validation,
+   limited concurrency, per-session/global rate limits and request timeouts.
+
+Only numeric game observations are sent to Gemini, never camera frames or the
+puzzle answer. The API key remains on the server. Structured responses are locally
+validated before use. References: https://ai.google.dev/gemini-api/docs/generate-content/structured-output
+
+## Supplied beanstalk artwork
+
+The road now loads player-stem.png, adapted from the user's supplied beanstalk.png
+with background removal through image generation. The original is preserved as
+player-stem-source.png. Nearest-neighbor filtering keeps pixel edges crisp, the
+source is centered in each lane, and scrolling, palette transitions and collision
+geometry remain unchanged. No new asset downloads are required at runtime.
+
+Local verification: 253 game tests plus 3 backend tests pass, including input
+ownership, legal AI decisions, difficulty limits, pause/shutdown, structured API
+validation, rate limits and fallback errors. Live Gemini returned validated
+plans. Browser checks exercised both roles, mode switching, difficulty selection,
+AI Jon collecting a stage item, AI Giant casting, and the supplied beanstalk.
+Changes are local only; do not push until the user asks.

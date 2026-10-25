@@ -4,8 +4,9 @@ export const pixelGiantHand = `<path fill="#332245" d="M-19-64h38v63h-38z"/><pat
 export const pixelBars = `<g class="pixel-cell-bars" fill="#e4d7ee"><path d="M263 49h2v34h-2zm7 0h2v34h-2zm7 0h2v34h-2zm7 0h2v34h-2z"/><path d="M261 66h27v2h-27z"/></g>`;
 /** The landscape as separate depth layers, so a camera can slide them at different speeds. */
 export function pixelLayers(dawn = false, stalkTile?: string) {
+  const supplied = stalkTile?.includes("player-stem");
   const stalk = stalkTile
-    ? `<defs><pattern id="stalk-tile" patternUnits="userSpaceOnUse" x="218.6" width="19.7" height="12.5"><image href="${stalkTile}" width="19.7" height="12.5"/></pattern></defs><rect x="218.6" y="-20" width="19.7" height="170" fill="url(#stalk-tile)"/>`
+    ? `<defs><pattern id="stalk-tile" patternUnits="userSpaceOnUse" x="218.6" width="19.7" height="${supplied ? 88.65 : 12.5}"><image href="${stalkTile}" x="${supplied ? -19.7 : 0}" width="${supplied ? 59.1 : 19.7}" height="${supplied ? 88.65 : 12.5}"/></pattern></defs><rect x="218.6" y="-20" width="19.7" height="170" fill="url(#stalk-tile)"/>`
     : `<path fill="#244d3d" d="M222 150V9h13v141z"/><path fill="#7fb266" d="M225 150V9h7v141z"/><path fill="#9bc87a" d="M225 150V9h2v141z"/>`;
   return {
     sky: `<rect width="320" height="180" fill="${dawn ? "#a7c7cf" : "#75668f"}"/><rect y="94" width="320" height="86" fill="${dawn ? "#d9dcb8" : "#a193b4"}"/>

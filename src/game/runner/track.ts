@@ -18,7 +18,7 @@ const STEM_TILE_SCALE = 0.5;
 
 /** Loads the pixel-art beanstalk tile; createTrack falls back to drawn stems if it is missing. */
 export function preloadTrackAssets(scene: Phaser.Scene) {
-  scene.load.image(STEM_FILE_KEY, `${import.meta.env.BASE_URL}assets/beanstalk/stem-tile.png`);
+  scene.load.image(STEM_FILE_KEY, `${import.meta.env.BASE_URL}assets/beanstalk/player-stem.png`);
 }
 
 /** Three living stems. Lane centers, collisions, and scrolling remain unchanged. */
@@ -60,7 +60,7 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
   }
   const hasArt = scene.textures.exists(STEM_FILE_KEY);
   const key = hasArt ? STEM_FILE_KEY : "enchanted-stem";
-  if (hasArt) scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+  if (hasArt) scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
   else if (!scene.textures.exists(key)) {
     const g = scene.make.graphics({}, false);
     const width = RUNNER.laneSpacing;
@@ -102,6 +102,11 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
       .setTileScale(hasArt ? STEM_TILE_SCALE : 1)
       .setDepth(0),
   );
+  if (hasArt) {
+    const source = scene.textures.get(key).getSourceImage() as HTMLImageElement;
+    for (const stem of stems)
+      stem.tilePositionX = (source.width - RUNNER.laneSpacing / STEM_TILE_SCALE) / 2;
+  }
   // Tile positions are in texture pixels, so a scaled tile must scroll proportionally faster.
   const scroll = 1 / (hasArt ? STEM_TILE_SCALE : 1);
 

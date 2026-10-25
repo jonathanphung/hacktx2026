@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import "./style.css";
+import { installMenuMotion } from "./shell/menu-motion";
 import { TutorialScene } from "./shell/tutorial";
 import { GameScene } from "./game/GameScene";
 import { GAME_HEIGHT, GAME_WIDTH } from "./shared/types";
@@ -27,7 +28,11 @@ if (params.has("facecam-preview")) {
   mountFacecamPreview();
 } else if (!params.has("novision")) {
   startVision()
-    .then(mountWebcamCorners)
+    .then((vision) => {
+      const stopMenuMotion = installMenuMotion(vision);
+      window.addEventListener("pagehide", stopMenuMotion, { once: true });
+      mountWebcamCorners(vision);
+    })
     .catch((err) => {
       console.warn("[vision] unavailable, keyboard only", err);
       showBanner("Camera unavailable — keyboard controls only");

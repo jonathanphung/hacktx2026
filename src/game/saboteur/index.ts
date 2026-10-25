@@ -3,8 +3,10 @@ import { untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
 import { GAME_HEIGHT, type Lane } from "../../shared/types";
 import { saboteurBus, type GameEvents, type World } from "../../shared/world";
-import { ATTACK_BY_ID, ATTACKS } from "./attacks";
+import { ATTACK_BY_ID } from "./attacks";
 import { SABOTEUR } from "./config";
+import { AttackRotation } from "./rotation";
+import { createRotationPreview } from "./rotation-view";
 import { GiantInventory } from "./inventory";
 
 import { createGiantHand } from "./giant-hand";
@@ -16,12 +18,11 @@ const GLOW_LOCK_ALPHA = 0.4;
 const GLOW_EASE_MS = 40;
 const MARKER_EASE_MS = 70;
 
-/** Player 2: aims one random obstacle and drops it every four seconds into the runner's world. */
+/** Player 2: aims the next obstacle in a repeating rotation and drops it every four seconds into the runner's world. */
 export function installSaboteur(scene: Phaser.Scene, world: World): void {
-  // One physical obstacle per throw: double-wall is intentionally outside this pool.
-  const pool = ATTACKS.filter((attack) => attack.id !== "double-wall");
-  const draw = () => pool[Math.floor(Math.random() * pool.length)].id;
-  const inventory = new GiantInventory(draw);
+  const rotation = new AttackRotation();
+  const inventory = new GiantInventory(() => rotation.next());
+  const preview = createRotationPreview(scene);
   let aimLane: Lane = 1;
   let now = -1;
   let nextFire = 0;
@@ -86,6 +87,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
     .setDepth(8);
 
   const announce = () => {
+    preview(inventory.cards, rotation.peek(4));
     world.events.emit("hand-changed", {
       hand: [...inventory.cards],
       selected: 0,

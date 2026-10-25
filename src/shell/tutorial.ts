@@ -9,6 +9,7 @@ import { createPickupView, preloadRunnerAssets, RunnerView } from "../game/runne
 import { createObstacleView } from "../game/saboteur/obstacle-view";
 import { withObstacleCue } from "../game/runner/obstacle-cue";
 import { createGiantHand } from "../game/saboteur/giant-hand";
+import { onMenuMotion } from "./menu-motion";
 import { mountShell } from "./presentation";
 import { installPause } from "./pause";
 import { POWERUP_GUIDE } from "./game-guide";
@@ -51,16 +52,16 @@ const LESSONS = [
     "Space also works",
   ],
   [
-    "GIANT · BLUFF",
-    "Try a fake-out",
-    "A feint looks like a real wind-up, then vanishes. Bait Jon into dodging before your real cast.",
-    "Click FEINT or press F · 8s recharge in play",
+    "GIANT · PLAN AHEAD",
+    "Drop the next object in rotation",
+    "Barrier → Hurdle → Oil → Mud → Fireball, then repeat. Your next drop is a Hurdle. Aim, then close your fist again.",
+    "Open your palm between fists · Space also works",
   ],
   [
     "BOTH PLAYERS · READY",
     "Your story starts here",
     "Jon reads the path. The Giant sets the trap. Keep one hand visible in your half of the camera.",
-    "The real adventure has no practice safety net",
+    "Move either hand / Enter to begin · Click also works",
   ],
 ] as const;
 
@@ -110,6 +111,7 @@ export class TutorialScene extends Phaser.Scene {
       <button class="practice-skip" type="button">Skip practice → story</button>`;
     const feedback = ui.querySelector<HTMLElement>(".practice-feedback")!;
     const action = ui.querySelector<HTMLButtonElement>(".practice-action")!;
+    let stopFinishMotion: (() => void) | undefined;
     const show = () => {
       lessonTarget = lesson === 3 ? (lane === 0 ? 2 : 0) : lane;
       const [who, title, description, keys] = LESSONS[lesson];
@@ -120,13 +122,15 @@ export class TutorialScene extends Phaser.Scene {
       ui.querySelector("section p")!.textContent = description;
       ui.querySelector("kbd")!.textContent = keys;
       feedback.textContent = "";
-      action.hidden = lesson < 6;
-      action.textContent = lesson === 6 ? "FEINT · F" : "Enter the story →";
+      action.hidden = lesson < 7;
+      action.textContent = "Enter the story →";
+      if (lesson === 7 && !stopFinishMotion) stopFinishMotion = onMenuMotion(finish);
       glow.setVisible(lesson >= 4 && lesson < 7);
       marker.setVisible(lesson >= 4 && lesson < 7);
     };
     const finish = () => {
       if (this.sys.isPaused()) return;
+      stopFinishMotion?.();
       ui.inert = true;
       this.scene.start("title", { practiceComplete: true });
     };
@@ -146,34 +150,17 @@ export class TutorialScene extends Phaser.Scene {
         show();
       });
     };
-    const fake = () => {
-      if (lesson !== 6 || waiting || this.sys.isPaused()) return;
-      hand = createGiantHand(this, laneX(aim), 0xff5252, 650);
-      waiting = true;
-      this.time.delayedCall(650, () => {
-        hand?.destroy();
-        hand = null;
-        waiting = false;
-        complete("A bluff! Your real drop stays ready.");
-      });
+    const beginKey = (event: KeyboardEvent) => {
+      if (lesson === 7 && event.code === "Enter" && !event.repeat) finish();
     };
-    action.addEventListener("click", () => {
-      if (this.sys.isPaused()) return;
-      if (lesson === 7) finish();
-      else fake();
+    window.addEventListener("keydown", beginKey);
+    untilShutdown(this, () => {
+      window.removeEventListener("keydown", beginKey);
+      stopFinishMotion?.();
     });
-    const key = (event: KeyboardEvent) => {
-      if (
-        event.code === "KeyF" &&
-        !event.repeat &&
-        !event.metaKey &&
-        !event.ctrlKey &&
-        !event.altKey
-      )
-        fake();
-    };
-    window.addEventListener("keydown", key);
-    untilShutdown(this, () => window.removeEventListener("keydown", key));
+    action.addEventListener("click", () => {
+      if (!this.sys.isPaused() && lesson === 7) finish();
+    });
     untilShutdown(
       this,
       inputBus.on("input", (e) => {
@@ -198,16 +185,19 @@ export class TutorialScene extends Phaser.Scene {
           }
           if (lesson === 4 && aims.has(0) && aims.has(2))
             complete("The red marker follows your aim.");
-          if (e.action === "fire" && lesson === 5 && !waiting) {
-            hand = createGiantHand(this, laneX(aim), 0xffb74d, 400, "hurdle");
+          if (e.action === "fire" && (lesson === 5 || lesson === 6) && !waiting) {
+            const kind = lesson === 5 ? "barrier" : "hurdle";
+            const jumpable = kind === "hurdle";
+            const height = jumpable ? 24 : 50;
+            hand = createGiantHand(this, laneX(aim), 0xffb74d, 400, kind);
             waiting = true;
             this.time.delayedCall(400, () => {
               hand?.release();
               hand = null;
               const view = withObstacleCue(
                 this,
-                createObstacleView(this, laneX(aim), 110, "hurdle", 140, 24),
-                { kind: "hurdle", lane: aim, jumpable: true, effect: "end-run", height: 24 },
+                createObstacleView(this, laneX(aim), 110, kind, 140, height),
+                { kind, lane: aim, jumpable, effect: "end-run", height },
               );
               this.tweens.add({
                 targets: view,
@@ -216,7 +206,11 @@ export class TutorialScene extends Phaser.Scene {
                 onComplete: () => {
                   view.destroy();
                   waiting = false;
-                  complete("Cast landed. Jon sees the warning first.");
+                  complete(
+                    lesson === 5
+                      ? "Barrier dropped. Next in rotation: Hurdle."
+                      : "Hurdle dropped. Oil is next; the preview lets you plan.",
+                  );
                 },
               });
             });

@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { untilShutdown } from "../shared/emitter";
 import { inputBus } from "../shared/input";
+import { onMenuMotion } from "./menu-motion";
 import { installShellAudio, playCue } from "./audio";
 import { playCinematic } from "./cinematic";
 import { unlockCell } from "./rescue";
@@ -46,6 +47,7 @@ function installStart(
     event.preventDefault();
     if (keyboardStart) go();
   };
+  if (keyboardStart) untilShutdown(scene, onMenuMotion(go));
   button.disabled = false;
   button.addEventListener("click", go);
   window.addEventListener("keydown", onEnter);
@@ -77,7 +79,7 @@ export class TitleScene extends Phaser.Scene {
       </div>
       <button class="story-button" type="button" data-primary>Learn to play · practice grove</button>
       <button class="story-secondary" type="button" data-secondary>Skip practice · Play story</button>
-      <p class="start-hint">Click to begin, press Enter, or swipe up · Esc pauses during play</p>
+      <p class="start-hint">Click to begin, press Enter, or move either player’s hand · Esc pauses during play</p>
       <p class="camera-hint">Share one webcam. Keep one hand visible in your half.</p>`;
     screen.append(content);
     const primary = content.querySelector<HTMLButtonElement>("[data-primary]")!;
@@ -116,7 +118,7 @@ export class GameOverScene extends Phaser.Scene {
       <p class="story-subtitle">Every good tale deserves another try.</p>
       <div class="story-results"><div><strong id="result-score"></strong><span>SCORE</span></div><div><strong id="result-time"></strong><span>SURVIVED</span></div></div>
       <button class="story-button" type="button" disabled>Catch your breath…</button>
-      <p class="start-hint">Click replay, press Enter, or swipe up for another adventure</p>`;
+      <p class="start-hint">Click replay, press Enter, or move either player’s hand for another adventure</p>`;
 
       if (victory) {
         screen.classList.add("festival-victory");

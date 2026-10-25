@@ -1821,8 +1821,7 @@ body {
   color: #ffb5a8;
 }
 .practice-action,
-.practice-skip,
-.giant-feint button {
+.practice-skip {
   pointer-events: auto;
   border: 1px solid #d4bc8a;
   background: #60427d;
@@ -1845,38 +1844,63 @@ body {
   font-size: 0.85cqw;
 }
 .practice-ui button:focus-visible,
-.giant-feint button:focus-visible,
 .story-secondary:focus-visible {
   outline: 2px solid #a4ffe3;
   outline-offset: 3px;
 }
-.giant-feint {
+/* The forecast lives beside the track and never covers playable stems. */
+.giant-rotation {
   position: absolute;
   right: 1%;
-  bottom: 32%;
+  top: 54%;
   width: 21%;
   z-index: 1;
-  text-align: center;
+  padding: 0.7cqw;
+  box-sizing: border-box;
+  border: 1px solid #ad91c4;
+  border-radius: 0.5cqw;
+  background: #211b36ed;
+  color: #f8ebd1;
   font:
     0.8cqw "Courier New",
     monospace;
-  color: #e7d4f4;
 }
-.giant-feint button {
-  width: 100%;
-  background: #49325fee;
-  border-color: #bb9bde;
+.giant-rotation h3 {
+  font-size: 1cqw;
+  color: #ffe2a0;
+  margin: 0 0 0.5cqw;
 }
-.giant-feint button:disabled {
-  color: #c5b4d5;
-  background: #272034ed;
-  cursor: default;
+.giant-rotation ol {
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.3cqw;
+  list-style: none;
 }
-.giant-feint span {
-  display: block;
-  background: #211b36ee;
-  padding: 0.5cqw;
-  line-height: 1.5;
+.giant-rotation li {
+  display: grid;
+  grid-template-columns: 1.5cqw 1fr;
+  gap: 0.1cqw 0.4cqw;
+  border-left: 0.25cqw solid var(--attack-color);
+  padding: 0.3cqw 0.5cqw;
+  background: #382b49;
+}
+.giant-rotation li:first-child {
+  background: #574068;
+  outline: 1px solid #d5b5eb;
+}
+.giant-rotation b {
+  grid-row: span 2;
+  align-self: center;
+  color: #e9d494;
+}
+.giant-rotation small {
+  font-size: 0.6cqw;
+  color: #c9b6dc;
+}
+.giant-rotation p {
+  font-size: 0.65cqw;
+  margin: 0.5cqw 0 0;
 }
 .obstacle-legend {
   display: grid;

@@ -1,3 +1,4 @@
+import { PowerupState } from "./powerups";
 import { expect, it } from "vitest";
 import { HazardMotion, hazardSpeed, crossesRunner } from "./active-hazards";
 import { RUNNER } from "./config";
@@ -47,3 +48,43 @@ it("rewards a real clean log jump once, after its trailing edge clears; never a 
   shielded.noteJump(true, true);
   expect(shielded.cleanJumpPoints(670, 24, true)).toBe(0);
 });
+
+it.each(["fireball", "hurdle", "barrier", "mud", "oil", "wild-thorns", "sticky-sap"])(
+  "giant slowdown never repositions or reverses %s on activation or expiry",
+  (kind) => {
+    const powerups = new PowerupState();
+    const motion = new HazardMotion(kind);
+    const control = new HazardMotion(kind);
+    let y = 220;
+    let controlY = 220;
+    for (let time = 0; time <= 9000; time += 100) {
+      if (time === 500) powerups.activate("giant-slow", time);
+      powerups.expire(time);
+      const scale = powerups.speedFactor(time);
+      const next = motion.advance(y, 0.1, 300 * scale, scale, false);
+      controlY = control.advance(controlY, 0.1, 300, 1, false);
+      expect(next).toBeGreaterThanOrEqual(y);
+      expect(next).toBe(controlY);
+      y = next;
+    }
+  },
+);
+
+it.each(["barrier", "mud", "oil", "wild-thorns", "sticky-sap"])(
+  "Time Slow keeps %s moving with the scrolling stalk immediately after collection",
+  (kind) => {
+    const powerups = new PowerupState();
+    const motion = new HazardMotion(kind);
+    powerups.activate("slowmo", 100);
+    let y = 220;
+    let stalk = 220;
+    for (let time = 100; time < 700; time += 10) {
+      const scale = powerups.speedFactor(time);
+      const next = motion.advance(y, 0.01, 300 * scale, scale, false);
+      stalk += 300 * scale * 0.01;
+      expect(next).toBeGreaterThan(y);
+      expect(next).toBeCloseTo(stalk);
+      y = next;
+    }
+  },
+);

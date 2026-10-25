@@ -8,7 +8,7 @@ import { playCinematic } from "./cinematic";
 import { unlockCell } from "./rescue";
 import { addBeanstalks, mountShell } from "./presentation";
 
-import { letterMarkup, towerArt } from "./story";
+import { letterMarkup } from "./story";
 
 let introSeen = false;
 
@@ -137,12 +137,19 @@ export class TitleScene extends Phaser.Scene {
     if (
       import.meta.env.DEV &&
       !data.skipStoryPreview &&
-      ["opening", "ending", "rescue"].includes(preview ?? "")
+      ["opening", "ending", "rescue", "victory"].includes(preview ?? "")
     ) {
       content.inert = true;
       const done = () => this.scene.start("title", { skipStoryPreview: true });
       this.time.delayedCall(0, () => {
-        if (preview === "rescue") unlockCell(this, () => playCinematic(this, true, done));
+        if (preview === "victory")
+          this.scene.start("game-over", {
+            score: 2000,
+            survivedMs: 120000,
+            stage: 5,
+            outcome: "escaped",
+          });
+        else if (preview === "rescue") unlockCell(this, () => playCinematic(this, true, done));
         else playCinematic(this, preview === "ending", done);
       });
       return;
@@ -194,7 +201,7 @@ export class GameOverScene extends Phaser.Scene {
           "The lock is broken. Jon and Claude made it out.";
         const art = document.createElement("div");
         art.className = "victory-badge";
-        art.innerHTML = towerArt(true);
+        art.innerHTML = `<img class="victory-claude" src="${import.meta.env.BASE_URL}assets/story/claude.png" alt="Claude, rescued and home" />`;
         const spell = document.createElement("div");
         spell.className = "spell-word victory-spell";
         spell.innerHTML = letterMarkup(6);
@@ -256,7 +263,11 @@ export class GameOverScene extends Phaser.Scene {
         installStart(this, button);
       });
     };
-    if (victory && !giantPlayer) unlockCell(this, () => playCinematic(this, true, showResult));
+    const previewVictory =
+      import.meta.env.DEV &&
+      new URLSearchParams(location.search).get("story-preview") === "victory";
+    if (victory && !giantPlayer && !previewVictory)
+      unlockCell(this, () => playCinematic(this, true, showResult));
     else showResult();
   }
 }

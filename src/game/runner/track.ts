@@ -1,3 +1,4 @@
+import type { StageId } from "../../shared/stages";
 import Phaser from "phaser";
 import { GAME_HEIGHT, GAME_WIDTH, LANES, type Lane } from "../../shared/types";
 import { RUNNER } from "./config";
@@ -12,9 +13,17 @@ export function lerpColor(a: number, b: number, t: number): number {
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }
 
+const THEMED_STEMS: Record<StageId, string> = {
+  humpty: "humpty/beanstalk.png",
+  wonderland: "alice/beanstalk.png",
+  cinderella: "cinderella/beanstalk.png",
+  mermaid: "kt/beanstalk.png",
+  redhood: "lrr/beanstalk.png",
+  xen: "beanstalk.png",
+};
+const stemKey = (stage: StageId) => `story-stem-${stage}`;
 const STEM_FILE_KEY = "beanstalk-stem";
 const STEM_LOOP_FRAME = "vertical-repeat";
-const ALICE_STEM_KEY = "beanstalk-alice";
 // Matching spiral phases, measured in the supplied loop source. Repeat a complete
 // turn, not the full illustration whose top/bottom edges have different widths.
 const STEM_LOOP = { top: 972, height: 290 };
@@ -23,39 +32,54 @@ const STEM_TILE_SCALE = 0.5;
 
 /** Loads the pixel-art beanstalk tile; createTrack falls back to drawn stems if it is missing. */
 export function preloadTrackAssets(scene: Phaser.Scene) {
-  scene.load.image(
-    `${ALICE_STEM_KEY}-source`,
-    `${import.meta.env.BASE_URL}assets/beanstalk/alice-stem-source.png`,
-  );
+  for (const [stage, file] of Object.entries(THEMED_STEMS)) {
+    const key = stemKey(stage as StageId);
+    const sourceKey = stage === "wonderland" ? `${key}-source` : key;
+    if (stage === "wonderland") {
+      scene.load.once(`filecomplete-image-${sourceKey}`, () => {
+        if (scene.textures.exists(key)) return;
+        const source = scene.textures.get(sourceKey).getSourceImage() as HTMLImageElement;
+        const canvas = document.createElement("canvas");
+        canvas.width = source.width;
+        canvas.height = source.height;
+        const context = canvas.getContext("2d")!;
+        context.drawImage(source, 0, 0);
+        const pixels = context.getImageData(0, 0, source.width, source.height);
+        let left = source.width,
+          top = source.height,
+          right = 0,
+          bottom = 0;
+        for (let y = 0; y < source.height; y++) {
+          for (let x = 0; x < source.width; x++) {
+            const i = (y * source.width + x) * 4;
+            // The replacement illustration has a near-black matte baked in.
+            if (Math.max(pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]) < 24)
+              pixels.data[i + 3] = 0;
+            if (pixels.data[i + 3]) {
+              left = Math.min(left, x);
+              top = Math.min(top, y);
+              right = Math.max(right, x);
+              bottom = Math.max(bottom, y);
+            }
+          }
+        }
+        context.putImageData(pixels, 0, 0);
+        const texture = scene.textures.createCanvas(key, right - left + 1, bottom - top + 1)!;
+        texture.context.drawImage(canvas, -left, -top);
+        texture.refresh();
+        texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      });
+    }
+    scene.load.image(sourceKey, `${import.meta.env.BASE_URL}assets/story/${file}`);
+  }
   scene.load.image(
     STEM_FILE_KEY,
     `${import.meta.env.BASE_URL}assets/beanstalk/player-stem-loop-source.png`,
   );
 }
 
-/** The supplied Alice image has a near-black matte rather than alpha transparency. */
-function prepareAliceStem(scene: Phaser.Scene) {
-  if (scene.textures.exists(ALICE_STEM_KEY)) return;
-  const source = scene.textures
-    .get(`${ALICE_STEM_KEY}-source`)
-    .getSourceImage() as HTMLImageElement;
-  const texture = scene.textures.createCanvas(ALICE_STEM_KEY, source.width, source.height)!;
-  texture.context.drawImage(source, 0, 0);
-  const pixels = texture.context.getImageData(0, 0, source.width, source.height);
-  for (let i = 0; i < pixels.data.length; i += 4) {
-    if (Math.max(pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]) < 24)
-      pixels.data[i + 3] = 0;
-  }
-  texture.context.putImageData(pixels, 0, 0);
-  texture.refresh();
-  texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
-  // The new illustration uses the same layout at 125% of the original resolution.
-  texture.add(STEM_LOOP_FRAME, 0, 0, 1215, source.width, 363);
-}
-
 /** Three living stems. Lane centers, collisions, and scrolling remain unchanged. */
 export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) {
-  prepareAliceStem(scene);
   // Sky gradient (redrawn while blending between stages) with clouds on top.
   const sky = scene.add.graphics().setDepth(-2.1);
   const drawSky = (c: Sky) => {
@@ -155,7 +179,20 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
   }
   // Tile positions are in texture pixels, so a scaled tile must scroll proportionally faster.
   let scroll = 1 / (hasArt ? STEM_TILE_SCALE : 1);
-  let currentStemKey = key;
+  const applyStem = (stage: StageId) => {
+    const themedKey = stemKey(stage);
+    if (!scene.textures.exists(themedKey)) return;
+    const texture = scene.textures.get(themedKey);
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    const source = texture.getSourceImage();
+    const scale = RUNNER.laneSpacing / (source.width * 0.42);
+    for (const stem of stems) {
+      stem.setTexture(themedKey).setTileScale(scale).clearTint();
+      stem.tilePositionX = (source.width - RUNNER.laneSpacing / scale) / 2;
+    }
+    scroll = 1 / scale;
+  };
+  applyStem("humpty");
 
   // Speed lines: faint streaks that fade in as the track gets fast.
   const left = laneX(0) - RUNNER.laneSpacing / 2;
@@ -183,26 +220,13 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
 
   return {
     /** Blends the sky and stems into a stage's palette over `ms`. */
-    setStage(tuning: StageTuning, ms: number) {
-      const nextKey = tuning.stemTexture ?? key;
-      if (nextKey !== currentStemKey && scene.textures.exists(nextKey)) {
-        const source = scene.textures.get(nextKey).getSourceImage() as HTMLImageElement;
-        const scale = nextKey === ALICE_STEM_KEY ? 0.4 : hasArt ? STEM_TILE_SCALE : 1;
-        for (const stem of stems) {
-          const offset = stem.tilePositionY / scroll;
-          stem.setTexture(nextKey, nextKey === "enchanted-stem" ? undefined : STEM_LOOP_FRAME);
-          stem.setTileScale(scale);
-          stem.tilePositionX = (source.width - RUNNER.laneSpacing / scale) / 2;
-          stem.tilePositionY = offset / scale;
-        }
-        scroll = 1 / scale;
-        currentStemKey = nextKey;
-      }
+    setStage(tuning: StageTuning, ms: number, stage?: StageId) {
+      if (stage) applyStem(stage);
       blend = {
         fromSky: skyNow,
         toSky: tuning.sky,
         fromStem: stemNow,
-        toStem: tuning.stemTint,
+        toStem: stage ? 0xffffff : tuning.stemTint,
         t: 0,
         ms,
       };

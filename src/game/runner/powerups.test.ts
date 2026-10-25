@@ -60,11 +60,11 @@ it("adds instant Blast and an eight-second Giant Slow while retaining Slow Drain
   p.activate("double", 9000);
   expect(p.scoreFactor(9001)).toBe(2); // Main uses this factor to slow pot drain, not multiply scores.
 });
-it("Time Slow freezes hazards for 450ms and still slows time afterward", () => {
+it("Time Slow applies one consistent speed factor immediately and afterward", () => {
   const p = new PowerupState();
   p.activate("slowmo", 100);
-  expect(p.hazardsFrozen(549)).toBe(true);
-  expect(p.hazardsFrozen(550)).toBe(false);
+  expect(p.speedFactor(100)).toBe(POWERUPS.slowmoFactor);
+  expect(p.speedFactor(549)).toBe(POWERUPS.slowmoFactor);
   expect(p.speedFactor(551)).toBe(POWERUPS.slowmoFactor);
 });
 

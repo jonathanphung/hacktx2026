@@ -1,3 +1,4 @@
+import { obstacleArtLayout, obstacleTexture, sceneArtStage } from "../../shell/supplied-assets";
 import Phaser from "phaser";
 import { TalePots, SCORE } from "./score";
 import { acceptsPlayerInput } from "../../shared/match";
@@ -44,6 +45,7 @@ interface Obstacle {
   view: ObstacleView;
   w: number;
   h: number;
+  offsetY: number;
   /** Already touched the runner: effects apply once per obstacle. */
   touched: boolean;
   motion: HazardMotion;
@@ -98,7 +100,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         spec,
         obstacles.map((o) => ({
           lane: laneOf(o.view.x),
-          y: o.view.y,
+          y: o.view.y + o.offsetY,
           jumpable: o.spec.jumpable,
           lethal: o.spec.effect === "end-run",
           height: o.h,
@@ -120,12 +122,26 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       y = -h;
     const view =
       spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
-    const labelled = withObstacleCue(scene, view, spec).setDepth(spec.effect === "slow" ? 2 : 3);
+    const texture = obstacleTexture(spec.kind, sceneArtStage(scene));
+    const bounds =
+      spec.createView && texture && scene.textures.exists(texture)
+        ? obstacleArtLayout(
+            spec.kind,
+            w,
+            h,
+            scene.textures.get(texture).getSourceImage().width /
+              scene.textures.get(texture).getSourceImage().height,
+          )
+        : { width: w, height: h, offsetY: 0 };
+    const labelled = withObstacleCue(scene, view, spec, bounds).setDepth(
+      spec.effect === "slow" ? 2 : 3,
+    );
     obstacles.push({
       spec,
       view: labelled,
-      w,
-      h,
+      w: bounds.width,
+      h: bounds.height,
+      offsetY: bounds.offsetY,
       touched: false,
       motion: new HazardMotion(spec.kind),
     });
@@ -153,7 +169,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       events.emit("stage-changed", { index: stage.index, id: stage.id, name: stage.name });
       trail.holdUntil(time + STAGE_CALM_MS);
     }
-    track.setStage(STAGE_TUNING[stage.id], first ? 1 : STAGE_BLEND_MS);
+    track.setStage(STAGE_TUNING[stage.id], first ? 1 : STAGE_BLEND_MS, stage.id);
     track.announce(stage.name);
   };
 
@@ -350,18 +366,16 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       const ob = obstacles[i];
       const previousY = ob.view.y;
       const hazardScale = powerups.speedFactor(time);
-      const frozen = powerups.hazardsFrozen(time);
       ob.view.y = ob.motion.advance(
         ob.view.y,
         dt,
         stageSpeed(stages.stage.id, inStage) * hazardScale,
         hazardScale,
-        frozen,
+        false,
       );
-      (ob.view as Phaser.GameObjects.Container).setAlpha(frozen ? 0.65 : 1);
       const inBand =
         Math.abs(ob.view.x - lateral.value) < (ob.w + hitbox) / 2 &&
-        crossesRunner(previousY, ob.view.y, ob.h);
+        crossesRunner(previousY + ob.offsetY, ob.view.y + ob.offsetY, ob.h);
       ob.motion.noteJump(inBand, airborne);
       const hit = !ob.touched && inBand && !(ob.spec.jumpable && airborne);
       if (hit) {
@@ -438,7 +452,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       stage: stages.index,
       obstacles: obstacles.map((o) => ({
         lane: laneOf(o.view.x),
-        y: o.view.y,
+        y: o.view.y + o.offsetY,
         height: o.h,
         speed: o.motion.velocity,
         jumpable: o.spec.jumpable,

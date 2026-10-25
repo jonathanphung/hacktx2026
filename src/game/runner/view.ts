@@ -3,6 +3,14 @@ import type { StageId, StageItemId } from "../../shared/stages";
 import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_GUIDE } from "../../shell/game-guide";
+import {
+  SUPPLIED_ART,
+  STAGE_FORCEFIELDS,
+  fittedArt,
+  pickupTexture,
+  preloadSuppliedArt,
+  stageItemTexture,
+} from "../../shell/supplied-assets";
 import { RunnerFx } from "./fx";
 import { preloadTrackAssets } from "./track";
 import { jumpHeight } from "./motion";
@@ -21,6 +29,7 @@ const TEX = 128;
 
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   preloadTrackAssets(scene);
+  preloadSuppliedArt(scene);
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
   for (const kind of Object.keys(POWERUP_GUIDE))
     scene.load.svg(`pickup-${kind}`, `${import.meta.env.BASE_URL}assets/pickups/${kind}.svg`, {
@@ -48,6 +57,9 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.anims.exists("runner-run")) return;
+  for (const key of Object.keys(SUPPLIED_ART)) {
+    scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+  }
   for (const { prefix } of Object.values(RUNNER_OUTFITS)) {
     for (const direction of RUN_VARIANTS) {
       const sheet = scene.textures
@@ -73,13 +85,15 @@ function ensureAssets(scene: Phaser.Scene) {
     });
   }
   scene.textures.get("runner-redhood-basket").setFilter(Phaser.Textures.FilterMode.NEAREST);
-  scene.textures.get("runner-forcefield").setFilter(Phaser.Textures.FilterMode.NEAREST);
-  scene.anims.create({
-    key: "runner-forcefield-pulse",
-    frames: scene.anims.generateFrameNumbers("runner-forcefield", { start: 0, end: 11 }),
-    frameRate: 1000 / 80,
-    repeat: -1,
-  });
+  for (const { key } of Object.values(STAGE_FORCEFIELDS)) {
+    scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    scene.anims.create({
+      key: `${key}-pulse`,
+      frames: scene.anims.generateFrameNumbers(key, { start: 0, end: 11 }),
+      frameRate: 1000 / 80,
+      repeat: -1,
+    });
+  }
   const spark = scene.make.graphics({}, false);
   spark.fillStyle(0xffedb0);
   spark.fillRect(3, 0, 2, 8);
@@ -135,6 +149,7 @@ export class RunnerView {
     private groundY: number,
   ) {
     ensureAssets(scene);
+    scene.data.set("story-art-stage", "humpty");
     this.baseScale = RUNNER.runnerSize / this.outfit.figureHeight;
     this.shadow = scene.add.ellipse(x, groundY + 6, 44, 22, 0x000000, 0.55).setDepth(9);
     this.sprite = scene.add
@@ -253,6 +268,8 @@ export class RunnerView {
 
   /** Called on stage entry; the running animation keeps its existing stride frame. */
   setStage(stage: StageId) {
+    this.shield.play(`${STAGE_FORCEFIELDS[stage].key}-pulse`, true);
+    this.scene.data.set("story-art-stage", stage);
     this.outfit = runnerOutfit(stage);
     this.baseScale = RUNNER.runnerSize / this.outfit.figureHeight;
     this.hitUntil = -Infinity;
@@ -316,6 +333,21 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
   const { color } = POWERUP_GUIDE[kind];
   const r = POWERUPS.size / 2;
   const glow = scene.add.rectangle(0, 0, r * 2 + 12, r * 2 + 12, color, 0.12);
+  const supplied = pickupTexture(kind);
+  if (supplied && scene.textures.exists(supplied)) {
+    const art = fittedArt(scene, supplied, POWERUPS.size + 6, POWERUPS.size + 6);
+    const view = scene.add.container(x, y, [glow, art]).setDepth(5);
+    scene.tweens.add({
+      targets: glow,
+      scale: 1.25,
+      alpha: 0.04,
+      duration: 650,
+      yoyo: true,
+      repeat: -1,
+    });
+    view.once("destroy", () => scene.tweens.killTweensOf(glow));
+    return view;
+  }
   // Stepped gold setting echoes the game's pixel-art story panels.
   const coin = scene.add.graphics();
   coin.fillStyle(0x29233b).fillRect(-24, -20, 48, 40).fillRect(-20, -24, 40, 48);
@@ -425,8 +457,13 @@ export function createStageItemView(
   _name: string,
 ) {
   const halo = scene.add.circle(0, 0, 34, 0xffe08a, 0.35).setStrokeStyle(3, 0xffffff, 0.9);
-  const art = scene.add.graphics();
-  drawStageItem(art, item);
+  const texture = stageItemTexture(item);
+  const art =
+    texture && scene.textures.exists(texture)
+      ? fittedArt(scene, texture, 50, 50)
+      : scene.add.graphics();
+  if (!(texture && scene.textures.exists(texture)))
+    drawStageItem(art as Phaser.GameObjects.Graphics, item);
   const view = scene.add.container(x, y, [halo, art]).setDepth(6);
   scene.tweens.add({
     targets: halo,

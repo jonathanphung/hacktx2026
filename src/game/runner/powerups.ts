@@ -70,13 +70,11 @@ export const POWERUP_DURATION: Record<PowerupKind, number> = {
 
 /** Which powerups are active and until when. Pure logic (no Phaser), so it's unit-tested. */
 export class PowerupState {
-  private freezeUntil = -Infinity;
   private until = new Map<PowerupKind, number>();
 
   /** Starts (or refreshes) a powerup. */
   activate(kind: PowerupKind, now: number): void {
     if (kind === "blast") return;
-    if (kind === "slowmo") this.freezeUntil = now + 450;
     this.until.set(kind, now + POWERUP_DURATION[kind]);
   }
 
@@ -101,10 +99,6 @@ export class PowerupState {
       }
     }
     return done;
-  }
-
-  hazardsFrozen(now: number): boolean {
-    return now < this.freezeUntil;
   }
 
   speedFactor(now: number): number {

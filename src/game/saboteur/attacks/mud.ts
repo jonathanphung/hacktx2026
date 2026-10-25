@@ -13,6 +13,7 @@ export const mud: AttackDef = {
       lane,
       jumpable: false,
       effect: "slow",
+      width: 140,
       height: 150,
       color: 0x8d6e63,
     });

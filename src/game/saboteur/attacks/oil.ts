@@ -13,6 +13,7 @@ export const oil: AttackDef = {
       lane,
       jumpable: true,
       effect: "slow",
+      width: 140,
       height: 70,
       color: 0x5e35b1,
     });

@@ -29,8 +29,8 @@ The rescue/victory tower uses matching pixel scenery and layered cell bars.
 
 Scenes play automatically. Waving either hand advances a beat after a 900 ms
 entry grace period, using a fresh movement baseline each time. Continue and Skip
-buttons remain; keyboard shortcuts are optional. Reduced-motion mode uses static
-storyboard poses with the same captions and timing.
+buttons remain; keyboard shortcuts are optional. Reduced-motion mode keeps character, scenery, and story-effect animations playing.
+It uses a fixed camera and disables camera shake, rotation, flashes, and hit-stop.
 
 At the tower, the six earned letters form the spell. Either player can hold an
 open palm for one second to charge and cast it, with progress and letter feedback.

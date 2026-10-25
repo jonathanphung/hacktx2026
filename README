@@ -446,3 +446,31 @@ all nested badges/cards fit their column and long feedback wraps. This keeps
 status, clues and controls outside the three central beanstalk lanes, including
 when split cameras are expanded. Story/pause overlays and scrolling tale gates
 retain their intentional full-screen/on-track presentation.
+
+Camera alignment: camera-mode HUD panels now share the camera's 1% outer inset
+and 24% width (26% expanded). Camera borders use border-box sizing so score,
+tale/clues and feedback align exactly with the video edges without resizing it.
+
+Camera previews now appear only during gameplay, including its pause menu, and
+hide on title, opening cinematic and results screens. Removed the camera toolbar
+and its collapse/resize handlers; both previews keep their fixed aligned size.
+
+Fireballs and hurdle logs now roll downhill at 125% of road speed, advancing
+relative to the beanstalk. The AI snapshot reports their actual velocity so dodge
+timing follows the same movement as collisions. Animated log grain and a revolving
+fireball core show rolling without rotating their JUMP/DODGE advice. Held attacks
+stay still; rolling animation pauses with the game and is removed on destruction.
+
+Pulled active-hazard updates and resolved integration conflicts. Preserved freeze,
+swept collisions, clean-jump rewards, Blast/Giant Slow and the latest motion-based
+AI timing. Rolling attacks now start at 1.25x (fireball) / 1.15x (log) road speed
+and accelerate to 1.75x / 1.45x, retaining the shared minimum warning-time cap.
+Latest travel-driven log grain replaces the older timer animation; the fireball
+keeps its revolving core alongside the new flame trail.
+
+Oil and mud now slide Jon smoothly into one neighboring lane on an unblocked
+hit, following lateral momentum in the center and always pushing inward at the
+edges. Steering can immediately counter the slide; the existing brief snare still
+limits rapid dodge spam. Each spill pushes once, shields block it, and oil remains
+jumpable. Natural sap retains its snare without a lane push. The HUD warns
+SLIPPING! STEER BACK! Tests cover edge safety and both center-lane directions.

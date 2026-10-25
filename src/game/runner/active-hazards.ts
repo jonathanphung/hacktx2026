@@ -13,7 +13,7 @@ export function hazardSpeed(
   const distance = RUNNER.runnerY - GIANT_RELEASE_Y - (height + RUNNER.hitboxSize) / 2;
   const safeCap = distance / ((RUNNER.minWarningMs - GIANT_WINDUP_MS) / 1000);
   const ramp = Math.max(0, Math.min(1, ageMs / (kind === "fireball" ? 600 : 800)));
-  const factor = kind === "fireball" ? 1.15 + 0.5 * ramp : 1.05 + 0.3 * ramp;
+  const factor = kind === "fireball" ? 1.25 + 0.5 * ramp : 1.15 + 0.3 * ramp;
   return Math.min(
     trackSpeed * factor,
     Math.min(safeCap, kind === "fireball" ? 550 : 500) * timeScale,

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { finishFireballs } from "./projectiles";
+
 describe("fireball follow-through", () => {
   it("continues fireballs past the runner while other obstacles stay frozen", () => {
     const fire = { spec: { kind: "fireball" }, view: { y: 610, destroy: vi.fn() }, h: 72 };

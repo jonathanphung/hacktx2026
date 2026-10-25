@@ -31,7 +31,8 @@ export function mountWebcamCorners(
     statuses.set(player, status);
     visible.set(player, false);
   }
-  setupCameraDock();
+  const dock = document.getElementById("facecam");
+  if (dock) dock.hidden = false;
   if (!vision.onFrame) {
     showBanner("Camera layout preview · Camera and gesture input are off");
     return;
@@ -73,37 +74,6 @@ export function showBanner(text: string): void {
     keyboard.textContent = "Keyboard mode";
     banner.append(" ", retry, " ", keyboard);
   }
-}
-
-function setupCameraDock(): void {
-  const dock = document.getElementById("facecam");
-  const body = document.getElementById("facecam-body");
-  const toggle = document.getElementById("facecam-toggle");
-  const size = document.getElementById("facecam-size");
-  if (!dock || !body || !toggle || !size) return;
-  dock.hidden = false;
-  for (const control of [toggle, size]) {
-    control.onkeydown = (event) => {
-      // Activating dock buttons with a keyboard must not also start a run or fire an attack.
-      if (event.key === "Enter" || event.key === " ") event.stopPropagation();
-    };
-  }
-  toggle.onclick = () => {
-    body.hidden = !body.hidden;
-    toggle.setAttribute("aria-expanded", String(!body.hidden));
-    const label = body.hidden ? "Show player cameras" : "Collapse player cameras";
-    toggle.setAttribute("aria-label", label);
-    toggle.title = label;
-    toggle.textContent = body.hidden ? "+" : "−";
-  };
-  size.onclick = () => {
-    const expanded = dock.classList.toggle("expanded");
-    size.setAttribute("aria-pressed", String(expanded));
-    const label = expanded ? "Shrink player cameras" : "Enlarge player cameras";
-    size.setAttribute("aria-label", label);
-    size.title = label;
-    size.textContent = expanded ? "↙" : "↗";
-  };
 }
 
 /** Camera-free layout check; placeholders never emit game input or pretend to be inference. */

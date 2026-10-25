@@ -478,3 +478,7 @@ SLIPPING! STEER BACK! Tests cover edge safety and both center-lane directions.
 Single-player camera presentation now shows only the human's preview: Jon's left
 camera when playing Jon, or the giant's right camera when playing the giant.
 Two-player games retain both previews; camera gesture tracking is unchanged.
+
+Both camera previews now show vertical thirds in their role color. The giant's
+lines still follow its calibrated aim range; Jon's lines are visual guides only,
+so runner swipes keep their existing relative-motion behavior.

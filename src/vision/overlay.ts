@@ -40,8 +40,9 @@ export function drawFeedback(
   ctx.strokeStyle = color;
   ctx.fillStyle = color;
   ctx.lineWidth = Math.max(2, w / 150);
-  if (player === "saboteur") {
-    const range = getVisionSettings().aim;
+  {
+    // Runner guides are visual references; swipe controls remain relative motions.
+    const range = player === "saboteur" ? getVisionSettings().aim : { minX: 0, maxX: 1 };
     ctx.globalAlpha = 0.5;
     for (const fraction of [1 / 3, 2 / 3]) {
       const x = (range.minX + (range.maxX - range.minX) * fraction) * w;

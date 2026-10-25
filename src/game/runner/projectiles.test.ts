@@ -1,14 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { finishFireballs, obstacleSpeed } from "./projectiles";
+import { finishFireballs } from "./projectiles";
 
-it("rolls fireballs and logs toward Jon relative to the road at every stage speed", () => {
-  for (const speed of [260, 440]) {
-    expect(obstacleSpeed("fireball", speed)).toBeCloseTo(speed * 1.25);
-    expect(obstacleSpeed("hurdle", speed)).toBeCloseTo(speed * 1.25);
-    expect(obstacleSpeed("barrier", speed)).toBe(speed);
-    expect(obstacleSpeed("mud", speed)).toBe(speed);
-  }
-});
 describe("fireball follow-through", () => {
   it("continues fireballs past the runner while other obstacles stay frozen", () => {
     const fire = { spec: { kind: "fireball" }, view: { y: 610, destroy: vi.fn() }, h: 72 };

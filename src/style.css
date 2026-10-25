@@ -2440,3 +2440,63 @@ body {
   letter-spacing: 0.12em;
   opacity: 0.85;
 }
+
+.giant-debuff {
+  color: #d9bdff;
+  font-weight: bold;
+  font-size: 0.85cqw;
+}
+.giant-debuff[hidden] {
+  display: none;
+}
+
+.powerup-badge > b img {
+  display: block;
+  width: 2.2cqw;
+  height: 2.2cqw;
+}
+.practice-guide b img {
+  width: 1.6cqw;
+  height: 1.6cqw;
+  vertical-align: middle;
+}
+.practice-guide {
+  max-height: 43%;
+  overflow: auto;
+}
+
+.combat-preview {
+  position: absolute;
+  z-index: 6;
+  left: 25%;
+  right: 25%;
+  top: 1%;
+  padding: 0.6cqw;
+  background: #211b36ed;
+  border: 1px solid #ffe3a5;
+  color: #fff0d2;
+  font:
+    0.8cqw "Courier New",
+    monospace;
+}
+.combat-preview strong,
+.combat-preview span {
+  display: block;
+  margin-bottom: 0.3cqw;
+}
+.combat-preview div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3cqw;
+}
+.combat-preview button {
+  background: #49345f;
+  border: 1px solid #ab90c3;
+  color: #fff0d2;
+  padding: 0.4cqw;
+  font: inherit;
+  cursor: pointer;
+}
+.combat-preview button:focus-visible {
+  outline: 2px solid #a4ffe3;
+}

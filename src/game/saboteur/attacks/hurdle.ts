@@ -1,10 +1,10 @@
 import { createObstacleView } from "../obstacle-view";
 import type { AttackDef } from "../../../shared/attacks";
 
-/** A low hurdle: jump it or dodge it. */
+/** A rolling log: jump cleanly for a bonus, or dodge it. */
 export const hurdle: AttackDef = {
   id: "hurdle",
-  name: "Hurdle",
+  name: "Rolling Log",
   color: 0xffb74d,
   fire(world, lane) {
     world.spawnObstacle({

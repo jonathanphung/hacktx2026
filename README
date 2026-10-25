@@ -460,3 +460,10 @@ relative to the beanstalk. The AI snapshot reports their actual velocity so dodg
 timing follows the same movement as collisions. Animated log grain and a revolving
 fireball core show rolling without rotating their JUMP/DODGE advice. Held attacks
 stay still; rolling animation pauses with the game and is removed on destruction.
+
+Pulled active-hazard updates and resolved integration conflicts. Preserved freeze,
+swept collisions, clean-jump rewards, Blast/Giant Slow and the latest motion-based
+AI timing. Rolling attacks now start at 1.25x (fireball) / 1.15x (log) road speed
+and accelerate to 1.75x / 1.45x, retaining the shared minimum warning-time cap.
+Latest travel-driven log grain replaces the older timer animation; the fireball
+keeps its revolving core alongside the new flame trail.

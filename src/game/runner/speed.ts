@@ -10,7 +10,7 @@ export const MAX_SPEED = Math.min(
   WARNING_DISTANCE / ((RUNNER.minWarningMs - GIANT_WINDUP_MS) / 1000),
 );
 
-/** Total telegraph plus travel time before reaching the runner at `speed` px/s. */
+/** Conservative base telegraph plus travel; live casting adds 200 ms of wind-up. */
 export function warningMs(speed: number): number {
   return GIANT_WINDUP_MS + (WARNING_DISTANCE / speed) * 1000;
 }

@@ -1747,6 +1747,8 @@ body {
   z-index: 2;
 }
 .pixel-hand {
+  /* Let the long sleeve reach above the sky without moving the hand anchor. */
+  overflow: visible;
   width: 15%;
   height: 62.223%;
   z-index: 4;

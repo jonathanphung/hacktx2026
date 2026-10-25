@@ -1,5 +1,6 @@
 import { GIANT_RELEASE_Y } from "../../shared/combat";
 import type Phaser from "phaser";
+import { obstacleArtLayout, obstacleTexture, sceneArtStage } from "../../shell/supplied-assets";
 
 /** Local, self-hosted fantasy art; bounds match each obstacle's collision dimensions. */
 export function createObstacleView(
@@ -11,6 +12,26 @@ export function createObstacleView(
   height: number,
   held = false,
 ) {
+  const texture = obstacleTexture(kind, sceneArtStage(scene));
+  if (texture && scene.textures.exists(texture)) {
+    const source = scene.textures.get(texture).getSourceImage();
+    const layout = obstacleArtLayout(kind, width, height, source.width / source.height);
+    const art = scene.add
+      .image(0, layout.offsetY, texture)
+      .setDisplaySize(layout.width, layout.height);
+    const view = scene.add.container(x, held ? y : GIANT_RELEASE_Y, [art]).setDepth(6);
+    if (kind === "fireball") {
+      scene.tweens.add({
+        targets: art,
+        alpha: 0.8,
+        duration: 120,
+        yoyo: true,
+        repeat: -1,
+      });
+      view.once("destroy", () => scene.tweens.killTweensOf(art));
+    }
+    return view;
+  }
   const g = scene.add.graphics();
   const w = width / 2,
     h = height / 2;

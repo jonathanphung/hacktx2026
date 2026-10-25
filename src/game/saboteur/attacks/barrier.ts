@@ -13,6 +13,7 @@ export const barrier: AttackDef = {
       lane,
       jumpable: false,
       effect: "end-run",
+      width: 140,
       height: 50,
       color: 0xff5252,
     });

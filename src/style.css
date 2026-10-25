@@ -2511,3 +2511,14 @@ body {
 .practice-guide b img {
   image-rendering: pixelated;
 }
+.victory-badge:has(.victory-claude) {
+  border: 0;
+  overflow: visible;
+}
+.victory-claude {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+}

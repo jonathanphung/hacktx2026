@@ -1,31 +1,53 @@
 import Phaser from "phaser";
-import type { StageItemId } from "../../shared/stages";
+import type { StageId, StageItemId } from "../../shared/stages";
 import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_GUIDE } from "../../shell/game-guide";
+import {
+  SUPPLIED_ART,
+  STAGE_FORCEFIELDS,
+  fittedArt,
+  pickupTexture,
+  preloadSuppliedArt,
+  stageItemTexture,
+} from "../../shell/supplied-assets";
 import { RunnerFx } from "./fx";
 import { preloadTrackAssets } from "./track";
 import { jumpHeight } from "./motion";
+import {
+  HIT_DURATION_MS,
+  HIT_FRAMES,
+  RUNNER_OUTFITS,
+  hitReactionFrame,
+  runnerOutfit,
+} from "./outfit";
 
 const RUN_FRAMES = 16;
 const RUN_VARIANTS = ["", "-left", "-right", "-slow", "-slow-left", "-slow-right"];
 const S = 2;
 const TEX = 128;
-/** Visible character height in the 128px animation frames. */
-const FIGURE = 48;
 
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   preloadTrackAssets(scene);
+  preloadSuppliedArt(scene);
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
   for (const kind of Object.keys(POWERUP_GUIDE))
     scene.load.svg(`pickup-${kind}`, `${import.meta.env.BASE_URL}assets/pickups/${kind}.svg`, {
       width: 64,
       height: 64,
     });
-  for (const variant of RUN_VARIANTS) {
-    scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
+  for (const { prefix, folder } of Object.values(RUNNER_OUTFITS)) {
+    for (const variant of RUN_VARIANTS) {
+      scene.load.image(`${prefix}-sheet${variant}`, `${base}${folder}jon-run${variant}.png`);
+    }
+    scene.load.image(`${prefix}-jump`, `${base}${folder}jon-jump.png`);
+    scene.load.image(`${prefix}-defeat`, `${base}${folder}jon-defeat.png`);
+    scene.load.spritesheet(`${prefix}-hit`, `${base}${folder}jon-hit-sheet.png`, {
+      frameWidth: TEX,
+      frameHeight: TEX,
+    });
   }
-  scene.load.image("runner-jump", `${base}jon-jump.png`);
+  scene.load.image("runner-redhood-basket", `${base}redhood/jon-basket.png`);
   scene.load.spritesheet("runner-forcefield", `${base}forcefield.png`, {
     frameWidth: 192,
     frameHeight: 192,
@@ -35,25 +57,43 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.anims.exists("runner-run")) return;
-  for (const direction of RUN_VARIANTS) {
-    const sheet = scene.textures
-      .get(`runner-sheet${direction}`)
-      .getSourceImage() as HTMLImageElement;
-    for (let i = 0; i < RUN_FRAMES; i++) {
-      const texture = scene.textures.createCanvas(`runner-run${direction}-${i}`, TEX, TEX)!;
-      texture.context.drawImage(sheet, i * TEX, 0, TEX, TEX, 0, 0, TEX, TEX);
-      texture.refresh();
-      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  for (const key of Object.keys(SUPPLIED_ART)) {
+    scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+  }
+  for (const { prefix } of Object.values(RUNNER_OUTFITS)) {
+    for (const direction of RUN_VARIANTS) {
+      const sheet = scene.textures
+        .get(`${prefix}-sheet${direction}`)
+        .getSourceImage() as HTMLImageElement;
+      for (let i = 0; i < RUN_FRAMES; i++) {
+        const texture = scene.textures.createCanvas(`${prefix}-run${direction}-${i}`, TEX, TEX)!;
+        texture.context.drawImage(sheet, i * TEX, 0, TEX, TEX, 0, 0, TEX, TEX);
+        texture.refresh();
+        texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      }
     }
   }
-  scene.textures.get("runner-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
-  scene.textures.get("runner-forcefield").setFilter(Phaser.Textures.FilterMode.NEAREST);
-  scene.anims.create({
-    key: "runner-forcefield-pulse",
-    frames: scene.anims.generateFrameNumbers("runner-forcefield", { start: 0, end: 11 }),
-    frameRate: 1000 / 80,
-    repeat: -1,
-  });
+  for (const { prefix } of Object.values(RUNNER_OUTFITS)) {
+    for (const pose of ["jump", "hit", "defeat"]) {
+      scene.textures.get(`${prefix}-${pose}`).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
+    scene.anims.create({
+      key: `${prefix}-fatal-hit`,
+      frames: scene.anims.generateFrameNumbers(`${prefix}-hit`, { start: 0, end: HIT_FRAMES - 1 }),
+      frameRate: 1000 / 60,
+      repeat: 0,
+    });
+  }
+  scene.textures.get("runner-redhood-basket").setFilter(Phaser.Textures.FilterMode.NEAREST);
+  for (const { key } of Object.values(STAGE_FORCEFIELDS)) {
+    scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    scene.anims.create({
+      key: `${key}-pulse`,
+      frames: scene.anims.generateFrameNumbers(key, { start: 0, end: 11 }),
+      frameRate: 1000 / 80,
+      repeat: -1,
+    });
+  }
   const spark = scene.make.graphics({}, false);
   spark.fillStyle(0xffedb0);
   spark.fillRect(3, 0, 2, 8);
@@ -94,8 +134,10 @@ export class RunnerView {
   private shield: Phaser.GameObjects.Sprite;
   private crashed = false;
   private baseScale: number;
+  private outfit = runnerOutfit("humpty");
   private wasAirborne = false;
   private landedAt = -Infinity;
+  private hitUntil = -Infinity;
   private fx: RunnerFx;
   private lastFrameKey = "";
   private lastGhostAt = -Infinity;
@@ -107,10 +149,11 @@ export class RunnerView {
     private groundY: number,
   ) {
     ensureAssets(scene);
-    this.baseScale = RUNNER.runnerSize / (FIGURE * S);
+    scene.data.set("story-art-stage", "humpty");
+    this.baseScale = RUNNER.runnerSize / this.outfit.figureHeight;
     this.shadow = scene.add.ellipse(x, groundY + 6, 44, 22, 0x000000, 0.55).setDepth(9);
     this.sprite = scene.add
-      .sprite(x, groundY, "runner-run-0")
+      .sprite(x, groundY, `${this.outfit.prefix}-run-0`)
       .setScale(this.baseScale)
       .setDepth(10);
     this.sprite.play("runner-run");
@@ -149,20 +192,24 @@ export class RunnerView {
     if (airborne && !this.wasAirborne) {
       this.magic.emitParticleAt(pose.x, this.groundY, 14);
       sprite.anims.pause();
-      sprite.setTexture("runner-jump");
     } else if (!airborne && this.wasAirborne) {
-      sprite.play("runner-run");
+      sprite.anims.resume();
       this.landedAt = time;
       this.fx.dust(pose.x, this.groundY + this.unit * 20, 8, 150, pose.speed, 1.3);
     }
     this.wasAirborne = airborne;
     sprite.anims.timeScale = pose.speed / RUNNER.baseSpeed;
-    if (!airborne) {
+    const hitFrame = hitReactionFrame(time, this.hitUntil);
+    if (hitFrame !== null) {
+      sprite.setTexture(`${this.outfit.prefix}-hit`, hitFrame);
+    } else if (airborne) {
+      sprite.setTexture(`${this.outfit.prefix}-jump`);
+    } else {
       // Choose cape art without restarting the underlying leg animation.
       const frame = sprite.anims.currentFrame?.textureKey.replace("runner-run-", "") ?? "0";
       const direction = pose.vx < -40 ? "-left" : pose.vx > 40 ? "-right" : "";
       const slowed = pose.slowed ? "-slow" : "";
-      sprite.setTexture(`runner-run${slowed}${direction}-${frame}`);
+      sprite.setTexture(`${this.outfit.prefix}-run${slowed}${direction}-${frame}`);
     }
 
     // Squash & stretch: stretch on the way up, squash briefly on landing.
@@ -219,6 +266,16 @@ export class RunnerView {
     return this.baseScale * S;
   }
 
+  /** Called on stage entry; the running animation keeps its existing stride frame. */
+  setStage(stage: StageId) {
+    this.shield.play(`${STAGE_FORCEFIELDS[stage].key}-pulse`, true);
+    this.scene.data.set("story-art-stage", stage);
+    this.outfit = runnerOutfit(stage);
+    this.baseScale = RUNNER.runnerSize / this.outfit.figureHeight;
+    this.hitUntil = -Infinity;
+    this.magic.emitting = this.outfit.prefix === "runner";
+  }
+
   setShield(on: boolean) {
     this.shield.setVisible(on);
   }
@@ -230,15 +287,28 @@ export class RunnerView {
   }
 
   /** The shield just absorbed a hit: cyan flash. */
-  shieldBlocked() {
+  shieldBlocked(time: number) {
+    this.reactToHit(time);
     this.scene.cameras.main.flash(150, 128, 222, 234);
   }
 
-  /** Knocked down: flash red, spin and fade, with a camera shake. */
+  /** Brief nonfatal reaction; the underlying stride clock continues. */
+  reactToHit(time: number) {
+    this.hitUntil = time + HIT_DURATION_MS;
+  }
+
+  /** Knocked down: stay upright, flash red and fade, with a camera shake. */
   crash() {
     this.crashed = true;
     this.shield.setVisible(false);
     this.sprite.anims.stop();
+    this.sprite.anims.timeScale = 1;
+    this.sprite.setAngle(0);
+    const prefix = this.outfit.prefix;
+    this.sprite.play(`${prefix}-fatal-hit`);
+    this.sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      this.sprite.setTexture(`${prefix}-defeat`);
+    });
     this.sprite.setTint(0xff5252);
     const cam = this.scene.cameras.main;
     cam.shake(200, 0.01);
@@ -250,7 +320,6 @@ export class RunnerView {
     cam.zoomTo(1.06, 90, "Quad.easeOut", true);
     this.scene.tweens.add({
       targets: this.sprite,
-      angle: this.sprite.angle + 200,
       alpha: 0.4,
       scale: this.baseScale * 0.8,
       duration: 500,
@@ -264,6 +333,21 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
   const { color } = POWERUP_GUIDE[kind];
   const r = POWERUPS.size / 2;
   const glow = scene.add.rectangle(0, 0, r * 2 + 12, r * 2 + 12, color, 0.12);
+  const supplied = pickupTexture(kind);
+  if (supplied && scene.textures.exists(supplied)) {
+    const art = fittedArt(scene, supplied, POWERUPS.size + 6, POWERUPS.size + 6);
+    const view = scene.add.container(x, y, [glow, art]).setDepth(5);
+    scene.tweens.add({
+      targets: glow,
+      scale: 1.25,
+      alpha: 0.04,
+      duration: 650,
+      yoyo: true,
+      repeat: -1,
+    });
+    view.once("destroy", () => scene.tweens.killTweensOf(glow));
+    return view;
+  }
   // Stepped gold setting echoes the game's pixel-art story panels.
   const coin = scene.add.graphics();
   coin.fillStyle(0x29233b).fillRect(-24, -20, 48, 40).fillRect(-20, -24, 40, 48);
@@ -373,8 +457,13 @@ export function createStageItemView(
   _name: string,
 ) {
   const halo = scene.add.circle(0, 0, 34, 0xffe08a, 0.35).setStrokeStyle(3, 0xffffff, 0.9);
-  const art = scene.add.graphics();
-  drawStageItem(art, item);
+  const texture = stageItemTexture(item);
+  const art =
+    texture && scene.textures.exists(texture)
+      ? fittedArt(scene, texture, 50, 50)
+      : scene.add.graphics();
+  if (!(texture && scene.textures.exists(texture)))
+    drawStageItem(art as Phaser.GameObjects.Graphics, item);
   const view = scene.add.container(x, y, [halo, art]).setDepth(6);
   scene.tweens.add({
     targets: halo,

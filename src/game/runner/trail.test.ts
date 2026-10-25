@@ -51,6 +51,6 @@ describe("natural trail hazards", () => {
   it("offers jumpable thorns, dodge-only rocks, and slowing sap", () => {
     expect(trailHazard(0, 0)).toMatchObject({ lane: 0, jumpable: true, effect: "end-run" });
     expect(trailHazard(1, 0.5)).toMatchObject({ lane: 1, jumpable: false, effect: "end-run" });
-    expect(trailHazard(2, 0.9)).toMatchObject({ lane: 2, jumpable: true, effect: "slow" });
+    expect(trailHazard(2, 0.9)).toMatchObject({ lane: 2, jumpable: false, effect: "slow" });
   });
 });

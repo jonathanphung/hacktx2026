@@ -1,5 +1,5 @@
 /** Local code-native pixel scenery, using the running game's vine, sleeve and parchment palette. */
-export const pixelClaude = `<path fill="#33283f" d="M-10-13h4v-4h4v4h5v-4h4v4h4V6H-10z"/><path fill="#db9c78" d="M-8-12h4v-3h2v5h6v-5h2v3h3V4H-8z"/><path fill="#f2c59b" d="M-6-4H7v6H-6z"/><path fill="#33283f" d="M-5-7h2v3h-2zm9 0h2v3H4z"/><path fill="#a4dfc7" d="M-9 3h19v4H-9zm13 4h4v9H4z"/><path fill="#9a684c" d="M-8 7h5v5h-5zm11 0h6v5H3z"/>`;
+export const pixelClaude = `<image href="${import.meta.env.BASE_URL}assets/story/claude.png" x="-16" y="-12" width="32" height="24" style="image-rendering:pixelated"/>`;
 export const pixelGiantHand = `<path fill="#332245" d="M-19-64h38v63h-38z"/><path fill="#6b477d" d="M-15-64h30v57h-30z"/><path fill="#d6ad67" d="M-21-13h42v8h-42z"/><path fill="#805039" d="M-21-5h42v29h-4v12h-9v-4H2v4h-9v-4h-7v-6h-7z"/><path fill="#c9956b" d="M-17-3h34v25h-4v10H7V19H3v13h-6V19h-4v9h-6V17h-4z"/><path fill="#e8bd92" d="M-14-1h26v5h-26zm-2 20h4v5h-4zm10 8h3v4h-3zm10 0h3v4H4zm10-4h3v4h-3z"/>`;
 export const pixelBars = `<g class="pixel-cell-bars" fill="#e4d7ee"><path d="M263 49h2v34h-2zm7 0h2v34h-2zm7 0h2v34h-2zm7 0h2v34h-2z"/><path d="M261 66h27v2h-27z"/></g>`;
 /** The landscape as separate depth layers, so a camera can slide them at different speeds. */

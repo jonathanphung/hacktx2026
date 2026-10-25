@@ -13,6 +13,7 @@ export const hurdle: AttackDef = {
       lane,
       jumpable: true,
       effect: "end-run",
+      width: 140,
       height: 24,
       color: 0xffb74d,
     });

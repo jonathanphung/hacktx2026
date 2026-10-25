@@ -2,6 +2,7 @@ import type Phaser from "phaser";
 import type { Lane } from "../../shared/types";
 import type { ObstacleSpec } from "../../shared/world";
 import type { HazardMix } from "./stage-tuning";
+import { obstacleArtLayout, obstacleTexture, sceneArtStage } from "../../shell/supplied-assets";
 
 export const TRAIL = {
   firstMs: 5000,
@@ -42,7 +43,7 @@ export function trailHazard(lane: Lane, roll: number, mix: HazardMix = DEFAULT_M
   const r = roll * total;
   const kind =
     r < mix.thorns ? "wild-thorns" : r < mix.thorns + mix.rock ? "moss-rock" : "sticky-sap";
-  const jumpable = kind !== "moss-rock";
+  const jumpable = kind === "wild-thorns";
   const effect = kind === "sticky-sap" ? "slow" : "end-run";
   const width = 110,
     height = kind === "wild-thorns" ? 28 : 48;
@@ -65,6 +66,15 @@ function drawTrailHazard(
   width: number,
   height: number,
 ) {
+  const texture = obstacleTexture(kind, sceneArtStage(scene));
+  if (texture && scene.textures.exists(texture)) {
+    const source = scene.textures.get(texture).getSourceImage();
+    const layout = obstacleArtLayout(kind, width, height, source.width / source.height);
+    const art = scene.add
+      .image(0, layout.offsetY, texture)
+      .setDisplaySize(layout.width, layout.height);
+    return scene.add.container(x, y, [art]).setDepth(6);
+  }
   const g = scene.add.graphics();
   const w = width / 2,
     h = height / 2;

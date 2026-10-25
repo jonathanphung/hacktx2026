@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import type { StageItemId } from "../../shared/stages";
 import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
+import { POWERUP_GUIDE } from "../../shell/game-guide";
 import { RunnerFx } from "./fx";
 import { jumpHeight } from "./motion";
 
@@ -251,30 +252,57 @@ export class RunnerView {
   }
 }
 
-const PICKUP_STYLE: Record<PowerupKind, { color: number; label: string }> = {
-  shield: { color: 0x26c6da, label: "S" },
-  slowmo: { color: 0xffee58, label: "⏱" },
-  double: { color: 0x66bb6a, label: "x2" },
-};
-
-/** A collectible powerup: a glowing coin with a label. */
+/** Distinct silhouettes and full names; decorative halo does not change the pickup hitbox. */
 export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind: PowerupKind) {
-  const { color, label } = PICKUP_STYLE[kind];
+  const { color, name } = POWERUP_GUIDE[kind];
   const r = POWERUPS.size / 2;
-  const glow = scene.add.circle(0, 0, r + 6, color, 0.25);
-  const coin = scene.add.circle(0, 0, r, color).setStrokeStyle(3, 0xffffff);
-  const text = scene.add
-    .text(0, 0, label, { fontFamily: "system-ui, sans-serif", fontSize: "20px", color: "#1b1b2f" })
+  const glow = scene.add.circle(0, 0, r + 11, color, 0.25);
+  const coin = scene.add.circle(0, 0, r + 3, 0x201a32).setStrokeStyle(3, color);
+  const icon = scene.add.graphics().lineStyle(3, color).fillStyle(color);
+  if (kind === "shield") {
+    icon
+      .beginPath()
+      .moveTo(-12, -13)
+      .lineTo(12, -13)
+      .lineTo(10, 3)
+      .lineTo(0, 14)
+      .lineTo(-10, 3)
+      .closePath()
+      .strokePath();
+    icon.lineBetween(-5, 0, -1, 5).lineBetween(-1, 5, 7, -5);
+  } else if (kind === "slowmo") {
+    icon.lineBetween(-12, -13, 12, -13).lineBetween(-12, 13, 12, 13);
+    icon.lineBetween(-9, -12, 9, 12).lineBetween(9, -12, -9, 12);
+    icon.fillTriangle(-7, 10, 7, 10, 0, 3);
+  }
+  const multiplier = scene.add
+    .text(0, 0, kind === "double" ? "2×" : "", {
+      fontFamily: "Courier New, monospace",
+      fontSize: "23px",
+      fontStyle: "bold",
+      color: "#9cffb1",
+    })
     .setOrigin(0.5);
-  const view = scene.add.container(x, y, [glow, coin, text]).setDepth(5);
+  const label = scene.add
+    .text(0, r + 12, name, {
+      fontFamily: "Courier New, monospace",
+      fontSize: "14px",
+      fontStyle: "bold",
+      color: `#${color.toString(16)}`,
+      backgroundColor: "#201a32",
+      padding: { x: 6, y: 3 },
+    })
+    .setOrigin(0.5, 0);
+  const view = scene.add.container(x, y, [glow, coin, icon, multiplier, label]).setDepth(5);
   scene.tweens.add({
     targets: glow,
-    scale: 1.3,
+    scale: 1.25,
     alpha: 0.1,
-    duration: 500,
+    duration: 650,
     yoyo: true,
     repeat: -1,
   });
+  view.once("destroy", () => scene.tweens.killTweensOf(glow));
   return view;
 }
 

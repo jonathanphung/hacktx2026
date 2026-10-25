@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import "./style.css";
+import { TutorialScene } from "./shell/tutorial";
 import { GameScene } from "./game/GameScene";
 import { GAME_HEIGHT, GAME_WIDTH } from "./shared/types";
 import { installKeyboard } from "./shell/keyboard";
@@ -17,7 +18,7 @@ new Phaser.Game({
   backgroundColor: "#1b1b2f",
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
   physics: { default: "arcade" },
-  scene: [TitleScene, GameScene, GameOverScene],
+  scene: [TitleScene, GameScene, GameOverScene, TutorialScene],
 });
 
 // Add ?novision to the URL to skip the camera and play with the keyboard only.

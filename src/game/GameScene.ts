@@ -4,6 +4,7 @@ import type { GameEvents } from "../shared/world";
 import { installHud } from "../shell/hud";
 import { installRunner } from "./runner";
 import { preloadRunnerAssets } from "./runner/view";
+import { installGiantFeint } from "./saboteur/feint";
 import { installSaboteur } from "./saboteur";
 
 /**
@@ -25,6 +26,7 @@ export class GameScene extends Phaser.Scene {
     // HUD before saboteur: it must be listening when the saboteur announces its starting hand.
     installHud(this, events);
     installSaboteur(this, world);
+    installGiantFeint(this, world);
 
     // Dev-only handle so agents/devtools can drive and inspect a run, e.g.
     // __game.world.spawnObstacle({ kind: "test", lane: 1, jumpable: false, effect: "end-run" })

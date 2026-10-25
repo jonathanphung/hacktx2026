@@ -474,3 +474,19 @@ edges. Steering can immediately counter the slide; the existing brief snare stil
 limits rapid dodge spam. Each spill pushes once, shields block it, and oil remains
 jumpable. Natural sap retains its snare without a lane push. The HUD warns
 SLIPPING! STEER BACK! Tests cover edge safety and both center-lane directions.
+
+Single-player camera presentation now shows only the human's preview: Jon's left
+camera when playing Jon, or the giant's right camera when playing the giant.
+Two-player games retain both previews; camera gesture tracking is unchanged.
+
+Both camera previews now show vertical thirds in their role color. The giant's
+lines still follow its calibrated aim range; Jon's lines are visual guides only,
+so runner swipes keep their existing relative-motion behavior.
+
+Removed the tale panel's obsolete absolute centering and half-width translation.
+It now uses its sidebar's full width at the base style as well as the run layout,
+preventing clipped titles and missing clue boxes when layout styles update.
+
+Removed the Giant Aim panel from the run HUD. Single-player camera visibility now
+uses explicit match-mode state on the stage, cleared on shutdown, instead of a
+nested selector. Published together with the tale panel centering fix.

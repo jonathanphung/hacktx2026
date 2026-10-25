@@ -21,6 +21,16 @@ const THEMED_STEMS: Record<StageId, string> = {
   redhood: "lrr/beanstalk.png",
   xen: "beanstalk.png",
 };
+// Each illustration ends partway through a spiral. Repeat one matching turn
+// instead; Wonderland coordinates are measured after its matte is cropped.
+const THEMED_STEM_LOOPS: Record<StageId, { top: number; height: number }> = {
+  humpty: { top: 582, height: 224 },
+  wonderland: { top: 1265, height: 416 },
+  cinderella: { top: 580, height: 225 },
+  mermaid: { top: 580, height: 225 },
+  redhood: { top: 581, height: 225 },
+  xen: { top: 680, height: 225 },
+};
 const stemKey = (stage: StageId) => `story-stem-${stage}`;
 const STEM_FILE_KEY = "beanstalk-stem";
 const STEM_LOOP_FRAME = "vertical-repeat";
@@ -185,9 +195,13 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
     const texture = scene.textures.get(themedKey);
     texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
     const source = texture.getSourceImage();
+    if (!texture.has(STEM_LOOP_FRAME)) {
+      const loop = THEMED_STEM_LOOPS[stage];
+      texture.add(STEM_LOOP_FRAME, 0, 0, loop.top, source.width, loop.height);
+    }
     const scale = RUNNER.laneSpacing / (source.width * 0.42);
     for (const stem of stems) {
-      stem.setTexture(themedKey).setTileScale(scale).clearTint();
+      stem.setTexture(themedKey, STEM_LOOP_FRAME).setTileScale(scale).clearTint();
       stem.tilePositionX = (source.width - RUNNER.laneSpacing / scale) / 2;
     }
     scroll = 1 / scale;

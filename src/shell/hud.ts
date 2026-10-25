@@ -20,7 +20,11 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   addBeanstalks(hud);
   const stage = document.getElementById("stage");
   stage?.classList.add("run-active");
-  untilShutdown(scene, () => stage?.classList.remove("run-active"));
+  if (stage) stage.dataset.matchMode = getMatch().mode;
+  untilShutdown(scene, () => {
+    stage?.classList.remove("run-active");
+    if (stage) delete stage.dataset.matchMode;
+  });
   hud.innerHTML += `<div class="hud-score"><span>THIS TALE</span><strong>0</strong><small class="hud-total">TOTAL 0</small></div>
     <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
     <div class="hud-feedback" role="status"></div><aside class="hud-discovery" role="status" hidden><strong></strong><span></span></aside>

@@ -45,6 +45,11 @@ body {
 #stage:not(.run-active) #facecam {
   display: none;
 }
+/* Single-player games show the human's preview, never an empty AI camera. */
+#stage[data-match-mode="jon"] #cam-saboteur,
+#stage[data-match-mode="giant"] #cam-runner {
+  display: none;
+}
 #facecam.expanded {
   width: 34%;
   max-width: 460px;
@@ -956,11 +961,11 @@ body {
   }
 }
 .hud-level {
-  position: absolute;
-  top: 12%;
-  left: 50%;
-  translate: -50% 0;
-  width: 37%;
+  position: relative;
+  top: auto;
+  left: auto;
+  translate: none;
+  width: 100%;
   background: #2e2949ee;
   border: 1px solid #d4bc8a;
   padding: 0.5cqw 0.8cqw;
@@ -1345,8 +1350,8 @@ body {
   font-size: 1.8cqw;
 }
 .story-hud .hud-level {
-  top: 1.5%;
-  width: 30%;
+  top: auto;
+  width: 100%;
   border: 0;
   border-radius: 0.6cqw;
   background: #211b36e8;
@@ -2357,6 +2362,9 @@ body {
   border-width: 1px;
 }
 #stage.run-active .run-sidebar .hud-jon {
+  display: none;
+}
+#stage.run-active .run-sidebar .hud-giant {
   display: none;
 }
 #stage.run-active .run-sidebar .hud-jon:has(.powerup-badge),

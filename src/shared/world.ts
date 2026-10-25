@@ -39,7 +39,7 @@ export interface World {
 }
 
 /** Runner powerups. Shield absorbs one hit; slowmo slows the track; double doubles score. */
-export type PowerupKind = "shield" | "slowmo" | "double";
+export type PowerupKind = "shield" | "slowmo" | "double" | "blast" | "giant-slow";
 
 /** Events within one game run. A fresh emitter is created per run (see GameScene). */
 export interface GameEvents {

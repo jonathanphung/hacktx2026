@@ -12,6 +12,13 @@ export const POWERUP_GUIDE: Record<
     color: 0x9cffb1,
     symbol: "½",
   },
+  blast: { name: "BLAST", effect: "Clears on-screen obstacles", color: 0xffb8ed, symbol: "✹" },
+  "giant-slow": {
+    name: "GIANT SLOW",
+    effect: "Giant cooldown ×1.25",
+    color: 0xc6abff,
+    symbol: "1¼",
+  },
 };
 
 /** Text and shape agree with collision semantics, never the obstacle's artwork or name. */

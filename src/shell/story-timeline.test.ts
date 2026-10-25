@@ -4,8 +4,10 @@ import {
   clampCamera,
   crossesGrab,
   ENDING_BEATS,
+  crossesShatter,
   GRAB_BEAT,
   OPENING_BEATS,
+  SHATTER_BEAT,
   STAGE,
   STORY_BEAT_MS,
   storyFrame,
@@ -80,12 +82,13 @@ describe("the film is continuous, bounded and framed", () => {
         }
       }
   });
-  it("opens and closes the cinema bars", () => {
+  it("opens the cinema bars, and clears them (the ending leaves a thin band for its title)", () => {
     for (const ending of [false, true]) {
       expect(storyFrame(ending, 0).letterbox).toBe(0);
       expect(storyFrame(ending, total(ending) / 2).letterbox).toBe(1);
-      expect(storyFrame(ending, total(ending)).letterbox).toBe(0);
     }
+    expect(storyFrame(false, total(false)).letterbox).toBe(0);
+    expect(storyFrame(true, total(true)).letterbox).toBeLessThan(0.5);
   });
 });
 
@@ -93,7 +96,8 @@ describe("opening beats", () => {
   it("lands the grab with a flash and shake, and nothing before it", () => {
     const at = GRAB_BEAT * STORY_BEAT_MS;
     expect(storyFrame(false, at - 50).flash).toBeLessThan(0.01);
-    expect(storyFrame(false, at - 50).shake).toBeLessThan(0.01);
+    // Only the faint tremble of the growing shadow.
+    expect(storyFrame(false, at - 50).shake).toBeLessThan(1);
     expect(storyFrame(false, at + 20).flash).toBeGreaterThan(0.5);
     expect(storyFrame(false, at + 20).shake).toBeGreaterThan(3);
     expect(storyFrame(false, at + 1500).flash).toBeLessThan(0.01);
@@ -115,13 +119,65 @@ describe("opening beats", () => {
     expect(storyFrame(false, 2.2 * STORY_BEAT_MS).cell).toBe(0);
   });
   it("only runs when Jon is actually moving", () => {
-    expect(storyFrame(false, 3.01 * STORY_BEAT_MS).jon.state).toBe("idle");
-    expect(storyFrame(false, 3.5 * STORY_BEAT_MS).jon.state).toBe("run");
+    expect(storyFrame(false, 4.01 * STORY_BEAT_MS).jon.state).toBe("idle");
+    expect(storyFrame(false, 4.4 * STORY_BEAT_MS).jon.state).toBe("run");
     expect(storyFrame(false, 0.5 * STORY_BEAT_MS).jon.state).toBe("run");
+  });
+  it("builds dread before the grab: wisp fades, shadow creeps, Claude shouts, sky darkens", () => {
+    const calm = storyFrame(false, 0.5 * STORY_BEAT_MS);
+    expect(calm.orb.alpha).toBeGreaterThan(0.9);
+    expect(calm.shadow.s).toBe(0);
+    expect(calm.dark).toBe(0);
+    const worried = storyFrame(false, 2.3 * STORY_BEAT_MS);
+    expect(worried.orb.alpha).toBe(0);
+    expect(worried.shadow.s).toBeGreaterThan(0.6);
+    expect(worried.bubble.a).toBe(1);
+    expect(worried.dark).toBeGreaterThan(0.25);
+    expect(storyFrame(false, 3.8 * STORY_BEAT_MS).shadow.s).toBe(0);
   });
 });
 
 describe("ending beats", () => {
+  it("shatters the lock with a flash, burst and shake exactly once", () => {
+    const at = SHATTER_BEAT * STORY_BEAT_MS;
+    expect(storyFrame(true, at - 30).cell).toBe(1);
+    expect(storyFrame(true, at - 30).cellBreak).toBe(0);
+    expect(storyFrame(true, at + 30).cell).toBe(0);
+    expect(storyFrame(true, at + 30).flash).toBeGreaterThan(0.6);
+    expect(storyFrame(true, at + 30).shake).toBeGreaterThan(5);
+    expect(storyFrame(true, at + 2000).cellBreak).toBe(1);
+    expect(crossesShatter(true, at - 5, at + 5)).toBe(true);
+    expect(crossesShatter(true, at + 5, at + 20)).toBe(false);
+    expect(crossesShatter(false, at - 5, at + 5)).toBe(false);
+  });
+  it("rumbles harder as the letters gather, then slides the pair down the stalk", () => {
+    expect(storyFrame(true, 0.3 * STORY_BEAT_MS).shake).toBeLessThan(
+      storyFrame(true, 0.95 * STORY_BEAT_MS).shake,
+    );
+    const slideStart = storyFrame(true, 1.3 * STORY_BEAT_MS);
+    const slideEnd = storyFrame(true, 1.9 * STORY_BEAT_MS);
+    expect(slideEnd.jon.y).toBeGreaterThan(slideStart.jon.y + 30);
+    // Falling accelerates: the second half covers more ground than the first.
+    const mid = storyFrame(true, 1.6 * STORY_BEAT_MS).jon.y;
+    expect(slideEnd.jon.y - mid).toBeGreaterThan(mid - slideStart.jon.y);
+  });
+  it("lets the giant wave goodbye, then watches the sun rise and the title appear", () => {
+    expect(storyFrame(true, 1.5 * STORY_BEAT_MS).hand.visible).toBe(false);
+    const wave = storyFrame(true, 2.5 * STORY_BEAT_MS);
+    expect(wave.hand.visible).toBe(true);
+    expect(Math.abs(wave.hand.roll)).toBeGreaterThanOrEqual(0);
+    const rolls = new Set<number>();
+    for (let t = 2.4; t < 2.85; t += 0.02)
+      rolls.add(Math.sign(storyFrame(true, t * STORY_BEAT_MS).hand.roll));
+    expect(rolls.has(1) && rolls.has(-1)).toBe(true);
+    expect(storyFrame(true, 3.15 * STORY_BEAT_MS).hand.visible).toBe(false);
+    expect(storyFrame(true, 0).dawn).toBe(0);
+    expect(storyFrame(true, 2.9 * STORY_BEAT_MS).sun).toBeLessThan(0.1);
+    expect(storyFrame(true, total(true)).sun).toBe(1);
+    expect(storyFrame(true, total(true)).dawn).toBeCloseTo(1, 1);
+    expect(storyFrame(true, 3.4 * STORY_BEAT_MS).title).toBe(0);
+    expect(storyFrame(true, total(true)).title).toBe(1);
+  });
   it("brings both companions down and home, with the bars gone", () => {
     const end = storyFrame(true, total(true));
     expect(end.claude.y).toBeGreaterThan(135);

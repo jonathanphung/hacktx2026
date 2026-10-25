@@ -454,3 +454,9 @@ tale/clues and feedback align exactly with the video edges without resizing it.
 Camera previews now appear only during gameplay, including its pause menu, and
 hide on title, opening cinematic and results screens. Removed the camera toolbar
 and its collapse/resize handlers; both previews keep their fixed aligned size.
+
+Fireballs and hurdle logs now roll downhill at 115% of road speed, advancing
+relative to the beanstalk. The AI snapshot reports their actual velocity so dodge
+timing follows the same movement as collisions. Animated log grain and a revolving
+fireball core show rolling without rotating their JUMP/DODGE advice. Held attacks
+stay still; rolling animation pauses with the game and is removed on destruction.

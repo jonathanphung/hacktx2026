@@ -19,7 +19,7 @@ import { Spring } from "./motion";
 import { RelicPowers } from "./relics";
 import { absorbProtection } from "./protection";
 import { hasEscapeLane } from "./spawn-safety";
-import { finishFireballs } from "./projectiles";
+import { finishFireballs, obstacleSpeed } from "./projectiles";
 import { TrailSpawner, trailHazard, naturalLanes } from "./trail";
 import { isLastStage, type StageInfo } from "../../shared/stages";
 import { pickItemLane } from "./items";
@@ -306,7 +306,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
 
     for (let i = obstacles.length - 1; i >= 0; i--) {
       const ob = obstacles[i];
-      ob.view.y += speed * dt;
+      ob.view.y += obstacleSpeed(ob.spec.kind, speed) * dt;
       const hit =
         !ob.touched &&
         Math.abs(ob.view.x - lateral.value) < (ob.w + hitbox) / 2 &&
@@ -376,6 +376,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         lane: laneOf(o.view.x),
         y: o.view.y,
         height: o.h,
+        speed: obstacleSpeed(o.spec.kind, speed),
         jumpable: o.spec.jumpable,
         lethal: o.spec.effect === "end-run",
       })),

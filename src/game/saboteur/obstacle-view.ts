@@ -101,6 +101,36 @@ export function createObstacleView(
   }
   // Released objects begin at the fingertips, rather than popping in above the screen.
   const view = scene.add.container(x, held ? y : GIANT_RELEASE_Y, [g]).setDepth(6);
+  if (!held && (kind === "hurdle" || kind === "fireball")) {
+    const rolling = scene.add.graphics();
+    view.add(rolling);
+    const spin = scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: kind === "hurdle" ? 460 : 340,
+      repeat: -1,
+      onUpdate: (tween) => {
+        const phase = tween.getValue() ?? 0;
+        rolling.clear();
+        if (kind === "hurdle") {
+          // Grain travels around the cylinder while its long axis stays across the lane.
+          rolling.lineStyle(2, 0xf2c889, 0.8);
+          for (let i = 0; i < 3; i++) {
+            const yy = ((phase + i / 3) % 1) * (height - 6) - h + 3;
+            rolling.lineBetween(-w + 23, yy, w - 23, yy);
+          }
+        } else {
+          // A revolving hot core with the flame tail still pointing uphill.
+          rolling.lineStyle(3, 0xfff2a3, 0.9);
+          const a = phase * Math.PI * 2;
+          rolling.beginPath();
+          rolling.arc(0, 12, w * 0.45, a, a + Math.PI * 1.4);
+          rolling.strokePath();
+        }
+      },
+    });
+    view.once("destroy", () => spin.remove());
+  }
   if (kind === "fireball") {
     scene.tweens.add({
       targets: g,

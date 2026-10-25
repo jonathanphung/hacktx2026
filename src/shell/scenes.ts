@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { untilShutdown } from "../shared/emitter";
 import { inputBus } from "../shared/input";
+import { onMenuMotion } from "./menu-motion";
 import { installShellAudio, playCue } from "./audio";
 import { playCinematic } from "./cinematic";
 import { unlockCell } from "./rescue";
@@ -10,11 +11,20 @@ import { letterMarkup, towerArt } from "./story";
 
 let introSeen = false;
 
-function installStart(scene: Phaser.Scene, button: HTMLButtonElement): void {
+function installStart(
+  scene: Phaser.Scene,
+  button: HTMLButtonElement,
+  target = "game",
+  keyboardStart = true,
+): void {
   let started = false;
   const go = () => {
-    if (started) return;
+    if (started || button.closest<HTMLElement>(".story-screen")?.inert) return;
     started = true;
+    if (target === "tutorial") {
+      scene.scene.start("tutorial");
+      return;
+    }
     button.disabled = true;
     button.textContent = "Opening the story…";
     {
@@ -35,8 +45,9 @@ function installStart(scene: Phaser.Scene, button: HTMLButtonElement): void {
   const onEnter = (event: KeyboardEvent) => {
     if (event.code !== "Enter" || event.repeat) return;
     event.preventDefault();
-    go();
+    if (keyboardStart) go();
   };
+  if (keyboardStart) untilShutdown(scene, onMenuMotion(go));
   button.disabled = false;
   button.addEventListener("click", go);
   window.addEventListener("keydown", onEnter);
@@ -44,7 +55,7 @@ function installStart(scene: Phaser.Scene, button: HTMLButtonElement): void {
   untilShutdown(
     scene,
     inputBus.on("input", (e) => {
-      if (e.player === "runner" && e.action === "jump") go();
+      if (keyboardStart && e.player === "runner" && e.action === "jump") go();
     }),
   );
 }
@@ -53,7 +64,7 @@ export class TitleScene extends Phaser.Scene {
   constructor() {
     super("title");
   }
-  create() {
+  create(data: { practiceComplete?: boolean } = {}) {
     installShellAudio();
     const screen = mountShell(this, "story-screen");
     addBeanstalks(screen);
@@ -66,11 +77,23 @@ export class TitleScene extends Phaser.Scene {
         <section class="role-card"><span class="role-number">PLAYER ONE · LEFT SIDE</span><h2>Jon the Wizard</h2><p>Dodge the giant’s tricks.<br>Keep your adventure alive.</p><strong>Swipe left / right to dodge<br>Swipe up to jump</strong><small>A / D / W · Jump low traps; dodge walls</small></section>
         <section class="role-card giant"><span class="role-number">PLAYER TWO · RIGHT SIDE</span><h2>Be the Giant</h2><p>Guard your kingdom in the clouds.<br>Send obstacles into Jon’s path.</p><strong>Move your hand to aim<br>Close your fist to fire</strong><small>J / K / L: aim · Space: drop next · Stock grows every 2 tales</small></section>
       </div>
-      <button class="story-button" type="button">Enter the enchanted realm</button>
-      <p class="start-hint">Click to begin, press Enter, or swipe up · Esc pauses during play</p>
+      <button class="story-button" type="button" data-primary>Learn to play · practice grove</button>
+      <button class="story-secondary" type="button" data-secondary>Skip practice · Play story</button>
+      <p class="start-hint">Click to begin, press Enter, or move either player’s hand · Esc pauses during play</p>
       <p class="camera-hint">Share one webcam. Keep one hand visible in your half.</p>`;
     screen.append(content);
-    installStart(this, content.querySelector("button")!);
+    const primary = content.querySelector<HTMLButtonElement>("[data-primary]")!;
+    const secondary = content.querySelector<HTMLButtonElement>("[data-secondary]")!;
+    if (data.practiceComplete) {
+      primary.textContent = "Enter the enchanted realm";
+      secondary.textContent = "Practice again";
+      installStart(this, primary);
+      secondary.addEventListener("click", () => this.scene.start("tutorial"));
+      this.time.delayedCall(0, () => primary.click());
+    } else {
+      installStart(this, primary, "tutorial");
+      installStart(this, secondary, "game", false);
+    }
   }
 }
 
@@ -95,7 +118,7 @@ export class GameOverScene extends Phaser.Scene {
       <p class="story-subtitle">Every good tale deserves another try.</p>
       <div class="story-results"><div><strong id="result-score"></strong><span>SCORE</span></div><div><strong id="result-time"></strong><span>SURVIVED</span></div></div>
       <button class="story-button" type="button" disabled>Catch your breath…</button>
-      <p class="start-hint">Click replay, press Enter, or swipe up for another adventure</p>`;
+      <p class="start-hint">Click replay, press Enter, or move either player’s hand for another adventure</p>`;
 
       if (victory) {
         screen.classList.add("festival-victory");

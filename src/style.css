@@ -1705,3 +1705,252 @@ body {
   outline: 2px solid #a4e8d5;
   outline-offset: 3px;
 }
+
+/* Practice and readability experiment; the track remains the center of attention. */
+.story-secondary {
+  display: block;
+  margin: 1cqw auto 0;
+  border: 0;
+  background: none;
+  color: #49325f;
+  text-decoration: underline;
+  font:
+    bold 1.05cqw "Courier New",
+    monospace;
+  cursor: pointer;
+}
+.practice-ui {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  color: #fff0d5;
+  font:
+    1.05cqw "Courier New",
+    monospace;
+}
+.practice-ui header {
+  position: absolute;
+  top: 3%;
+  left: 33%;
+  width: 34%;
+  text-align: center;
+  padding: 0.8cqw;
+  box-sizing: border-box;
+  background: #211b36ee;
+  border: 1px solid #d4bc8a;
+}
+.practice-ui header span {
+  display: block;
+  color: #a4ffe3;
+  font-size: 0.8cqw;
+  margin-bottom: 0.5cqw;
+}
+.practice-ui header strong {
+  display: block;
+  font-size: 1.4cqw;
+}
+.practice-ui progress {
+  width: 100%;
+  height: 0.5cqw;
+  accent-color: #a4ffe3;
+}
+.practice-card,
+.practice-guide {
+  position: absolute;
+  bottom: 6%;
+  padding: 1.1cqw;
+  border: 1px solid #b59ace;
+  background: #211b36ed;
+  box-sizing: border-box;
+  border-radius: 0.5cqw;
+}
+.practice-card {
+  left: 2%;
+  width: 27%;
+}
+.practice-card small {
+  color: #b6ecd5;
+  font-size: 0.85cqw;
+}
+.practice-card h1 {
+  font-size: 1.7cqw;
+  line-height: 1.15;
+  color: #ffe5a3;
+  margin: 0.65cqw 0;
+}
+.practice-card p {
+  font-size: 1.05cqw;
+  line-height: 1.6;
+}
+.practice-card kbd {
+  display: block;
+  font:
+    0.85cqw "Courier New",
+    monospace;
+  color: #cebada;
+}
+.practice-feedback {
+  min-height: 2.8cqw;
+  margin-top: 0.8cqw;
+  line-height: 1.4;
+  color: #a4ffe3;
+  font-weight: bold;
+}
+.practice-guide {
+  right: 2%;
+  width: 25%;
+  font-size: 0.9cqw;
+  line-height: 1.4;
+}
+.practice-guide h2 {
+  font-size: 1.2cqw;
+  margin: 0 0 0.7cqw;
+  color: #ffe5a3;
+}
+.practice-guide p {
+  margin: 0.65cqw 0;
+}
+.practice-guide b {
+  color: #ffe5a3;
+}
+.jump-key {
+  color: #a4ffe3;
+}
+.dodge-key {
+  color: #ffb5a8;
+}
+.practice-action,
+.practice-skip {
+  pointer-events: auto;
+  border: 1px solid #d4bc8a;
+  background: #60427d;
+  color: #fff0d5;
+  cursor: pointer;
+  padding: 0.7cqw 1cqw;
+  font:
+    bold 1cqw "Courier New",
+    monospace;
+}
+.practice-action[hidden] {
+  display: none;
+}
+.practice-skip {
+  position: absolute;
+  top: 2%;
+  bottom: auto;
+  left: 2%;
+  background: #211b36ee;
+  font-size: 0.85cqw;
+}
+.practice-ui button:focus-visible,
+.story-secondary:focus-visible {
+  outline: 2px solid #a4ffe3;
+  outline-offset: 3px;
+}
+/* The forecast lives beside the track and never covers playable stems. */
+.giant-rotation {
+  position: absolute;
+  right: 1%;
+  top: 54%;
+  width: 21%;
+  z-index: 1;
+  padding: 0.7cqw;
+  box-sizing: border-box;
+  border: 1px solid #ad91c4;
+  border-radius: 0.5cqw;
+  background: #211b36ed;
+  color: #f8ebd1;
+  font:
+    0.8cqw "Courier New",
+    monospace;
+}
+.giant-rotation h3 {
+  font-size: 1cqw;
+  color: #ffe2a0;
+  margin: 0 0 0.5cqw;
+}
+.giant-rotation ol {
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.3cqw;
+  list-style: none;
+}
+.giant-rotation li {
+  display: grid;
+  grid-template-columns: 1.5cqw 1fr;
+  gap: 0.1cqw 0.4cqw;
+  border-left: 0.25cqw solid var(--attack-color);
+  padding: 0.3cqw 0.5cqw;
+  background: #382b49;
+}
+.giant-rotation li:first-child {
+  background: #574068;
+  outline: 1px solid #d5b5eb;
+}
+.giant-rotation b {
+  grid-row: span 2;
+  align-self: center;
+  color: #e9d494;
+}
+.giant-rotation small {
+  font-size: 0.6cqw;
+  color: #c9b6dc;
+}
+.giant-rotation p {
+  font-size: 0.65cqw;
+  margin: 0.5cqw 0 0;
+}
+.obstacle-legend {
+  display: grid;
+  gap: 0.3cqw;
+  font-size: 0.8cqw;
+}
+.obstacle-legend span:first-child {
+  color: #a4ffe3;
+}
+.obstacle-legend span:last-child {
+  color: #ffb5a8;
+}
+.story-hud .hud-powerups {
+  display: grid;
+  gap: 0.4cqw;
+}
+.powerup-badge {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.6cqw;
+  border: 1px solid var(--power-color);
+  padding: 0.45cqw 0.5cqw 0.65cqw;
+  background: #171427;
+  color: var(--power-color);
+}
+.powerup-badge > b {
+  font-size: 2cqw;
+}
+.powerup-badge span {
+  flex: 1;
+}
+.powerup-badge strong {
+  display: block;
+  font-size: 0.95cqw;
+}
+.story-hud .powerup-badge small {
+  display: block;
+  font-size: 0.65cqw;
+}
+.powerup-badge em {
+  font:
+    0.85cqw "Courier New",
+    monospace;
+}
+.powerup-badge progress {
+  position: absolute;
+  bottom: 0.15cqw;
+  left: 3%;
+  width: 94%;
+  height: 0.25cqw;
+  accent-color: var(--power-color);
+}

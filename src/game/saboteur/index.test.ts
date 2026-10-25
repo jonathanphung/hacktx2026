@@ -6,6 +6,7 @@ import type { GameEvents, World } from "../../shared/world";
 import { installSaboteur } from "./index";
 import { SABOTEUR } from "./config";
 import { createGiantHand } from "./giant-hand";
+vi.mock("./rotation-view", () => ({ createRotationPreview: vi.fn(() => vi.fn()) }));
 vi.mock("./giant-hand", () => ({
   createGiantHand: vi.fn(() => ({ release: vi.fn(), destroy: vi.fn() })),
 }));
@@ -87,7 +88,7 @@ describe("saboteur attack warnings", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
-  it("chooses a single-obstacle attack even at the end of the random pool", () => {
+  it("starts with a single barrier regardless of random values", () => {
     vi.mocked(Math.random).mockReturnValue(0.999);
     const { events, world, fire } = setup();
     try {
@@ -96,7 +97,7 @@ describe("saboteur attack warnings", () => {
       events.emit("update", 1000 + SABOTEUR.warningMs);
       expect(world.spawnObstacle).toHaveBeenCalledOnce();
       expect(world.spawnObstacle).toHaveBeenCalledWith(
-        expect.objectContaining({ kind: "fireball" }),
+        expect.objectContaining({ kind: "barrier" }),
       );
     } finally {
       events.emit("shutdown", undefined);
@@ -336,4 +337,25 @@ describe("saboteur fire buffering", () => {
       events.emit("shutdown", undefined);
     }
   });
+});
+
+it("casts in the displayed rotation over a full lap and ignores blocked extra fists", () => {
+  const { events, world, fire } = setup();
+  const actual: string[] = [];
+  world.events.on("cast-result", (r) => {
+    if (r.accepted) actual.push(r.attackId!);
+  });
+  try {
+    for (let i = 0; i < 7; i++) {
+      const t = 1000 + i * 4000;
+      events.emit("update", t);
+      fire();
+      fire(); // A rejected cast must not advance the sequence.
+      events.emit("update", t + SABOTEUR.warningMs);
+    }
+    expect(actual).toEqual(["barrier", "hurdle", "oil", "mud", "fireball", "barrier", "hurdle"]);
+    expect(world.spawnObstacle).toHaveBeenCalledTimes(7);
+  } finally {
+    events.emit("shutdown", undefined);
+  }
 });

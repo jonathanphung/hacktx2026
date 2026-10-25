@@ -1,3 +1,4 @@
+import { POWERUP_GUIDE } from "./game-guide";
 import { STAGES } from "../shared/stages";
 import type Phaser from "phaser";
 import { untilShutdown, type Emitter } from "../shared/emitter";
@@ -18,7 +19,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
     <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
     <div class="hud-feedback" role="status"></div><aside class="hud-discovery" role="status" hidden><strong></strong><span></span></aside>
-    <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2><small>A / D: dodge · W: jump</small></section>
+    <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2><small>Swipe / A / D: dodge · Up / W: jump</small><p class="obstacle-legend"><span>↑ JUMP: low obstacles</span><span>↔ DODGE: tall / blocked</span></p></section>
     <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Space: drop</small></section>`;
   const score = hud.querySelector(".hud-score strong")!;
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
@@ -74,11 +75,34 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   scene.events.on("update", footsteps);
   untilShutdown(scene, () => scene.events.off("update", footsteps));
   const activePowerups = new Set<PowerupKind>();
-  const powerupNames: Record<PowerupKind, string> = {
-    shield: "SHIELD",
-    slowmo: "SLOW MOTION",
-    double: "2× SCORE",
+  const powerupUntil = new Map<PowerupKind, number>();
+  const powerupDuration = new Map<PowerupKind, number>();
+  let gameTime = 0;
+  const renderPowerups = () => {
+    const panel = hud.querySelector(".hud-powerups")!;
+    panel.replaceChildren();
+    for (const kind of activePowerups) {
+      const guide = POWERUP_GUIDE[kind];
+      const badge = document.createElement("div");
+      badge.className = "powerup-badge";
+      badge.style.setProperty("--power-color", `#${guide.color.toString(16)}`);
+      badge.innerHTML = `<b aria-hidden="true">${guide.symbol}</b><span><strong>${guide.name}</strong><small>${guide.effect}</small></span><em></em><progress max="1" aria-label="${guide.name} remaining"></progress>`;
+      badge.dataset.kind = kind;
+      panel.append(badge);
+    }
   };
+  const powerupTimers = (time: number) => {
+    gameTime = time;
+    for (const badge of hud.querySelectorAll<HTMLElement>(".powerup-badge")) {
+      const kind = badge.dataset.kind as PowerupKind;
+      const remaining = Math.max(0, (powerupUntil.get(kind) ?? time) - time);
+      badge.querySelector("em")!.textContent = `${(remaining / 1000).toFixed(1)}s`;
+      badge.querySelector("progress")!.value =
+        remaining / Math.max(1, powerupDuration.get(kind) ?? 1);
+    }
+  };
+  scene.events.on("update", powerupTimers);
+  untilShutdown(scene, () => scene.events.off("update", powerupTimers));
   let feedbackTimer: Phaser.Time.TimerEvent | undefined;
   const announce = (message: string, positive = false) => {
     feedbackTimer?.remove();
@@ -140,16 +164,21 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   );
   untilShutdown(
     scene,
-    events.on("powerup", ({ kind, active }) => {
-      if (active) activePowerups.add(kind);
-      else activePowerups.delete(kind);
-      hud.querySelector(".hud-powerups")!.textContent = [...activePowerups]
-        .map((p) => powerupNames[p])
-        .join(" · ");
+    events.on("powerup", ({ kind, active, durationMs }) => {
+      if (active) {
+        activePowerups.add(kind);
+        powerupUntil.set(kind, gameTime + durationMs);
+        powerupDuration.set(kind, durationMs);
+      } else {
+        activePowerups.delete(kind);
+        powerupUntil.delete(kind);
+      }
+      renderPowerups();
+      powerupTimers(gameTime);
       if (!active) playCue("expire");
       if (active) {
         playCue("pickup");
-        announce(`${powerupNames[kind]} ACTIVE`, true);
+        announce(`${POWERUP_GUIDE[kind].name} · ${POWERUP_GUIDE[kind].effect}`, true);
       }
     }),
   );

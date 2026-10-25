@@ -1,4 +1,5 @@
 import type Phaser from "phaser";
+import { onStoryAdvance } from "./story-controls";
 import { untilShutdown } from "../shared/emitter";
 import { playCue } from "./audio";
 import { mountShell } from "./presentation";
@@ -14,16 +15,18 @@ export function playStory(
   screen.setAttribute("role", "dialog");
   screen.setAttribute("aria-modal", "true");
   screen.setAttribute("aria-label", "Story cutscene");
-  screen.innerHTML = `<div class="tale-frame"><div class="tale-art"></div><div class="tale-copy"><p class="tale-kicker">THE SEARCH FOR CLAUDE</p><div class="spell-word" aria-label="Restored letters"></div><p class="tale-speaker"></p><h1></h1><p class="tale-dialogue" aria-live="polite"></p><p class="tale-reward"></p><div class="tale-controls"><button class="story-button tale-next" type="button">Next</button><button class="tale-skip" type="button">Skip scene</button><small>Enter: next · Esc: skip</small></div></div></div>`;
+  screen.innerHTML = `<div class="tale-frame"><div class="tale-art"></div><div class="tale-copy"><p class="tale-kicker">THE SEARCH FOR CLAUDE</p><div class="spell-word" aria-label="Restored letters"></div><p class="tale-speaker"></p><h1></h1><p class="tale-dialogue" aria-live="polite"></p><p class="tale-reward"></p><div class="tale-controls"><button class="story-button tale-next" type="button">Next</button><button class="tale-skip" type="button">Skip scene</button><small>Wave either hand to continue · Plays automatically</small></div></div></div>`;
   const next = screen.querySelector<HTMLButtonElement>(".tale-next")!;
   const skip = screen.querySelector<HTMLButtonElement>(".tale-skip")!;
   const previousFocus =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
   let index = 0,
     done = false;
+  let offMotion = () => {};
   let timer: ReturnType<typeof setTimeout> | undefined;
   const cleanup = () => {
     clearTimeout(timer);
+    offMotion();
     window.removeEventListener("keydown", onKey, true);
   };
   const finish = () => {
@@ -36,6 +39,8 @@ export function playStory(
   };
   const render = () => {
     clearTimeout(timer);
+    offMotion();
+    offMotion = onStoryAdvance(advance);
     const beat = beats[index];
     screen.querySelector(".tale-art")!.innerHTML = taleArt(beat.art);
     screen.querySelector(".spell-word")!.innerHTML = letterMarkup(beat.collected);

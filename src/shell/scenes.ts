@@ -64,7 +64,7 @@ export class TitleScene extends Phaser.Scene {
   constructor() {
     super("title");
   }
-  create(data: { practiceComplete?: boolean } = {}) {
+  create(data: { practiceComplete?: boolean; skipStoryPreview?: boolean } = {}) {
     installShellAudio();
     const screen = mountShell(this, "story-screen");
     addBeanstalks(screen);
@@ -82,6 +82,21 @@ export class TitleScene extends Phaser.Scene {
       <p class="start-hint">Click to begin, press Enter, or move either player’s hand · Esc pauses during play</p>
       <p class="camera-hint">Share one webcam. Keep one hand visible in your half.</p>`;
     screen.append(content);
+    // Local review routes avoid completing all six stages just to inspect the ending.
+    const preview = new URLSearchParams(location.search).get("story-preview");
+    if (
+      import.meta.env.DEV &&
+      !data.skipStoryPreview &&
+      ["opening", "ending", "rescue"].includes(preview ?? "")
+    ) {
+      content.inert = true;
+      const done = () => this.scene.start("title", { skipStoryPreview: true });
+      this.time.delayedCall(0, () => {
+        if (preview === "rescue") unlockCell(this, () => playCinematic(this, true, done));
+        else playCinematic(this, preview === "ending", done);
+      });
+      return;
+    }
     const primary = content.querySelector<HTMLButtonElement>("[data-primary]")!;
     const secondary = content.querySelector<HTMLButtonElement>("[data-secondary]")!;
     if (data.practiceComplete) {

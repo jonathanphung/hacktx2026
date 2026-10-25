@@ -17,10 +17,10 @@ const FIGURE = 48;
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   preloadTrackAssets(scene);
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
-  for (const kind of ["blast", "giant-slow"])
+  for (const kind of Object.keys(POWERUP_GUIDE))
     scene.load.svg(`pickup-${kind}`, `${import.meta.env.BASE_URL}assets/pickups/${kind}.svg`, {
-      width: 96,
-      height: 96,
+      width: 64,
+      height: 64,
     });
   for (const variant of RUN_VARIANTS) {
     scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
@@ -263,44 +263,20 @@ export class RunnerView {
 export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind: PowerupKind) {
   const { color } = POWERUP_GUIDE[kind];
   const r = POWERUPS.size / 2;
-  const glow = scene.add.circle(0, 0, r + 11, color, 0.25);
-  const coin = scene.add.circle(0, 0, r + 3, 0x201a32).setStrokeStyle(3, color);
-  const icon = scene.add.graphics().lineStyle(3, color).fillStyle(color);
-  if (kind === "shield") {
-    icon
-      .beginPath()
-      .moveTo(-12, -13)
-      .lineTo(12, -13)
-      .lineTo(10, 3)
-      .lineTo(0, 14)
-      .lineTo(-10, 3)
-      .closePath()
-      .strokePath();
-    icon.lineBetween(-5, 0, -1, 5).lineBetween(-1, 5, 7, -5);
-  } else if (kind === "slowmo") {
-    icon.lineBetween(-12, -13, 12, -13).lineBetween(-12, 13, 12, 13);
-    icon.lineBetween(-9, -12, 9, 12).lineBetween(9, -12, -9, 12);
-    icon.fillTriangle(-7, 10, 7, 10, 0, 3);
-  }
-  const multiplier = scene.add
-    .text(0, 0, kind === "double" ? "½" : "", {
-      fontFamily: "Courier New, monospace",
-      fontSize: "23px",
-      fontStyle: "bold",
-      color: "#9cffb1",
-    })
-    .setOrigin(0.5);
-  const art =
-    kind === "blast" || kind === "giant-slow"
-      ? scene.add.image(0, 0, `pickup-${kind}`).setDisplaySize(36, 36)
-      : null;
-  const view = scene.add
-    .container(x, y, [glow, coin, icon, multiplier, ...(art ? [art] : [])])
-    .setDepth(5);
+  const glow = scene.add.rectangle(0, 0, r * 2 + 12, r * 2 + 12, color, 0.12);
+  // Stepped gold setting echoes the game's pixel-art story panels.
+  const coin = scene.add.graphics();
+  coin.fillStyle(0x29233b).fillRect(-24, -20, 48, 40).fillRect(-20, -24, 40, 48);
+  coin.fillStyle(0xd6af65).fillRect(-22, -18, 44, 36).fillRect(-18, -22, 36, 44);
+  coin.fillStyle(0x3c3449).fillRect(-20, -16, 40, 32).fillRect(-16, -20, 32, 40);
+  coin.fillStyle(0xfff0bc).fillRect(-18, -22, 12, 2).fillRect(-22, -18, 2, 10);
+  scene.textures.get(`pickup-${kind}`).setFilter(Phaser.Textures.FilterMode.NEAREST);
+  const art = scene.add.image(0, 0, `pickup-${kind}`).setDisplaySize(40, 40);
+  const view = scene.add.container(x, y, [glow, coin, art]).setDepth(5);
   scene.tweens.add({
     targets: glow,
     scale: 1.25,
-    alpha: 0.1,
+    alpha: 0.04,
     duration: 650,
     yoyo: true,
     repeat: -1,

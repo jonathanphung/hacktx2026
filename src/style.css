@@ -2505,3 +2505,9 @@ body {
   color: #a4ffe3;
   font-weight: bold;
 }
+
+/* Keep the same pixel-art symbols crisp in the HUD and practice guide. */
+.powerup-badge > b img,
+.practice-guide b img {
+  image-rendering: pixelated;
+}

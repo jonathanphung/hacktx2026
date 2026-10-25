@@ -440,3 +440,9 @@ cancels any resume countdown. After a camera-mode death, replay is disabled for
 two seconds with a visible countdown before keyboard, click or hand input arms.
 Keyboard-only replay and victory timing stay unchanged. Split cameras are now
 24% of the stage width (26% expanded), with status panels below them.
+
+Gameplay HUD columns are capped at 27% of the stage and clipped horizontally;
+all nested badges/cards fit their column and long feedback wraps. This keeps
+status, clues and controls outside the three central beanstalk lanes, including
+when split cameras are expanded. Story/pause overlays and scrolling tale gates
+retain their intentional full-screen/on-track presentation.

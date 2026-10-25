@@ -4,6 +4,7 @@ import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_GUIDE } from "../../shell/game-guide";
 import { RunnerFx } from "./fx";
+import { preloadTrackAssets } from "./track";
 import { jumpHeight } from "./motion";
 
 const RUN_FRAMES = 16;
@@ -14,6 +15,7 @@ const TEX = 128;
 const FIGURE = 48;
 
 export function preloadRunnerAssets(scene: Phaser.Scene) {
+  preloadTrackAssets(scene);
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
   for (const variant of RUN_VARIANTS) {
     scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);

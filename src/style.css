@@ -262,8 +262,23 @@ body {
   overflow: hidden;
 }
 .beanstalk-art svg {
+  position: relative;
   width: 100%;
   height: 100%;
+}
+.beanstalk-vine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8cqw;
+  background-repeat: repeat-y;
+  background-size: 100% auto;
+}
+.beanstalk-vine.left {
+  left: -0.5cqw;
+}
+.beanstalk-vine.right {
+  right: -0.5cqw;
 }
 .story-content {
   position: relative;

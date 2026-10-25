@@ -12,6 +12,15 @@ export function lerpColor(a: number, b: number, t: number): number {
   return (ch(16) << 16) | (ch(8) << 8) | ch(0);
 }
 
+const STEM_FILE_KEY = "beanstalk-stem";
+/** The tile is drawn at 2x for crispness; shown at half size. */
+const STEM_TILE_SCALE = 0.5;
+
+/** Loads the pixel-art beanstalk tile; createTrack falls back to drawn stems if it is missing. */
+export function preloadTrackAssets(scene: Phaser.Scene) {
+  scene.load.image(STEM_FILE_KEY, `${import.meta.env.BASE_URL}assets/beanstalk/stem-tile.png`);
+}
+
 /** Three living stems. Lane centers, collisions, and scrolling remain unchanged. */
 export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) {
   // Sky gradient (redrawn while blending between stages) with clouds on top.
@@ -49,8 +58,10 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
       repeat: -1,
     });
   }
-  const key = "enchanted-stem";
-  if (!scene.textures.exists(key)) {
+  const hasArt = scene.textures.exists(STEM_FILE_KEY);
+  const key = hasArt ? STEM_FILE_KEY : "enchanted-stem";
+  if (hasArt) scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+  else if (!scene.textures.exists(key)) {
     const g = scene.make.graphics({}, false);
     const width = RUNNER.laneSpacing;
     const cx = width / 2;
@@ -88,8 +99,11 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
   const stems = LANES.map((lane) =>
     scene.add
       .tileSprite(laneX(lane), GAME_HEIGHT / 2, RUNNER.laneSpacing, GAME_HEIGHT, key)
+      .setTileScale(hasArt ? STEM_TILE_SCALE : 1)
       .setDepth(0),
   );
+  // Tile positions are in texture pixels, so a scaled tile must scroll proportionally faster.
+  const scroll = 1 / (hasArt ? STEM_TILE_SCALE : 1);
 
   // Speed lines: faint streaks that fade in as the track gets fast.
   const left = laneX(0) - RUNNER.laneSpacing / 2;
@@ -160,7 +174,7 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
         gates[i].y += dy;
         if (gates[i].y > GAME_HEIGHT + 80) gates.splice(i, 1)[0].destroy();
       }
-      for (const stem of stems) stem.tilePositionY -= dy;
+      for (const stem of stems) stem.tilePositionY -= dy * scroll;
       const alpha = Phaser.Math.Clamp((speed - RUNNER.streakFromSpeed) / 250, 0, 1) * 0.22;
       for (const s of streaks) {
         s.y += dy * 1.7;

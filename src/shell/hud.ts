@@ -18,17 +18,42 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const hud = mountShell(scene, "story-hud");
   hud.dataset.mode = getMatch().mode;
   addBeanstalks(hud);
+  const stage = document.getElementById("stage");
+  stage?.classList.add("run-active");
+  untilShutdown(scene, () => stage?.classList.remove("run-active"));
   hud.innerHTML += `<div class="hud-score"><span>THIS TALE</span><strong>0</strong><small class="hud-total">TOTAL 0</small></div>
-    <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div></div>
+    <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
     <div class="hud-feedback" role="status"></div><aside class="hud-discovery" role="status" hidden><strong></strong><span></span></aside>
-    <section class="hud-jon"><div class="hud-powerups"></div><h2>JON</h2></section>
-    <section class="hud-giant"><h2>GIANT</h2><div class="hud-cards"></div></section>`;
+    <section class="hud-jon"><div class="hud-powerups"></div><p class="hud-snare" hidden></p><h2>JON</h2><small>Swipe / A / D: dodge · Up / W: jump</small><p class="obstacle-legend"><span>↑ JUMP: low obstacles</span><span>↔ DODGE: tall / blocked</span></p></section>
+    <section class="hud-giant"><h2>GIANT · AIM: CENTER</h2><div class="hud-cards"></div><small>J/K/L: aim · Space: drop</small></section>`;
+  const left = document.createElement("div"),
+    right = document.createElement("div");
+  left.className = "run-sidebar run-left";
+  right.className = "run-sidebar run-right";
+  for (const selector of [
+    ".hud-score",
+    ".hud-level",
+    ".hud-jon",
+    ".hud-discovery",
+    ".hud-feedback",
+  ])
+    left.append(hud.querySelector(selector)!);
+  right.append(hud.querySelector(".hud-giant")!);
+  const horizon = document.createElement("div");
+  horizon.className = "run-horizon";
+  horizon.setAttribute("aria-hidden", "true");
+  hud.append(horizon, left, right);
+  hud
+    .querySelectorAll(".hud-jon > small, .obstacle-legend, .hud-giant > small")
+    .forEach((node) => node.remove());
   const score = hud.querySelector(".hud-score strong")!;
   const total = hud.querySelector(".hud-total")!;
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
   const cards = hud.querySelector(".hud-cards")!;
-  if (getMatch().mode === "giant")
+  if (getMatch().mode === "giant") {
     hud.querySelector(".hud-score > span")!.textContent = "JON'S TALE";
+    hud.querySelector(".hud-jon h2")!.textContent = "AI JON";
+  }
   let cooling = false;
   let lastAim = 1;
   let discoveryTimer: Phaser.Time.TimerEvent | undefined;
@@ -36,6 +61,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   setMusicStage(0);
   const cooldownLabel = document.createElement("p");
   cooldownLabel.className = "cooldown-label";
+  hud.querySelector(".hud-giant")!.append(cooldownLabel);
   hud.querySelector(".hud-level strong")!.textContent = taleLabel(0);
   hud.querySelector(".hud-spell")!.innerHTML = letterMarkup(0);
   hud.querySelector(".hud-level span")!.textContent = `Find ${STAGES[0].item.name}`;
@@ -80,6 +106,14 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const powerupUntil = new Map<PowerupKind, number>();
   const powerupDuration = new Map<PowerupKind, number>();
   let gameTime = 0;
+  let snaredUntil = 0;
+  const snareLabel = hud.querySelector<HTMLElement>(".hud-snare")!;
+  untilShutdown(
+    scene,
+    events.on("runner-slowed", ({ durationMs }) => {
+      snaredUntil = gameTime + durationMs;
+    }),
+  );
   const renderPowerups = () => {
     const panel = hud.querySelector(".hud-powerups")!;
     panel.replaceChildren();
@@ -95,6 +129,8 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   };
   const powerupTimers = (time: number) => {
     gameTime = time;
+    snareLabel.hidden = time >= snaredUntil;
+    snareLabel.textContent = `SNARED · ${Math.max(0, (snaredUntil - time) / 1000).toFixed(1)}s`;
     for (const badge of hud.querySelectorAll<HTMLElement>(".powerup-badge")) {
       const kind = badge.dataset.kind as PowerupKind;
       const remaining = Math.max(0, (powerupUntil.get(kind) ?? time) - time);
@@ -133,7 +169,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
       if (!hand.length) {
         const empty = document.createElement("p");
         empty.textContent = "Recharging magic…";
-        cards.append(empty, cooldownLabel);
+        cards.append(empty);
       }
       hand.slice(0, 1).forEach((id, i) => {
         const attack = ATTACK_BY_ID.get(id);
@@ -159,9 +195,11 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     scene,
     events.on("saboteur-status", ({ state, remainingMs }) => {
       cooldownLabel.textContent =
-        state === "queued"
-          ? `DROPPING IN ${(remainingMs / 1000).toFixed(1)}s`
-          : `NEXT DROP IN ${(remainingMs / 1000).toFixed(1)}s`;
+        state === "ready"
+          ? "Ready"
+          : state === "queued"
+            ? `Dropping · ${(remainingMs / 1000).toFixed(1)}s`
+            : `Recharging · ${(remainingMs / 1000).toFixed(1)}s`;
     }),
   );
   untilShutdown(

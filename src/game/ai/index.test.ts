@@ -10,10 +10,13 @@ afterEach(() => {
   setMatch("duo", "normal");
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 it("drives the giant through legal inputs and stops during pause and after shutdown", async () => {
   vi.useFakeTimers();
+  vi.spyOn(Math, "random").mockReturnValue(0.5);
+  vi.stubGlobal("document", { querySelector: () => null });
   vi.stubGlobal(
     "fetch",
     vi.fn(async () => {

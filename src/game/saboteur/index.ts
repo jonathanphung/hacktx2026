@@ -76,7 +76,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   }
   const reject = (reason: "cooldown" | "starting" | "game-over", remainingMs = 0) =>
     publish("cast-result", { accepted: false, reason, lane: aimLane, remainingMs });
-  let lastState: GameEvents["saboteur-status"]["state"] = "ready";
+  let lastState: GameEvents["saboteur-status"]["state"] = "empty";
 
   const marker = scene.add.triangle(world.laneX(aimLane), 90, 0, 0, 40, 0, 20, 30, 0xff5252);
   marker.setDepth(10);

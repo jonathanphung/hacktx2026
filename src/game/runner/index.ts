@@ -11,6 +11,7 @@ import type {
   PowerupKind,
   World,
 } from "../../shared/world";
+import { Snare } from "./snare";
 import { withObstacleCue } from "./obstacle-cue";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
@@ -74,7 +75,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let now = -1;
   let startedAt = -1;
   let airborneUntil = 0;
-  let slowUntil = 0;
+  const snare = new Snare();
   const pots = new TalePots();
   let speed = RUNNER.baseSpeed;
   let over = false;
@@ -191,6 +192,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   };
 
   const moveTo = (next: Lane) => {
+    if (!snare.allowDodge(now)) return;
     events.emit("runner-action", { action: next < lane ? "left" : "right" });
     lane = next;
     lateral.target = laneX(lane);
@@ -243,13 +245,13 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       jump();
     }
     const airborne = time < airborneUntil;
-    lateral.step(dt, RUNNER.laneOmega * (time < slowUntil ? RUNNER.slowFactor : 1));
+    lateral.step(dt, RUNNER.laneOmega * snare.movementFactor(time));
     runner.render(
       {
         x: lateral.value,
         vx: lateral.velocity,
         jump: airborne ? 1 - (airborneUntil - time) / jumpMs() : null,
-        slowed: time < slowUntil,
+        slowed: snare.active(time),
         speed,
       },
       time,
@@ -336,7 +338,10 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           });
           return;
         } else if (ob.spec.effect === "slow") {
-          slowUntil = time + RUNNER.slowMs * relics.slowFactor;
+          const durationMs = RUNNER.slowMs * relics.slowFactor;
+          snare.apply(time, durationMs);
+          lateral.velocity *= RUNNER.slowFactor;
+          events.emit("runner-slowed", { durationMs });
         }
       }
       // Solid obstacles break on contact; surfaces (slow) stay and scroll away.

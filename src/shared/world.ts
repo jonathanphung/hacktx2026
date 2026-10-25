@@ -48,6 +48,7 @@ export interface GameEvents {
   score: { score: number; pot?: number };
   "runner-hit": { kind: string; effect: ObstacleEffect; blocked?: boolean; shieldBroken?: boolean };
   "obstacle-spawned": { kind: string; lane: Lane };
+  "runner-slowed": { durationMs: number };
   /** `stage` = index into STAGES (src/shared/stages.ts) of the stage the run ended in. */
   "game-over": {
     score: number;

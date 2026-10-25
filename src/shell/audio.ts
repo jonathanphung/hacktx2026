@@ -88,10 +88,7 @@ const SOUNDS: Record<Cue, Sound> = {
 };
 let context: AudioContext | undefined;
 let output: GainNode | undefined;
-let volume = 0.8;
-let rememberedVolume = volume;
-let muted = false,
-  installed = false;
+let installed = false;
 const lastPlayed = new Map<Cue, number>();
 
 let musicTimer: ReturnType<typeof setInterval> | undefined;
@@ -188,7 +185,7 @@ export function pauseMusic(paused: boolean): void {
 }
 
 export function playCue(cue: Cue): void {
-  if (muted || !context || !output) return;
+  if (!context || !output) return;
   if (context.state === "suspended") {
     void context
       .resume()
@@ -226,75 +223,23 @@ export function playCue(cue: Cue): void {
   });
 }
 
-/** One persistent slider controls the whole mix; M restores the previous level. */
+/** Audio unlocks after interaction; the mix has a fixed level and no volume controls. */
 export function installShellAudio(): void {
   if (installed) return;
   installed = true;
-  const wrapper = document.createElement("label");
-  wrapper.id = "sound-toggle";
-  wrapper.title = "Drag or scroll to adjust volume · M mutes";
-  const caption = document.createElement("span");
-  const slider = document.createElement("input");
-  slider.type = "range";
-  slider.min = "0";
-  slider.max = "100";
-  slider.step = "1";
-  slider.setAttribute("aria-label", "Volume");
-  const render = () => {
-    muted = volume === 0;
-    slider.value = String(Math.round(volume * 100));
-    caption.textContent = `Volume ${slider.value}%`;
-    slider.setAttribute("aria-valuetext", `${slider.value} percent`);
-    if (context && output) output.gain.setValueAtTime(volume, context.currentTime);
-  };
   const unlock = () => {
     try {
       if (!context) {
         context = new AudioContext();
         output = context.createGain();
-        output.gain.value = volume;
+        output.gain.value = 0.8;
         output.connect(context.destination);
       }
       if (context.state === "suspended") void context.resume().catch(() => {});
     } catch {
-      /* Audio is optional on unsupported browsers. */
+      /* Audio remains optional on unsupported browsers. */
     }
   };
-  const change = (value: number) => {
-    volume = Math.max(0, Math.min(1, Number.isFinite(value) ? value : volume));
-    if (volume > 0) rememberedVolume = volume;
-    render();
-    unlock();
-  };
-  slider.addEventListener("input", () => change(Number(slider.value) / 100));
-  slider.addEventListener(
-    "wheel",
-    (event) => {
-      event.preventDefault();
-      if (event.deltaY) change(volume + (event.deltaY < 0 ? 0.05 : -0.05));
-    },
-    { passive: false },
-  );
   window.addEventListener("pointerdown", unlock, { capture: true });
-  window.addEventListener(
-    "keydown",
-    (event) => {
-      unlock();
-      if (event.code !== "KeyM" || event.repeat || event.ctrlKey || event.metaKey || event.altKey)
-        return;
-      if (
-        event.target instanceof HTMLElement &&
-        event.target.closest("input, textarea, [contenteditable]")
-      )
-        return;
-      if (volume > 0) {
-        rememberedVolume = volume;
-        change(0);
-      } else change(rememberedVolume || 0.8);
-    },
-    { capture: true },
-  );
-  render();
-  wrapper.append(caption, slider);
-  document.getElementById("stage")?.append(wrapper);
+  window.addEventListener("keydown", unlock, { capture: true });
 }

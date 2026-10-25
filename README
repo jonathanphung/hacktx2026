@@ -376,3 +376,56 @@ validation, rate limits and fallback errors. Live Gemini returned validated
 plans. Browser checks exercised both roles, mode switching, difficulty selection,
 AI Jon collecting a stage item, AI Giant casting, and the supplied beanstalk.
 Changes are local only; do not push until the user asks.
+
+## Latest run UI and stronger snare
+
+The latest supplied beanstalk (2).png is preserved as player-stem-v3-source.png;
+player-stem-v3.png is its transparent-background game adaptation. The road, menu
+vines and cinematic use this version, with earlier versions retained for comparison.
+
+The run HUD now uses two side columns: score, tale objective, letters, powers and
+clue/status popups on the left; opponent status, aiming and the next obstacle on
+the right. A soft mist fades the upper edge of the climb. There are no volume
+controls or M shortcut; audio unlocks at a fixed mix level after interaction.
+Keyboard/control banners, visible Pause control, obstacle advice, item instruction
+labels and scrolling stage gates are removed from active gameplay. Esc still
+pauses and opens the pause screen. Menus/practice retain their instructions.
+
+Mud and sap now cause a real snare: lane movement uses 30% spring responsiveness
+and accepted dodges must be at least 550ms apart for the effect's duration. Jumps
+remain available, and road speed remains unchanged. The Cinderella reward still
+shortens the effect. A left-side SNARED countdown shows when normal movement will
+return; expiry immediately restores normal consecutive dodges. Tests cover the
+cooldown boundary and expiry. Changes remain local until the user requests a push.
+
+Verification for this pass: 253 game tests plus 3 backend tests pass, as do
+formatting, typecheck and production build. Browser review confirms no volume
+control, no active-run control prompts, separated side columns, the top fog fade
+and the latest supplied beanstalk. The webcam dock is constrained to the left
+column during play, even if it was expanded before the run.
+
+## Obstacle advice and aligned beanstalk repeat
+
+JUMP / DODGE labels are restored above natural and giant-deployed obstacles;
+other active-run control prompts remain hidden. A regression test checks both
+labels and preserves the obstacle release position.
+
+The scrolling road uses player-stem-loop-source.png, an adaptation of the supplied
+pixel artwork. Its vertical-repeat texture frame selects one full spiral turn
+(rows 972 through 1261), aligning the spiral and stem width at each join instead
+of repeating the mismatched edges of the full illustration. Menu/cinematic vines
+retain the full illustration.
+
+Verification: 254 game tests and 3 backend tests pass, with formatting, typecheck
+and production build passing. Browser review confirms the continuous road repeat
+and restored obstacle advice. Changes are committed locally; no automatic push.
+
+Stage divisions are restored: a scrolling gold-trimmed banner announces the tale
+at the start of the run and each stage transition, while side HUD placement and
+hidden gameplay controls remain unchanged.
+
+Integration with origin/main preserves the teammate's countdown score per tale
+and banked total alongside the side-column HUD, snare, latest art and stage gates.
+Resolved duplicate-history conflicts from the earlier squash merge. Verification:
+261 game tests plus 3 API tests, formatting, typecheck and production build pass;
+browser smoke check confirms the adventure loads and tale countdown renders.

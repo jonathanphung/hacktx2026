@@ -1,8 +1,7 @@
 import { defineConfig } from "vite";
 
-export default defineConfig(({ command }) => ({
-  // GitHub Pages serves the site from /jonandthebeanstalk/.
-  base: command === "build" ? "/jonandthebeanstalk/" : "/",
+export default defineConfig({
+  base: "/",
   server: { proxy: { "/api/ai": "http://127.0.0.1:8787" } },
   preview: { proxy: { "/api/ai": "http://127.0.0.1:8787" } },
   build: {
@@ -11,4 +10,4 @@ export default defineConfig(({ command }) => ({
       input: { main: "index.html", vision: "vision.html" },
     },
   },
-}));
+});

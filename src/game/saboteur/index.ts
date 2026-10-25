@@ -10,7 +10,7 @@ import { GiantInventory } from "./inventory";
 import { createGiantHand } from "./giant-hand";
 
 const GLOW_WIDTH = 160;
-const GLOW_ALPHA = 0.14;
+const GLOW_ALPHA = 0.22;
 const GLOW_LOCK_ALPHA = 0.4;
 /** Time constants (ms) for the aim indicators gliding between lanes. */
 const GLOW_EASE_MS = 40;
@@ -79,7 +79,10 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   marker.setDepth(10);
   // The target lane lights up the instant aim changes; the marker above eases over after it.
   const glow = scene.add
-    .rectangle(world.laneX(aimLane), GAME_HEIGHT / 2, GLOW_WIDTH, GAME_HEIGHT, 0xff5252, GLOW_ALPHA)
+    // Keep fill opaque: object alpha alone controls the idle/cast pulse. Applying both
+    // fillAlpha and alpha multiplied them after the first cast and hid the aiming lane.
+    .rectangle(world.laneX(aimLane), GAME_HEIGHT / 2, GLOW_WIDTH, GAME_HEIGHT, 0xff5252, 1)
+    .setAlpha(GLOW_ALPHA)
     .setDepth(8);
 
   const announce = () => {

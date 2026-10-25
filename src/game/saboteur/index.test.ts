@@ -13,6 +13,7 @@ vi.mock("./giant-hand", () => ({
 function setup() {
   const events = new Emitter<{ update: number; shutdown: undefined }>();
   const warnings: { destroy: ReturnType<typeof vi.fn> }[] = [];
+  const glows: { fillAlpha: number; alpha: number; destroy: ReturnType<typeof vi.fn> }[] = [];
   const isPaused = vi.fn(() => false);
   const scene = {
     sys: { isPaused },
@@ -25,17 +26,27 @@ function setup() {
       triangle: () => ({ setDepth: vi.fn(), x: 0 }),
       rectangle: (...args: unknown[]) => {
         const rect = {
+          fillAlpha: args[5] as number,
+          alpha: 1,
           setDepth: vi.fn(() => rect),
           x: 0,
-          setAlpha: vi.fn(() => rect),
+          setAlpha: vi.fn((alpha: number) => {
+            rect.alpha = alpha;
+            return rect;
+          }),
           destroy: vi.fn(),
         };
         // Only the 0.3-alpha attack warnings count; the lane glow is a permanent fixture.
         if (args[5] === 0.3) warnings.push(rect);
+        if (args[5] === 1) glows.push(rect);
         return rect;
       },
     },
-    tweens: { add: vi.fn() },
+    tweens: {
+      add: vi.fn(({ targets, alpha }: { targets: { alpha: number }; alpha: number }) => {
+        targets.alpha = alpha;
+      }),
+    },
   } as unknown as Phaser.Scene;
   const world: World = {
     scene,
@@ -47,10 +58,27 @@ function setup() {
   installSaboteur(scene, world);
   const fire = () =>
     inputBus.emit("input", { player: "saboteur", action: "fire", source: "keyboard" });
-  return { events, world, warnings, fire, isPaused };
+  return { events, world, warnings, glows, fire, isPaused };
 }
 
 describe("saboteur attack warnings", () => {
+  it("keeps the red lane visible after repeated cast pulses and stage changes", () => {
+    const { events, world, glows, fire } = setup();
+    try {
+      const glow = glows[0];
+      expect(glow.fillAlpha * glow.alpha).toBeCloseTo(0.22);
+      for (const time of [0, 4000, 8000]) {
+        events.emit("update", time);
+        fire();
+        expect(glow.fillAlpha * glow.alpha).toBeCloseTo(0.22);
+      }
+      world.events.emit("stage-changed", { index: 1, id: "wonderland", name: "Alice" });
+      expect(glow.fillAlpha * glow.alpha).toBeCloseTo(0.22);
+      expect(glow.destroy).not.toHaveBeenCalled();
+    } finally {
+      events.emit("shutdown", undefined);
+    }
+  });
   // Cooldown assertions count obstacles, so use a single-obstacle card.
   beforeEach(() => {
     vi.clearAllMocks();

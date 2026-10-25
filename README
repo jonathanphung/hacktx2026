@@ -403,3 +403,19 @@ formatting, typecheck and production build. Browser review confirms no volume
 control, no active-run control prompts, separated side columns, the top fog fade
 and the latest supplied beanstalk. The webcam dock is constrained to the left
 column during play, even if it was expanded before the run.
+
+## Obstacle advice and aligned beanstalk repeat
+
+JUMP / DODGE labels are restored above natural and giant-deployed obstacles;
+other active-run control prompts remain hidden. A regression test checks both
+labels and preserves the obstacle release position.
+
+The scrolling road uses player-stem-loop-source.png, an adaptation of the supplied
+pixel artwork. Its vertical-repeat texture frame selects one full spiral turn
+(rows 972 through 1261), aligning the spiral and stem width at each join instead
+of repeating the mismatched edges of the full illustration. Menu/cinematic vines
+retain the full illustration.
+
+Verification: 254 game tests and 3 backend tests pass, with formatting, typecheck
+and production build passing. Browser review confirms the continuous road repeat
+and restored obstacle advice. Changes are committed locally; no automatic push.

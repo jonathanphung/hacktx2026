@@ -11,6 +11,7 @@ import type {
   World,
 } from "../../shared/world";
 import { Snare } from "./snare";
+import { withObstacleCue } from "./obstacle-cue";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
 import { Spring } from "./motion";
@@ -108,9 +109,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       y = -h;
     const view =
       spec.createView?.(scene, x, y) ?? scene.add.rectangle(x, y, w, h, spec.color ?? 0xffffff);
-    const labelled = scene.add
-      .container(view.x, view.y, [view.setPosition(0, 0)])
-      .setDepth(spec.effect === "slow" ? 2 : 3);
+    const labelled = withObstacleCue(scene, view, spec).setDepth(spec.effect === "slow" ? 2 : 3);
     obstacles.push({ spec, view: labelled, w, h, touched: false });
     events.emit("obstacle-spawned", { kind: spec.kind, lane: spec.lane });
   };

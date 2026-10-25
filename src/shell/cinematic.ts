@@ -155,11 +155,16 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
     const total = beats.length * STORY_BEAT_MS;
     if (elapsed >= total) return finish();
     const index = Math.floor(elapsed / STORY_BEAT_MS);
-    const frame = storyFrame(ending, reduced ? (index + 0.7) * STORY_BEAT_MS : elapsed);
+    const frame = storyFrame(ending, elapsed);
     const W = stage.clientWidth;
     const H = stage.clientHeight;
     // Camera: every layer shares the zoom, but slides by a fraction of the pan (parallax).
-    const { x: cx, y: cy, zoom, roll } = frame.camera;
+    const {
+      x: cx,
+      y: cy,
+      zoom,
+      roll,
+    } = reduced ? { x: STAGE.w / 2, y: STAGE.h / 2, zoom: 1, roll: 0 } : frame.camera;
     const jitter = reduced ? 0 : frame.shake;
     const sx = shakeNoise(now, 1) * jitter;
     const sy = shakeNoise(now, 2) * jitter;
@@ -202,8 +207,8 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
     titleCard.style.opacity = frame.title.toFixed(3);
     titleCard.style.transform = `scale(${(0.9 + frame.title * 0.1).toFixed(3)})`;
     // Sparks, shards, dust and fireworks (all functions of time, drawn from a fixed pool).
-    const t = (reduced ? (index + 0.7) * STORY_BEAT_MS : elapsed) / STORY_BEAT_MS;
-    const live = reduced ? [] : storyParticles(ending, t);
+    const t = elapsed / STORY_BEAT_MS;
+    const live = storyParticles(ending, t);
     particleEls.forEach((el, i) => {
       const p = live[i];
       if (!p) {
@@ -215,7 +220,7 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
       el.style.width = el.style.height = `${(p.size * unit).toFixed(1)}px`;
       el.style.transform = `translate3d(${(p.x * unit).toFixed(1)}px, ${(p.y * unit).toFixed(1)}px, 0)`;
     });
-    const liveRings = reduced ? [] : storyRings(ending, t);
+    const liveRings = storyRings(ending, t);
     ringEls.forEach((el, i) => {
       const r = liveRings[i];
       if (!r) {
@@ -227,7 +232,7 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
       el.style.width = el.style.height = `${d.toFixed(1)}px`;
       el.style.transform = `translate3d(${((r.x - r.r) * unit).toFixed(1)}px, ${((r.y - r.r) * unit).toFixed(1)}px, 0)`;
     });
-    const spell = reduced ? [] : spellLetters(ending, t);
+    const spell = spellLetters(ending, t);
     letterEls.forEach((el, i) => {
       const l = spell[i];
       if (!l) {
@@ -240,7 +245,7 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
     flash.style.opacity = reduced ? "0" : frame.flash.toFixed(3);
     barTop.style.transform = barBottom.style.transform = "";
     barTop.style.height = barBottom.style.height = `${(frame.letterbox * 8).toFixed(2)}%`;
-    const running = !reduced && frame.jon.state === "run";
+    const running = frame.jon.state === "run";
     const spriteFrame = running ? Math.floor(elapsed / 55) % 16 : 0;
     const climbing = frame.jon.state === "jump";
     sprite.style.backgroundImage = `url("${base}${climbing ? "jon-jump.png" : `jon-run${ending ? "-left" : "-right"}.png`}")`;
@@ -267,12 +272,10 @@ export function playCinematic(scene: Phaser.Scene, ending: boolean, onComplete: 
     }
     // Typewriter: letters pop in over the first half of the beat; the full line is announced once.
     const line = beats[index].text;
-    const shown = reduced
-      ? line
-      : line.slice(
-          0,
-          Math.ceil(((elapsed - index * STORY_BEAT_MS) / (STORY_BEAT_MS * 0.35)) * line.length),
-        );
+    const shown = line.slice(
+      0,
+      Math.ceil(((elapsed - index * STORY_BEAT_MS) / (STORY_BEAT_MS * 0.35)) * line.length),
+    );
     if (shown !== typed) {
       typed = shown;
       dialogue.textContent = shown;

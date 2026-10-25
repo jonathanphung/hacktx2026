@@ -944,12 +944,6 @@ body {
     opacity: 1;
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .intro-wizard,
-  .intro-stars {
-    animation: none;
-  }
-}
 .hud-level {
   position: relative;
   top: auto;
@@ -1236,19 +1230,6 @@ body {
     transform: translateY(70cqw) rotate(400deg);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .tale-frame,
-  .story-relic,
-  .story-clouds,
-  .story-sparks,
-  .festival-confetti {
-    animation: none;
-  }
-  .festival-confetti {
-    display: none;
-  }
-}
-
 .rescue-form {
   margin-top: 1cqw;
 }
@@ -1312,16 +1293,6 @@ body {
     transform: translateY(-2px);
   }
 }
-@media (prefers-reduced-motion: reduce) {
-  .claude-companion {
-    animation: none;
-  }
-  .cell-open {
-    animation: none;
-    opacity: 0;
-  }
-}
-
 /* Compact play HUD: the center of the track stays clear. */
 .story-hud .hud-score {
   left: 2%;
@@ -1903,12 +1874,6 @@ body {
   background: #a4dfc7;
   border-color: #d4ffe8;
 }
-@media (prefers-reduced-motion: reduce) {
-  .pixel-cell-bars {
-    transition: none;
-  }
-}
-
 .pixel-cell-overlay {
   position: absolute;
   inset: 0;
@@ -2024,13 +1989,6 @@ body {
 .pixel-dialogue {
   min-height: 2.6em;
 }
-@media (prefers-reduced-motion: reduce) {
-  .pixel-cloud-drift,
-  .pixel-twinkle rect {
-    animation: none;
-  }
-}
-
 /* Story effects: wisp, shadow, alarm bubble, particles, shock rings, spell letters, dawn. */
 .pixel-dawn-sky {
   opacity: 0;

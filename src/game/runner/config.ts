@@ -51,4 +51,5 @@ export const POWERUPS = {
   slowmoMs: 4000,
   slowmoFactor: 0.6,
   doubleMs: 6000,
+  giantSlowMs: 8000,
 };

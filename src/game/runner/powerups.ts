@@ -7,6 +7,8 @@ export const POWERUP_DURATION: Record<PowerupKind, number> = {
   shield: POWERUPS.shieldMs,
   slowmo: POWERUPS.slowmoMs,
   double: POWERUPS.doubleMs,
+  blast: 0,
+  "giant-slow": POWERUPS.giantSlowMs,
 };
 
 /** Which powerups are active and until when. Pure logic (no Phaser), so it's unit-tested. */

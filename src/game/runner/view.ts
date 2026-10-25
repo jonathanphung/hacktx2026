@@ -1,18 +1,17 @@
 import Phaser from "phaser";
-import type { StageItemId } from "../../shared/stages";
+import type { StageId, StageItemId } from "../../shared/stages";
 import type { PowerupKind } from "../../shared/world";
 import { POWERUPS, RUNNER } from "./config";
 import { POWERUP_GUIDE } from "../../shell/game-guide";
 import { RunnerFx } from "./fx";
 import { preloadTrackAssets } from "./track";
 import { jumpHeight } from "./motion";
+import { runnerOutfit } from "./outfit";
 
 const RUN_FRAMES = 16;
 const RUN_VARIANTS = ["", "-left", "-right", "-slow", "-slow-left", "-slow-right"];
 const S = 2;
 const TEX = 128;
-/** Visible character height in the 128px animation frames. */
-const FIGURE = 48;
 
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   preloadTrackAssets(scene);
@@ -26,6 +25,11 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
     scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
   }
   scene.load.image("runner-jump", `${base}jon-jump.png`);
+  for (const variant of RUN_VARIANTS) {
+    scene.load.image(`runner-humpty-sheet${variant}`, `${base}humpty/jon-run${variant}.png`);
+  }
+  scene.load.image("runner-humpty-jump", `${base}humpty/jon-jump.png`);
+  scene.load.image("runner-humpty-defeat", `${base}humpty/jon-defeat.png`);
   scene.load.spritesheet("runner-forcefield", `${base}forcefield.png`, {
     frameWidth: 192,
     frameHeight: 192,
@@ -35,17 +39,21 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.anims.exists("runner-run")) return;
-  for (const direction of RUN_VARIANTS) {
-    const sheet = scene.textures
-      .get(`runner-sheet${direction}`)
-      .getSourceImage() as HTMLImageElement;
-    for (let i = 0; i < RUN_FRAMES; i++) {
-      const texture = scene.textures.createCanvas(`runner-run${direction}-${i}`, TEX, TEX)!;
-      texture.context.drawImage(sheet, i * TEX, 0, TEX, TEX, 0, 0, TEX, TEX);
-      texture.refresh();
-      texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  for (const prefix of ["runner", "runner-humpty"]) {
+    for (const direction of RUN_VARIANTS) {
+      const sheet = scene.textures
+        .get(`${prefix}-sheet${direction}`)
+        .getSourceImage() as HTMLImageElement;
+      for (let i = 0; i < RUN_FRAMES; i++) {
+        const texture = scene.textures.createCanvas(`${prefix}-run${direction}-${i}`, TEX, TEX)!;
+        texture.context.drawImage(sheet, i * TEX, 0, TEX, TEX, 0, 0, TEX, TEX);
+        texture.refresh();
+        texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+      }
     }
   }
+  scene.textures.get("runner-humpty-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
+  scene.textures.get("runner-humpty-defeat").setFilter(Phaser.Textures.FilterMode.NEAREST);
   scene.textures.get("runner-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
   scene.textures.get("runner-forcefield").setFilter(Phaser.Textures.FilterMode.NEAREST);
   scene.anims.create({
@@ -94,6 +102,7 @@ export class RunnerView {
   private shield: Phaser.GameObjects.Sprite;
   private crashed = false;
   private baseScale: number;
+  private outfit = runnerOutfit("humpty");
   private wasAirborne = false;
   private landedAt = -Infinity;
   private fx: RunnerFx;
@@ -107,10 +116,10 @@ export class RunnerView {
     private groundY: number,
   ) {
     ensureAssets(scene);
-    this.baseScale = RUNNER.runnerSize / (FIGURE * S);
+    this.baseScale = RUNNER.runnerSize / this.outfit.figureHeight;
     this.shadow = scene.add.ellipse(x, groundY + 6, 44, 22, 0x000000, 0.55).setDepth(9);
     this.sprite = scene.add
-      .sprite(x, groundY, "runner-run-0")
+      .sprite(x, groundY, `${this.outfit.prefix}-run-0`)
       .setScale(this.baseScale)
       .setDepth(10);
     this.sprite.play("runner-run");
@@ -149,20 +158,21 @@ export class RunnerView {
     if (airborne && !this.wasAirborne) {
       this.magic.emitParticleAt(pose.x, this.groundY, 14);
       sprite.anims.pause();
-      sprite.setTexture("runner-jump");
     } else if (!airborne && this.wasAirborne) {
-      sprite.play("runner-run");
+      sprite.anims.resume();
       this.landedAt = time;
       this.fx.dust(pose.x, this.groundY + this.unit * 20, 8, 150, pose.speed, 1.3);
     }
     this.wasAirborne = airborne;
     sprite.anims.timeScale = pose.speed / RUNNER.baseSpeed;
-    if (!airborne) {
+    if (airborne) {
+      sprite.setTexture(`${this.outfit.prefix}-jump`);
+    } else {
       // Choose cape art without restarting the underlying leg animation.
       const frame = sprite.anims.currentFrame?.textureKey.replace("runner-run-", "") ?? "0";
       const direction = pose.vx < -40 ? "-left" : pose.vx > 40 ? "-right" : "";
       const slowed = pose.slowed ? "-slow" : "";
-      sprite.setTexture(`runner-run${slowed}${direction}-${frame}`);
+      sprite.setTexture(`${this.outfit.prefix}-run${slowed}${direction}-${frame}`);
     }
 
     // Squash & stretch: stretch on the way up, squash briefly on landing.
@@ -219,6 +229,13 @@ export class RunnerView {
     return this.baseScale * S;
   }
 
+  /** Called on stage entry; the running animation keeps its existing stride frame. */
+  setStage(stage: StageId) {
+    this.outfit = runnerOutfit(stage);
+    this.baseScale = RUNNER.runnerSize / this.outfit.figureHeight;
+    this.magic.emitting = stage !== "humpty";
+  }
+
   setShield(on: boolean) {
     this.shield.setVisible(on);
   }
@@ -239,6 +256,7 @@ export class RunnerView {
     this.crashed = true;
     this.shield.setVisible(false);
     this.sprite.anims.stop();
+    if (this.outfit.prefix === "runner-humpty") this.sprite.setTexture("runner-humpty-defeat");
     this.sprite.setTint(0xff5252);
     const cam = this.scene.cameras.main;
     cam.shake(200, 0.01);

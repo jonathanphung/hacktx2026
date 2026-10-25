@@ -145,6 +145,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   }
 
   const enterStage = (stage: StageInfo, time: number, first = false) => {
+    runner.setStage(stage.id);
     if (!first) {
       for (const obstacle of obstacles) obstacle.view.destroy();
       obstacles.length = 0;

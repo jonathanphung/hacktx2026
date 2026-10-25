@@ -278,7 +278,7 @@ export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind
     icon.fillTriangle(-7, 10, 7, 10, 0, 3);
   }
   const multiplier = scene.add
-    .text(0, 0, kind === "double" ? "2×" : "", {
+    .text(0, 0, kind === "double" ? "½" : "", {
       fontFamily: "Courier New, monospace",
       fontSize: "23px",
       fontStyle: "bold",

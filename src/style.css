@@ -2219,3 +2219,17 @@ body {
   background-position: center top;
   image-rendering: pixelated;
 }
+
+/* Bottom panels: just the player names, large; no lane or control text. */
+.story-hud .hud-jon h2,
+.story-hud .hud-giant h2 {
+  margin: 0;
+  font-size: 2.4cqw;
+  letter-spacing: 0.08em;
+}
+.story-hud .hud-total {
+  display: block;
+  font-size: 0.8cqw;
+  letter-spacing: 0.12em;
+  opacity: 0.85;
+}

@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { TalePots } from "./score";
 import { acceptsPlayerInput } from "../../shared/match";
 import { type Emitter, untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
@@ -74,7 +75,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   let startedAt = -1;
   let airborneUntil = 0;
   let slowUntil = 0;
-  let points = 0;
+  const pots = new TalePots();
   let speed = RUNNER.baseSpeed;
   let over = false;
   let nextPowerupAt = -1;
@@ -161,7 +162,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     if (collected) {
       relics.collect(time);
       runner.celebrate(speed);
-      if (isLastStage(item.stage.index)) points += STAGE_ITEM.finalBonus;
+      pots.bank(isLastStage(item.stage.index) ? STAGE_ITEM.finalBonus : 0);
     }
     const next = stages.itemGone(time, collected);
     if (stages.complete) {
@@ -177,7 +178,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     if (next) enterStage(next, time);
   };
   const powerups = new PowerupState();
-  const score = () => Math.floor(points);
+  const score = () => pots.score;
 
   const startPowerup = (kind: PowerupKind, time: number) => {
     powerups.activate(kind, time);
@@ -347,8 +348,9 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     }
 
     track.update(dt, speed);
-    points += (speed * dt * powerups.scoreFactor(time) * relics.scoreFactor) / 10;
-    events.emit("score", { score: score() });
+    // Bonuses that used to multiply points now slow the drain instead.
+    pots.drain(delta, powerups.scoreFactor(time) * relics.scoreFactor);
+    events.emit("score", { score: score(), pot: Math.floor(pots.pot) });
   };
   scene.events.on("update", update);
   untilShutdown(scene, () => scene.events.off("update", update));

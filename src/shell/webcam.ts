@@ -2,10 +2,6 @@ import type { PlayerId } from "../shared/types";
 import type { VisionHandle } from "../shared/vision";
 
 const PLAYERS = ["runner", "saboteur"] as const;
-const LABELS: Record<PlayerId, string> = {
-  runner: "P1 · Jon · Left",
-  saboteur: "P2 · Giant · Right",
-};
 
 /** Camera startup begins in main; keep its presentation here in the shell. */
 const keyboardOnly = new URLSearchParams(location.search).has("novision");
@@ -24,16 +20,13 @@ export function mountWebcamCorners(
   for (const player of PLAYERS) {
     const corner = document.getElementById(`cam-${player}`);
     if (!corner) continue;
-    const label = document.createElement("div");
-    label.className = "cam-label";
-    label.textContent = LABELS[player];
     const status = document.createElement("div");
     status.className = "cam-status";
     status.setAttribute("role", "status");
     status.textContent = vision.onFrame
       ? "Raise one hand in your half"
       : "Layout preview · Camera off";
-    corner.replaceChildren(label, vision.previews[player], status);
+    corner.replaceChildren(vision.previews[player], status);
     corner.dataset.ready = "false";
     statuses.set(player, status);
     visible.set(player, false);

@@ -31,9 +31,19 @@ describe("game keyboard shortcuts", () => {
         ...modifiers,
       } as unknown as KeyboardEvent);
     try {
-      for (const code of ["KeyH", "KeyA", "KeyC", "KeyK", "KeyT", "KeyX", "Space"]) key(code, true);
+      for (const code of ["KeyH", "KeyA", "KeyC", "KeyK", "KeyT", "KeyX", "Enter"]) key(code, true);
       expect(preventDefault).not.toHaveBeenCalled();
       expect(received).not.toHaveBeenCalled();
+      key("Space", false);
+      key("Enter", false, { repeat: true });
+      expect(received).not.toHaveBeenCalled();
+      key("Enter", false);
+      expect(received).toHaveBeenLastCalledWith({
+        player: "saboteur",
+        action: "fire",
+        source: "keyboard",
+      });
+      received.mockClear();
       key("KeyA", false, { ctrlKey: true });
       expect(received).not.toHaveBeenCalled();
       key("KeyA", false);

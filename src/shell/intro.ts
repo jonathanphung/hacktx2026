@@ -69,7 +69,7 @@ export function playStory(
   };
   const onKey = (event: KeyboardEvent) => {
     if (event.repeat) return;
-    if (["Escape", "Enter", "Space", "Tab"].includes(event.code)) {
+    if (["Escape", "Enter", "Tab"].includes(event.code)) {
       event.preventDefault();
       event.stopImmediatePropagation();
       if (event.code === "Escape") finish();

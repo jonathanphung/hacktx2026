@@ -93,7 +93,7 @@ export class TitleScene extends Phaser.Scene {
       <p class="story-subtitle">Claude is missing. Follow the clues. Bring your companion home.</p>
       <div class="mode-controls"><label>Play mode<select aria-label="Play mode"><option value="duo">Two players</option><option value="jon">Play as Jon · AI Giant</option><option value="giant">Play as Giant · AI Jon</option></select></label><label class="difficulty-control">Opponent<select aria-label="AI difficulty"><option value="easy">Easy</option><option value="normal">Normal</option><option value="hard">Hard</option></select></label></div><p class="mode-hint"></p><div class="role-cards">
         <section class="role-card"><span class="role-number">PLAYER ONE · LEFT SIDE</span><h2>Jon the Wizard</h2><p>Dodge the giant’s tricks.<br>Keep your adventure alive.</p><strong>Swipe left / right to dodge<br>Swipe up to jump</strong><small>A / D / W · Jump low traps; dodge walls</small></section>
-        <section class="role-card giant"><span class="role-number">PLAYER TWO · RIGHT SIDE</span><h2>Be the Giant</h2><p>Guard your kingdom in the clouds.<br>Send obstacles into Jon’s path.</p><strong>Move your hand to aim<br>Close your fist to fire</strong><small>J / K / L: aim · Space: drop next · Stock grows every 2 tales</small></section>
+        <section class="role-card giant"><span class="role-number">PLAYER TWO · RIGHT SIDE</span><h2>Be the Giant</h2><p>Guard your kingdom in the clouds.<br>Send obstacles into Jon’s path.</p><strong>Move your hand to aim<br>Close your fist to fire</strong><small>J / K / L: aim · Enter: drop next · Stock grows every 2 tales</small></section>
       </div>
       <button class="story-button" type="button" data-primary>Start adventure</button>
       <button class="story-secondary" type="button" data-secondary>Practice controls</button>
@@ -113,7 +113,7 @@ export class TitleScene extends Phaser.Scene {
       content.querySelector<HTMLElement>(".difficulty-control")!.hidden = mode.value === "duo";
       content.querySelector(".mode-hint")!.textContent =
         mode.value === "duo"
-          ? "Share one camera, or use A/D/W and J/K/L + Space."
+          ? "Share one camera, or use A/D/W and J/K/L + Enter."
           : mode.value === "jon"
             ? "You control Jon on the left. The AI giant guards the climb."
             : "You control the giant on the right. Stop AI Jon before he reaches Claude.";
@@ -123,7 +123,7 @@ export class TitleScene extends Phaser.Scene {
           ? "One camera, two players. Keyboard controls also work."
           : mode.value === "jon"
             ? "Your controls: left half of the camera, or A / D / W."
-            : "Your controls: right half of the camera, or J / K / L + Space.";
+            : "Your controls: right half of the camera, or J / K / L + Enter.";
       content.querySelector(".start-hint")!.textContent =
         "Enter or click to begin · Esc pauses during play";
       content.querySelector(".story-eyebrow")!.textContent =

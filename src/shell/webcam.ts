@@ -7,7 +7,7 @@ const PLAYERS = ["runner", "saboteur"] as const;
 const keyboardOnly = new URLSearchParams(location.search).has("novision");
 showBanner(
   keyboardOnly
-    ? "Keyboard mode · P1: A / D / W · P2: J / K / L + Space"
+    ? "Keyboard mode · P1: A / D / W · P2: J / K / L + Enter"
     : "Setting up camera… Allow camera access when prompted. You can also play with the keyboard.",
 );
 

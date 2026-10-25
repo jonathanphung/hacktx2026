@@ -7,7 +7,7 @@ interface LingeringObstacle {
 }
 /** Rolling attacks advance relative to the stem instead of riding it like scenery. */
 export function obstacleSpeed(kind: string, roadSpeed: number): number {
-  return roadSpeed * (kind === "fireball" || kind === "hurdle" ? 1.15 : 1);
+  return roadSpeed * (kind === "fireball" || kind === "hurdle" ? 1.25 : 1);
 }
 /** Fireballs finish crossing the road during the game-over transition. */
 export function finishFireballs<T extends LingeringObstacle>(

@@ -3,8 +3,8 @@ import { finishFireballs, obstacleSpeed } from "./projectiles";
 
 it("rolls fireballs and logs toward Jon relative to the road at every stage speed", () => {
   for (const speed of [260, 440]) {
-    expect(obstacleSpeed("fireball", speed)).toBeCloseTo(speed * 1.15);
-    expect(obstacleSpeed("hurdle", speed)).toBeCloseTo(speed * 1.15);
+    expect(obstacleSpeed("fireball", speed)).toBeCloseTo(speed * 1.25);
+    expect(obstacleSpeed("hurdle", speed)).toBeCloseTo(speed * 1.25);
     expect(obstacleSpeed("barrier", speed)).toBe(speed);
     expect(obstacleSpeed("mud", speed)).toBe(speed);
   }

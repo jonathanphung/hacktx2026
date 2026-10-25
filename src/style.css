@@ -2395,6 +2395,13 @@ body {
   font-size: 0.75cqw;
 }
 /* Keep the original two camera corners; place status below them when visible. */
+#stage.run-active #facecam .facecam-header {
+  left: 1%;
+  top: 1%;
+  transform: none;
+  max-width: 27%;
+  box-sizing: border-box;
+}
 #stage.run-active:has(#facecam:not([hidden])) .run-sidebar {
   top: 48%;
   bottom: 3%;

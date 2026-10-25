@@ -21,7 +21,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const stage = document.getElementById("stage");
   stage?.classList.add("run-active");
   untilShutdown(scene, () => stage?.classList.remove("run-active"));
-  hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
+  hud.innerHTML += `<div class="hud-score"><span>THIS TALE</span><strong>0</strong><small class="hud-total">TOTAL 0</small></div>
     <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
     <div class="hud-feedback" role="status"></div><aside class="hud-discovery" role="status" hidden><strong></strong><span></span></aside>
     <section class="hud-jon"><div class="hud-powerups"></div><p class="hud-snare" hidden></p><h2>JON</h2><small>Swipe / A / D: dodge · Up / W: jump</small><p class="obstacle-legend"><span>↑ JUMP: low obstacles</span><span>↔ DODGE: tall / blocked</span></p></section>
@@ -47,11 +47,11 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     .querySelectorAll(".hud-jon > small, .obstacle-legend, .hud-giant > small")
     .forEach((node) => node.remove());
   const score = hud.querySelector(".hud-score strong")!;
+  const total = hud.querySelector(".hud-total")!;
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
-  const aim = hud.querySelector(".hud-giant h2")!;
   const cards = hud.querySelector(".hud-cards")!;
   if (getMatch().mode === "giant") {
-    hud.querySelector(".hud-score > span")!.textContent = "JON'S SCORE";
+    hud.querySelector(".hud-score > span")!.textContent = "JON'S TALE";
     hud.querySelector(".hud-jon h2")!.textContent = "AI JON";
   }
   let cooling = false;
@@ -81,8 +81,6 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
         playCue("clue");
         playCue("relic");
         hud.querySelector(".hud-spell")!.innerHTML = letterMarkup(stage + 1);
-        hud.querySelector(".hud-relics")!.textContent =
-          `${stage + 1} ${stage === 0 ? "relic" : "relics"}`;
         discoveryTimer?.remove();
         discovery.querySelector("strong")!.textContent =
           `Clue found: ${"HACKTX"[stage]} · ${REWARDS[stage][0]}`;
@@ -156,7 +154,8 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   untilShutdown(
     scene,
     events.on("score", (e) => {
-      score.textContent = String(e.score);
+      score.textContent = String(e.pot ?? e.score);
+      total.textContent = `TOTAL ${e.score}`;
     }),
   );
   untilShutdown(
@@ -164,7 +163,6 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
     events.on("hand-changed", ({ hand, selected, aimLane }) => {
       if (aimLane !== lastAim) playCue("aim");
       lastAim = aimLane;
-      aim.textContent = `GIANT · ${LANES[aimLane]}`;
       cards.replaceChildren();
       if (cooling && hand.length) playCue("ready");
       cooling = !hand.length;

@@ -423,3 +423,9 @@ and restored obstacle advice. Changes are committed locally; no automatic push.
 Stage divisions are restored: a scrolling gold-trimmed banner announces the tale
 at the start of the run and each stage transition, while side HUD placement and
 hidden gameplay controls remain unchanged.
+
+Integration with origin/main preserves the teammate's countdown score per tale
+and banked total alongside the side-column HUD, snare, latest art and stage gates.
+Resolved duplicate-history conflicts from the earlier squash merge. Verification:
+261 game tests plus 3 API tests, formatting, typecheck and production build pass;
+browser smoke check confirms the adventure loads and tale countdown renders.

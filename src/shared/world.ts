@@ -44,7 +44,8 @@ export type PowerupKind = "shield" | "slowmo" | "double";
 /** Events within one game run. A fresh emitter is created per run (see GameScene). */
 export interface GameEvents {
   "runner-action": { action: "left" | "right" | "jump" };
-  score: { score: number };
+  /** `score` = points banked so far; `pot` = what the current tale is still worth (it drains). */
+  score: { score: number; pot?: number };
   "runner-hit": { kind: string; effect: ObstacleEffect; blocked?: boolean; shieldBroken?: boolean };
   "obstacle-spawned": { kind: string; lane: Lane };
   "runner-slowed": { durationMs: number };

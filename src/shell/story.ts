@@ -13,7 +13,7 @@ export const REWARDS = [
   ["Curious Reach", "Collect treasures and pickups from 18px farther away."],
   ["Glass Resolve", "Slow effects wear off 25% sooner."],
   ["Tidal Ward", "Absorb one hit. Recharges every 35 seconds."],
-  ["Brave Heart", "Earn 15% more score."],
+  ["Brave Heart", "Tale points drain 15% slower."],
   ["Last Clue", "The final piece of the cell’s message is revealed."],
 ] as const;
 export const PROLOGUE: readonly StoryBeat[] = [

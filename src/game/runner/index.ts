@@ -14,8 +14,8 @@ import type {
 import { Snare } from "./snare";
 import { withObstacleCue } from "./obstacle-cue";
 import { POWERUPS, RUNNER } from "./config";
-import { POWERUP_DURATION, POWERUP_KINDS, PowerupState } from "./powerups";
-import { HazardMotion, crossesRunner } from "./active-hazards";
+import { POWERUP_DURATION, POWERUP_KINDS, PowerupState, PowerupBag } from "./powerups";
+import { HazardMotion, crossesRunner, hazardSpeed } from "./active-hazards";
 import { detonate } from "./blast";
 import { explosion, jumpReward } from "./combat-fx";
 import { Spring } from "./motion";
@@ -103,7 +103,14 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           y: o.view.y,
           jumpable: o.spec.jumpable,
           lethal: o.spec.effect === "end-run",
+          height: o.h,
+          minSpeed: o.motion.velocity,
+          maxSpeed: Math.max(
+            o.motion.velocity,
+            hazardSpeed(o.spec.kind, 10000, speed, powerups.speedFactor(now)),
+          ),
         })),
+        { speed, timeScale: powerups.speedFactor(now) },
       )
     ) {
       waiting.push(spec);
@@ -202,6 +209,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     if (next) enterStage(next, time);
   };
   const powerups = new PowerupState();
+  const powerupBag = new PowerupBag();
   const score = () => pots.score;
 
   const startPowerup = (kind: PowerupKind, time: number) => {
@@ -321,7 +329,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
 
     if (!preview && time >= nextPowerupAt) {
       nextPowerupAt = time + POWERUPS.everyMs;
-      const kind = pick(POWERUP_KINDS);
+      const kind = powerupBag.next();
       const view = createPickupView(scene, laneX(pick(LANES)), -POWERUPS.size, kind);
       pickups.push({ kind, view });
     }

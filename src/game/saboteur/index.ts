@@ -102,7 +102,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
   const cast = (lane: Lane) => {
     const id = inventory.take(now);
     if (!id) return;
-    nextFire = now + 1700 * cooldownFactor;
+    nextFire = now + SABOTEUR.castGapMs * cooldownFactor;
     glow.setAlpha(GLOW_LOCK_ALPHA);
     scene.tweens.add({ targets: glow, alpha: GLOW_ALPHA, duration: 300 });
     publish("cast-result", {
@@ -110,7 +110,7 @@ export function installSaboteur(scene: Phaser.Scene, world: World): void {
       attackId: id,
       lane,
       remainingMs: Math.max(
-        1700 * cooldownFactor,
+        SABOTEUR.castGapMs * cooldownFactor,
         inventory.cards.length ? 0 : inventory.wait(now),
       ),
     });

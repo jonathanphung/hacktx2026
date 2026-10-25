@@ -6,7 +6,7 @@ Human input, movement/jump controllers and vision/model files are unchanged.
 
 - **Fireball** accelerates down its chosen stem with a flame trail. It never homes
   across lanes. Maximum speed respects the combined hand wind-up/travel reaction
-  budget of 1 second, including when the track reaches its cap.
+  budget of at least 1.2 seconds in actual play, including when the track reaches its cap.
 - **Rolling Log** accelerates more gently, with rolling grain tied to actual
   travel, so it visually stops during a time freeze. It remains jumpable. A clean
   jump restores up to 50 points to the current tale's pot, capped at its original
@@ -41,7 +41,7 @@ mechanics with normal damage, spawning and progression.
 
 ## Validation
 
-272 unit tests and 3 AI server tests pass, along with format, typecheck and build.
+277 unit tests and 3 AI server tests pass, along with format, typecheck and build.
 Tests cover reaction budgets, acceleration/slow/freeze behavior, swept contacts,
 clean-jump reward eligibility, Blast cleanup, new effect expiry and exact 1.25x
 cooldown/refill timing, including refresh without stacking. Browser checks cover
@@ -51,3 +51,25 @@ sandbox attack spawns. Human webcam gameplay tuning remains a playtest task.
 Before syncing, the scrapped uncommitted art was preserved in the Git stash named
 “Preserve scrapped local beanstalk artwork before gameplay sync.” Main's current
 artwork is used instead; those local originals were not discarded.
+
+## Balance pass before merge
+
+Giant stock refills every 3 seconds (20/min sustained). Saved stock uses a 2-second
+minimum cast gap, raised from 1.7 seconds. Giant Slow multiplies both by 1.25, to
+3.75 seconds and 2.5 seconds. Wind-up is 600 ms, raised from 400 ms to retain at
+least 1.2 seconds from the hand warning through first contact for the faster
+projectiles. Flight speed is retained. Natural waves keep their existing stage
+ramp from 4.5 to 1.7 seconds, subject to entrance, story and spawn-safety holds.
+
+The mixed-wave guard now compares conservative contact-time windows, not just
+whether obstacles are near the top. It prevents a fast fireball closing the last
+escape stem while older slower rocks are still dangerous, and treats frozen
+threats conservatively. Powerups keep their 8-second spawn cadence but draw from
+a shuffled bag: each five-spawn cycle contains Shield, Slow Time, Slow Drain,
+Blast and Giant Slow exactly once. Collection still requires reaching the stem.
+
+Simulation tests cover both fast attacks across 30/60/120 fps, all stage speed
+bands and Slow Time, plus the mixed-speed and frozen-triple-lane regressions.
+Clean-jump rewards remain below passive tale drain even under the fastest attack
+rotation and Slow Drain. These are mechanical fairness checks, not measured human
+win rates; final webcam difficulty still benefits from human playtests.

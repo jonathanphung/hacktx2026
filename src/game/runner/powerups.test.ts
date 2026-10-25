@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { POWERUPS } from "./config";
-import { PowerupState } from "./powerups";
+import { PowerupState, PowerupBag, POWERUP_KINDS } from "./powerups";
 
 describe("PowerupState", () => {
   it("is active for its duration, then expires once", () => {
@@ -60,4 +60,14 @@ it("Time Slow freezes hazards for 450ms and still slows time afterward", () => {
   expect(p.hazardsFrozen(549)).toBe(true);
   expect(p.hazardsFrozen(550)).toBe(false);
   expect(p.speedFactor(551)).toBe(POWERUPS.slowmoFactor);
+});
+
+it("spawns every pickup once per five-drop cycle even with extreme random values", () => {
+  for (const rng of [() => 0, () => 0.999999]) {
+    const bag = new PowerupBag(rng);
+    for (let cycle = 0; cycle < 20; cycle++) {
+      const kinds = Array.from({ length: POWERUP_KINDS.length }, () => bag.next());
+      expect([...kinds].sort()).toEqual([...POWERUP_KINDS].sort());
+    }
+  }
 });

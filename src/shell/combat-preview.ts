@@ -3,7 +3,7 @@ import type { World } from "../shared/world";
 import { mountShell } from "./presentation";
 import { ATTACK_BY_ID } from "../game/saboteur/attacks";
 import { createGiantHand } from "../game/saboteur/giant-hand";
-import { GIANT_WINDUP_MS } from "../shared/combat";
+import { SABOTEUR } from "../game/saboteur/config";
 
 /** Local review controls use real spawns and pickups. This installer is stripped from production. */
 export function installCombatPreview(scene: Phaser.Scene, world: World) {
@@ -20,10 +20,10 @@ export function installCombatPreview(scene: Phaser.Scene, world: World) {
         scene,
         world.laneX(target),
         attack.color,
-        GIANT_WINDUP_MS,
+        SABOTEUR.warningMs,
         attack.id,
       );
-      scene.time.delayedCall(GIANT_WINDUP_MS, () => {
+      scene.time.delayedCall(SABOTEUR.warningMs, () => {
         hand.release();
         attack.fire(world, target);
         busy = false;

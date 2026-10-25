@@ -9,6 +9,22 @@ export const POWERUP_KINDS: readonly PowerupKind[] = [
   "giant-slow",
 ];
 
+/** Shuffle bag: every five spawns contain each kind once, without changing the 8s cadence. */
+export class PowerupBag {
+  private bag: PowerupKind[] = [];
+  constructor(private rng: () => number = Math.random) {}
+  next(): PowerupKind {
+    if (!this.bag.length) {
+      this.bag = [...POWERUP_KINDS];
+      for (let i = this.bag.length - 1; i > 0; i--) {
+        const j = Math.floor(this.rng() * (i + 1));
+        [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
+      }
+    }
+    return this.bag.pop()!;
+  }
+}
+
 export const POWERUP_DURATION: Record<PowerupKind, number> = {
   shield: POWERUPS.shieldMs,
   slowmo: POWERUPS.slowmoMs,

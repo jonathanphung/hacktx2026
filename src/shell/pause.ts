@@ -49,7 +49,11 @@ export function installPause(scene: Phaser.Scene): void {
   resume.type = "button";
   resume.textContent = "Resume · Esc";
   resume.setAttribute("aria-live", "polite");
-  panel.append(heading, description, resume);
+  const home = document.createElement("button");
+  home.type = "button";
+  home.className = "story-secondary";
+  home.textContent = "Home screen";
+  panel.append(heading, description, resume, home);
   overlay.append(panel);
   stage.append(trigger, overlay);
 
@@ -134,11 +138,20 @@ export function installPause(scene: Phaser.Scene): void {
       toggle();
     } else if (paused && event.code === "Tab") {
       event.preventDefault();
-      resume.focus();
+      if (resume.disabled || document.activeElement === resume) home.focus();
+      else resume.focus();
     }
   };
   trigger.addEventListener("click", toggle);
   resume.addEventListener("click", toggle);
+  home.addEventListener("click", () => {
+    ended = true;
+    stopResumeMotion();
+    resetCountdown();
+    pauseMusic(false);
+    scene.scene.resume();
+    scene.scene.start("title");
+  });
   window.addEventListener("keydown", onKey, true);
   const storyPause = (active: boolean) => {
     storyActive = active;

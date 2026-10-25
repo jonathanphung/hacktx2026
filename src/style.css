@@ -788,7 +788,7 @@ body {
 #facecam .cam {
   position: absolute;
   top: 9%;
-  width: 29%;
+  width: 24%;
   max-width: none;
   border: 2px solid #ffffff55;
   border-radius: 8px;
@@ -796,7 +796,7 @@ body {
   box-shadow: 0 6px 20px #0008;
 }
 #facecam.expanded .cam {
-  width: 31%;
+  width: 26%;
 }
 #facecam .cam.left {
   left: 1%;
@@ -2238,6 +2238,11 @@ body {
   align-content: start;
   z-index: 4;
   pointer-events: none;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  /* Lane artwork starts beyond 30% on either side. Never paint HUD into it. */
+  max-width: 27%;
+  overflow-x: clip;
 }
 .run-left {
   left: 2.5%;
@@ -2255,6 +2260,19 @@ body {
   margin: 0;
   box-sizing: border-box;
   box-shadow: none;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#stage.run-active .run-sidebar * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#stage.run-active .run-sidebar .hud-feedback,
+#stage.run-active .run-sidebar .hud-discovery,
+#stage.run-active .run-sidebar .giant-rotation {
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 #stage.run-active .run-sidebar .hud-score,
 #stage.run-active .run-sidebar .hud-level,
@@ -2282,6 +2300,7 @@ body {
 #stage.run-active .run-sidebar .hud-level strong {
   display: block;
   font-size: 1.15cqw;
+  white-space: normal;
 }
 #stage.run-active .run-sidebar .hud-level > span {
   float: none;
@@ -2291,11 +2310,15 @@ body {
   margin: 0.5cqw 0 1cqw;
 }
 #stage.run-active .run-sidebar .spell-word {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   justify-content: flex-start;
   margin: 0.5cqw 0 0;
 }
 #stage.run-active .run-sidebar .spell-letter {
-  width: 2cqw;
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   height: 2.3cqw;
   font-size: 1.3cqw;
   float: none;
@@ -2346,8 +2369,7 @@ body {
   margin: 0.5cqw 0;
 }
 #stage.run-active #pause-toggle,
-#stage.run-active #banner,
-#stage.run-active .facecam-header {
+#stage.run-active #banner {
   display: none !important;
 }
 #stage.run-active .run-sidebar .ai-status {
@@ -2372,12 +2394,25 @@ body {
 #stage.run-active .run-sidebar .giant-rotation small {
   font-size: 0.75cqw;
 }
-#stage.run-active #facecam,
-#stage.run-active #facecam.expanded {
-  left: 2.5%;
-  width: 21%;
-  max-width: none;
-  bottom: 5%;
+/* Keep the original two camera corners; place status below them when visible. */
+#stage.run-active #facecam .facecam-header {
+  left: 1%;
+  top: 1%;
+  transform: none;
+  max-width: 27%;
+  box-sizing: border-box;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-sidebar {
+  top: 48%;
+  bottom: 3%;
+  width: 27%;
+  gap: 0.5cqw;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  pointer-events: auto;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-sidebar .hud-score strong {
+  font-size: 2cqw;
 }
 /* Bottom panels: just the player names, large; no lane or control text. */
 .story-hud .hud-jon h2,

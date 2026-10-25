@@ -6,7 +6,13 @@ import { POWERUP_GUIDE } from "../../shell/game-guide";
 import { RunnerFx } from "./fx";
 import { preloadTrackAssets } from "./track";
 import { jumpHeight } from "./motion";
-import { runnerOutfit } from "./outfit";
+import {
+  HIT_DURATION_MS,
+  HIT_FRAMES,
+  RUNNER_OUTFITS,
+  hitReactionFrame,
+  runnerOutfit,
+} from "./outfit";
 
 const RUN_FRAMES = 16;
 const RUN_VARIANTS = ["", "-left", "-right", "-slow", "-slow-left", "-slow-right"];
@@ -21,15 +27,18 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
       width: 64,
       height: 64,
     });
-  for (const variant of RUN_VARIANTS) {
-    scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
+  for (const { prefix, folder } of Object.values(RUNNER_OUTFITS)) {
+    for (const variant of RUN_VARIANTS) {
+      scene.load.image(`${prefix}-sheet${variant}`, `${base}${folder}jon-run${variant}.png`);
+    }
+    scene.load.image(`${prefix}-jump`, `${base}${folder}jon-jump.png`);
+    scene.load.image(`${prefix}-defeat`, `${base}${folder}jon-defeat.png`);
+    scene.load.spritesheet(`${prefix}-hit`, `${base}${folder}jon-hit-sheet.png`, {
+      frameWidth: TEX,
+      frameHeight: TEX,
+    });
   }
-  scene.load.image("runner-jump", `${base}jon-jump.png`);
-  for (const variant of RUN_VARIANTS) {
-    scene.load.image(`runner-humpty-sheet${variant}`, `${base}humpty/jon-run${variant}.png`);
-  }
-  scene.load.image("runner-humpty-jump", `${base}humpty/jon-jump.png`);
-  scene.load.image("runner-humpty-defeat", `${base}humpty/jon-defeat.png`);
+  scene.load.image("runner-redhood-basket", `${base}redhood/jon-basket.png`);
   scene.load.spritesheet("runner-forcefield", `${base}forcefield.png`, {
     frameWidth: 192,
     frameHeight: 192,
@@ -39,7 +48,7 @@ export function preloadRunnerAssets(scene: Phaser.Scene) {
 /** Creates the runner textures and animation once per game (they survive scene restarts). */
 function ensureAssets(scene: Phaser.Scene) {
   if (scene.anims.exists("runner-run")) return;
-  for (const prefix of ["runner", "runner-humpty"]) {
+  for (const { prefix } of Object.values(RUNNER_OUTFITS)) {
     for (const direction of RUN_VARIANTS) {
       const sheet = scene.textures
         .get(`${prefix}-sheet${direction}`)
@@ -52,9 +61,18 @@ function ensureAssets(scene: Phaser.Scene) {
       }
     }
   }
-  scene.textures.get("runner-humpty-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
-  scene.textures.get("runner-humpty-defeat").setFilter(Phaser.Textures.FilterMode.NEAREST);
-  scene.textures.get("runner-jump").setFilter(Phaser.Textures.FilterMode.NEAREST);
+  for (const { prefix } of Object.values(RUNNER_OUTFITS)) {
+    for (const pose of ["jump", "hit", "defeat"]) {
+      scene.textures.get(`${prefix}-${pose}`).setFilter(Phaser.Textures.FilterMode.NEAREST);
+    }
+    scene.anims.create({
+      key: `${prefix}-fatal-hit`,
+      frames: scene.anims.generateFrameNumbers(`${prefix}-hit`, { start: 0, end: HIT_FRAMES - 1 }),
+      frameRate: 1000 / 60,
+      repeat: 0,
+    });
+  }
+  scene.textures.get("runner-redhood-basket").setFilter(Phaser.Textures.FilterMode.NEAREST);
   scene.textures.get("runner-forcefield").setFilter(Phaser.Textures.FilterMode.NEAREST);
   scene.anims.create({
     key: "runner-forcefield-pulse",
@@ -105,6 +123,7 @@ export class RunnerView {
   private outfit = runnerOutfit("humpty");
   private wasAirborne = false;
   private landedAt = -Infinity;
+  private hitUntil = -Infinity;
   private fx: RunnerFx;
   private lastFrameKey = "";
   private lastGhostAt = -Infinity;
@@ -165,7 +184,10 @@ export class RunnerView {
     }
     this.wasAirborne = airborne;
     sprite.anims.timeScale = pose.speed / RUNNER.baseSpeed;
-    if (airborne) {
+    const hitFrame = hitReactionFrame(time, this.hitUntil);
+    if (hitFrame !== null) {
+      sprite.setTexture(`${this.outfit.prefix}-hit`, hitFrame);
+    } else if (airborne) {
       sprite.setTexture(`${this.outfit.prefix}-jump`);
     } else {
       // Choose cape art without restarting the underlying leg animation.
@@ -233,7 +255,8 @@ export class RunnerView {
   setStage(stage: StageId) {
     this.outfit = runnerOutfit(stage);
     this.baseScale = RUNNER.runnerSize / this.outfit.figureHeight;
-    this.magic.emitting = stage !== "humpty";
+    this.hitUntil = -Infinity;
+    this.magic.emitting = this.outfit.prefix === "runner";
   }
 
   setShield(on: boolean) {
@@ -247,16 +270,28 @@ export class RunnerView {
   }
 
   /** The shield just absorbed a hit: cyan flash. */
-  shieldBlocked() {
+  shieldBlocked(time: number) {
+    this.reactToHit(time);
     this.scene.cameras.main.flash(150, 128, 222, 234);
   }
 
-  /** Knocked down: flash red, spin and fade, with a camera shake. */
+  /** Brief nonfatal reaction; the underlying stride clock continues. */
+  reactToHit(time: number) {
+    this.hitUntil = time + HIT_DURATION_MS;
+  }
+
+  /** Knocked down: stay upright, flash red and fade, with a camera shake. */
   crash() {
     this.crashed = true;
     this.shield.setVisible(false);
     this.sprite.anims.stop();
-    if (this.outfit.prefix === "runner-humpty") this.sprite.setTexture("runner-humpty-defeat");
+    this.sprite.anims.timeScale = 1;
+    this.sprite.setAngle(0);
+    const prefix = this.outfit.prefix;
+    this.sprite.play(`${prefix}-fatal-hit`);
+    this.sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+      this.sprite.setTexture(`${prefix}-defeat`);
+    });
     this.sprite.setTint(0xff5252);
     const cam = this.scene.cameras.main;
     cam.shake(200, 0.01);
@@ -268,7 +303,6 @@ export class RunnerView {
     cam.zoomTo(1.06, 90, "Quad.easeOut", true);
     this.scene.tweens.add({
       targets: this.sprite,
-      angle: this.sprite.angle + 200,
       alpha: 0.4,
       scale: this.baseScale * 0.8,
       duration: 500,

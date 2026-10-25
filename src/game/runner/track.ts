@@ -14,6 +14,7 @@ export function lerpColor(a: number, b: number, t: number): number {
 
 const STEM_FILE_KEY = "beanstalk-stem";
 const STEM_LOOP_FRAME = "vertical-repeat";
+const ALICE_STEM_KEY = "beanstalk-alice";
 // Matching spiral phases, measured in the supplied loop source. Repeat a complete
 // turn, not the full illustration whose top/bottom edges have different widths.
 const STEM_LOOP = { top: 972, height: 290 };
@@ -23,13 +24,38 @@ const STEM_TILE_SCALE = 0.5;
 /** Loads the pixel-art beanstalk tile; createTrack falls back to drawn stems if it is missing. */
 export function preloadTrackAssets(scene: Phaser.Scene) {
   scene.load.image(
+    `${ALICE_STEM_KEY}-source`,
+    `${import.meta.env.BASE_URL}assets/beanstalk/alice-stem-source.png`,
+  );
+  scene.load.image(
     STEM_FILE_KEY,
     `${import.meta.env.BASE_URL}assets/beanstalk/player-stem-loop-source.png`,
   );
 }
 
+/** The supplied Alice image has a near-black matte rather than alpha transparency. */
+function prepareAliceStem(scene: Phaser.Scene) {
+  if (scene.textures.exists(ALICE_STEM_KEY)) return;
+  const source = scene.textures
+    .get(`${ALICE_STEM_KEY}-source`)
+    .getSourceImage() as HTMLImageElement;
+  const texture = scene.textures.createCanvas(ALICE_STEM_KEY, source.width, source.height)!;
+  texture.context.drawImage(source, 0, 0);
+  const pixels = texture.context.getImageData(0, 0, source.width, source.height);
+  for (let i = 0; i < pixels.data.length; i += 4) {
+    if (Math.max(pixels.data[i], pixels.data[i + 1], pixels.data[i + 2]) < 24)
+      pixels.data[i + 3] = 0;
+  }
+  texture.context.putImageData(pixels, 0, 0);
+  texture.refresh();
+  texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+  // The new illustration uses the same layout at 125% of the original resolution.
+  texture.add(STEM_LOOP_FRAME, 0, 0, 1215, source.width, 363);
+}
+
 /** Three living stems. Lane centers, collisions, and scrolling remain unchanged. */
 export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) {
+  prepareAliceStem(scene);
   // Sky gradient (redrawn while blending between stages) with clouds on top.
   const sky = scene.add.graphics().setDepth(-2.1);
   const drawSky = (c: Sky) => {
@@ -128,7 +154,8 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
       stem.tilePositionX = (source.width - RUNNER.laneSpacing / STEM_TILE_SCALE) / 2;
   }
   // Tile positions are in texture pixels, so a scaled tile must scroll proportionally faster.
-  const scroll = 1 / (hasArt ? STEM_TILE_SCALE : 1);
+  let scroll = 1 / (hasArt ? STEM_TILE_SCALE : 1);
+  let currentStemKey = key;
 
   // Speed lines: faint streaks that fade in as the track gets fast.
   const left = laneX(0) - RUNNER.laneSpacing / 2;
@@ -157,6 +184,20 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
   return {
     /** Blends the sky and stems into a stage's palette over `ms`. */
     setStage(tuning: StageTuning, ms: number) {
+      const nextKey = tuning.stemTexture ?? key;
+      if (nextKey !== currentStemKey && scene.textures.exists(nextKey)) {
+        const source = scene.textures.get(nextKey).getSourceImage() as HTMLImageElement;
+        const scale = nextKey === ALICE_STEM_KEY ? 0.4 : hasArt ? STEM_TILE_SCALE : 1;
+        for (const stem of stems) {
+          const offset = stem.tilePositionY / scroll;
+          stem.setTexture(nextKey, nextKey === "enchanted-stem" ? undefined : STEM_LOOP_FRAME);
+          stem.setTileScale(scale);
+          stem.tilePositionX = (source.width - RUNNER.laneSpacing / scale) / 2;
+          stem.tilePositionY = offset / scale;
+        }
+        scroll = 1 / scale;
+        currentStemKey = nextKey;
+      }
       blend = {
         fromSky: skyNow,
         toSky: tuning.sky,

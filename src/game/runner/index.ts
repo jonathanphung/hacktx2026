@@ -327,7 +327,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         } else if (powerups.isActive("shield", time) || relics.wardReady(time)) {
           const source = absorbProtection(powerups, relics, time);
           if (source === "pickup") endPowerup("shield");
-          runner.shieldBlocked();
+          runner.shieldBlocked(time);
           safeUntil = time + RUNNER.blockGraceMs;
         } else if (ob.spec.effect === "end-run") {
           over = true;
@@ -339,6 +339,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
           });
           return;
         } else if (ob.spec.effect === "slow") {
+          runner.reactToHit(time);
           const durationMs = RUNNER.slowMs * relics.slowFactor;
           snare.apply(time, durationMs);
           lateral.velocity *= RUNNER.slowFactor;

@@ -8,6 +8,7 @@ import { playCue, playObstacle, startMusic, stopMusic, setMusicStage } from "./a
 import { installPause } from "./pause";
 import { addBeanstalks, mountShell } from "./presentation";
 import { letterMarkup, REWARDS, taleLabel } from "./story";
+import { getMatch } from "../shared/match";
 
 const LANES = ["LEFT", "CENTER", "RIGHT"];
 export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): void {
@@ -15,6 +16,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   startMusic();
   untilShutdown(scene, stopMusic);
   const hud = mountShell(scene, "story-hud");
+  hud.dataset.mode = getMatch().mode;
   addBeanstalks(hud);
   hud.innerHTML += `<div class="hud-score"><span>SCORE</span><strong>0</strong></div>
     <div class="hud-level"><strong></strong><span></span><div class="hud-spell spell-word"></div><small class="hud-relics"></small></div>
@@ -25,6 +27,13 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
   const feedback = hud.querySelector<HTMLElement>(".hud-feedback")!;
   const aim = hud.querySelector(".hud-giant h2")!;
   const cards = hud.querySelector(".hud-cards")!;
+  if (getMatch().mode === "giant") {
+    hud.querySelector(".hud-score > span")!.textContent = "JON'S SCORE";
+    hud.querySelector(".hud-jon h2")!.textContent = "AI JON";
+    hud.querySelector(".hud-jon > small")!.textContent = "Collects clues · Dodges your attacks";
+  } else if (getMatch().mode === "jon") {
+    hud.querySelector(".hud-giant > small")!.textContent = "AI opponent";
+  }
   let cooling = false;
   let lastAim = 1;
   let discoveryTimer: Phaser.Time.TimerEvent | undefined;

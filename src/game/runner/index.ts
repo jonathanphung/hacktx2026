@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { acceptsPlayerInput } from "../../shared/match";
 import { type Emitter, untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
 import { GAME_HEIGHT, GAME_WIDTH, LANES, type Lane } from "../../shared/types";
@@ -211,6 +212,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     inputBus.on("input", (e) => {
       if (scene.sys?.isPaused()) return;
       if (over || e.player !== "runner") return;
+      if (!acceptsPlayerInput(e.player, e.source)) return;
       if (e.action === "left" && lane > 0) moveTo((lane - 1) as Lane);
       if (e.action === "right" && lane < 2) moveTo((lane + 1) as Lane);
       if (e.action === "jump") jump();
@@ -359,5 +361,21 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       return speed;
     },
     spawnObstacle,
+    snapshot: () => ({
+      runner: { lane, x: lateral.value, y: RUNNER.runnerY, airborne: now < airborneUntil },
+      speed,
+      stage: stages.index,
+      obstacles: obstacles.map((o) => ({
+        lane: laneOf(o.view.x),
+        y: o.view.y,
+        height: o.h,
+        jumpable: o.spec.jumpable,
+        lethal: o.spec.effect === "end-run",
+      })),
+      treasures: [
+        ...pickups.map((p) => ({ lane: laneOf(p.view.x), y: p.view.y })),
+        ...(stageItem ? [{ lane: stageItem.lane, y: stageItem.view.y }] : []),
+      ],
+    }),
   };
 }

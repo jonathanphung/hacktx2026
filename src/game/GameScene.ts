@@ -5,6 +5,7 @@ import { installHud } from "../shell/hud";
 import { installRunner } from "./runner";
 import { preloadRunnerAssets } from "./runner/view";
 import { installSaboteur } from "./saboteur";
+import { installAi } from "./ai";
 
 /**
  * One game run. Owned by the runner lane, but kept tiny on purpose: each lane plugs in with a
@@ -24,6 +25,7 @@ export class GameScene extends Phaser.Scene {
     const world = installRunner(this, events);
     // HUD before saboteur: it must be listening when the saboteur announces its starting hand.
     installHud(this, events);
+    installAi(this, world);
     installSaboteur(this, world);
 
     // Dev-only handle so agents/devtools can drive and inspect a run, e.g.

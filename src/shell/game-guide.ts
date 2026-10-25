@@ -4,30 +4,38 @@ export const POWERUP_GUIDE: Record<
   PowerupKind,
   { name: string; effect: string; color: number; symbol: string; icon?: string }
 > = {
-  shield: { name: "SHIELD", effect: "Blocks one hit", color: 0x6ae6ff, symbol: "⬡" },
+  shield: {
+    name: "SHIELD",
+    effect: "Blocks one hit",
+    color: 0x9abdc5,
+    symbol: "⬡",
+    icon: "shield",
+  },
   slowmo: {
     name: "SLOW TIME",
     effect: "Brief freeze, then slows time",
-    color: 0xffdf6a,
+    color: 0xd6af65,
     symbol: "⌛",
+    icon: "slowmo",
   },
   double: {
     name: "SLOW DRAIN",
     effect: "Tale points drain half as fast",
-    color: 0x9cffb1,
+    color: 0x89b987,
     symbol: "½",
+    icon: "double",
   },
   blast: {
     name: "BLAST",
     effect: "Clears on-screen obstacles",
-    color: 0xffb8ed,
+    color: 0xd99a73,
     symbol: "✹",
     icon: "blast",
   },
   "giant-slow": {
     name: "GIANT SLOW",
     effect: "Giant cooldown ×1.25",
-    color: 0xc6abff,
+    color: 0xb69ac6,
     symbol: "1¼",
     icon: "giant-slow",
   },

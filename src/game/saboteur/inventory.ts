@@ -1,4 +1,4 @@
-/** FIFO stock: one recharge every four seconds, with a safe gap between bursts. */
+/** FIFO stock: one recharge every three seconds, with a safe gap between bursts. */
 export class GiantInventory {
   readonly cards: string[] = [];
   capacity = 1;
@@ -15,16 +15,17 @@ export class GiantInventory {
   }
   take(now: number): string | undefined {
     const card = this.cards.shift();
-    if (card && this.refillAt === Infinity) this.refillAt = now + 4000;
+    if (card && this.refillAt === Infinity) this.refillAt = now + SABOTEUR.fireCooldownMs;
     return card;
   }
   update(now: number): boolean {
     if (now < this.refillAt) return false;
     if (this.cards.length < this.capacity) this.cards.push(this.draw());
-    this.refillAt = this.cards.length < this.capacity ? now + 4000 : Infinity;
+    this.refillAt = this.cards.length < this.capacity ? now + SABOTEUR.fireCooldownMs : Infinity;
     return true;
   }
   wait(now: number): number {
     return Math.max(0, this.refillAt - now);
   }
 }
+import { SABOTEUR } from "./config";

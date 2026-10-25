@@ -133,7 +133,7 @@ export function installHud(scene: Phaser.Scene, events: Emitter<GameEvents>): vo
         empty.textContent = "Recharging magic…";
         cards.append(empty, cooldownLabel);
       }
-      hand.forEach((id, i) => {
+      hand.slice(0, 1).forEach((id, i) => {
         const attack = ATTACK_BY_ID.get(id);
         const card = document.createElement("div");
         card.className = `hud-card${i === selected ? " selected" : ""}`;

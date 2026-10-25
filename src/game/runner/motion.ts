@@ -13,8 +13,8 @@ export class Spring {
   ) {}
 
   /** Advances by `dt` seconds (exact solution, stable for any dt). */
-  step(dt: number): number {
-    const w = this.omega;
+  step(dt: number, omega = this.omega): number {
+    const w = omega;
     const x0 = this.value - this.target;
     const v0 = this.velocity;
     const e = Math.exp(-w * dt);

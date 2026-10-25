@@ -304,3 +304,24 @@ and effects share the same master gain. Cinematic audio cleanup is idempotent so
 an old scene cannot stop the next scene's music a second time. A live browser
 analyser confirmed nonzero output after intro completion and theme change, and
 zero output at 0% volume. The production preview is rebuilt under /hacktx2026/.
+
+## Giant counterplay balance pass
+
+Giant obstacles now release at y=220 instead of y=110, with the hand, held object,
+warning and impact ring aligned to that position. Track speed stays capped at
+440px/s. Against the largest lethal obstacle, the 400ms telegraph plus travel
+still gives 1.15 seconds at top speed. The escape-lane gate also accounts for the
+lower release point so mixed waves cannot close every unjumpable lane.
+
+Pickup shields and the permanent ward now share one charge. A block consumes any
+pickup shield and restarts the ward's 35-second recharge, preventing a second
+block immediately afterward. Post-block immunity is 400ms instead of 800ms.
+Mud/sap slow lateral responsiveness to 65% for their normal duration, with the
+Cinderella reduction retained; they no longer slow the road. The separate slowmo
+pickup still intentionally slows the world.
+
+Giant stock refills every three seconds (was four), retaining the 1.7-second
+minimum gap and growing FIFO capacity. Only the next attack is revealed in both
+HUDs. Permanent jump/reach/score bonuses remain. All 222 tests and full checks
+pass, including shared-charge consumption, near-ready ward prevention, slow
+movement, refill timing, drop reaction budget, and escape-lane protection.

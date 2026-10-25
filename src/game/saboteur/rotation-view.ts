@@ -5,11 +5,11 @@ import { ATTACK_BY_ID } from "./attacks";
 /** Read-only forecast: stocked cards first, then the exact future rotation draws. */
 export function createRotationPreview(scene: Phaser.Scene) {
   const ui = mountShell(scene, "giant-rotation");
-  ui.innerHTML = `<h3>GIANT · NEXT DROPS</h3><ol></ol><p>Fist to drop · The order repeats</p>`;
+  ui.innerHTML = `<h3>GIANT · NEXT DROP</h3><ol></ol><p>Fist to drop · The order repeats</p>`;
   const list = ui.querySelector("ol")!;
   let last = "";
   return (stock: readonly string[], upcoming: readonly string[]) => {
-    const ids = [...stock, ...upcoming].slice(0, 4);
+    const ids = [...stock, ...upcoming].slice(0, 1);
     const key = JSON.stringify([stock.length, ids]);
     if (last === key) return;
     last = key;

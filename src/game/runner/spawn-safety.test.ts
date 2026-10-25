@@ -12,7 +12,7 @@ describe("mixed giant and natural waves", () => {
     expect(
       hasEscapeLane(
         fire,
-        wave.map((o) => ({ ...o, y: 201 })),
+        wave.map((o) => ({ ...o, y: 421 })),
       ),
     ).toBe(true);
   });

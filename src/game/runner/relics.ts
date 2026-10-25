@@ -23,7 +23,10 @@ export class RelicPowers {
   }
   absorb(now: number): boolean {
     if (!this.wardReady(now)) return false;
-    this.wardAt = now + 22_000;
+    this.spendWard(now);
     return true;
+  }
+  spendWard(now: number): void {
+    if (this.count >= 4) this.wardAt = now + 35_000;
   }
 }

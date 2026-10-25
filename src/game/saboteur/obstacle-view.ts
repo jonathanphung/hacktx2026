@@ -1,3 +1,4 @@
+import { GIANT_RELEASE_Y } from "../../shared/combat";
 import type Phaser from "phaser";
 
 /** Local, self-hosted fantasy art; bounds match each obstacle's collision dimensions. */
@@ -99,7 +100,7 @@ export function createObstacleView(
     g.lineBetween(0, -h, 0, h);
   }
   // Released objects begin at the fingertips, rather than popping in above the screen.
-  const view = scene.add.container(x, held ? y : 110, [g]).setDepth(6);
+  const view = scene.add.container(x, held ? y : GIANT_RELEASE_Y, [g]).setDepth(6);
   if (kind === "fireball") {
     scene.tweens.add({
       targets: g,

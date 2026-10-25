@@ -1,3 +1,4 @@
+import { GIANT_RELEASE_Y } from "../../shared/combat";
 import { createObstacleView } from "./obstacle-view";
 import type Phaser from "phaser";
 
@@ -46,7 +47,12 @@ export function createGiantHand(
     true,
   ).setScale(0.55);
   hand.add([g, spell]);
-  scene.tweens.add({ targets: hand, y: -27, duration: warningMs * 0.7, ease: "Back.easeOut" });
+  scene.tweens.add({
+    targets: hand,
+    y: GIANT_RELEASE_Y - 143,
+    duration: warningMs * 0.7,
+    ease: "Back.easeOut",
+  });
   let finished = false;
   const destroy = () => {
     if (finished) return;
@@ -64,7 +70,7 @@ export function createGiantHand(
       spell.setVisible(false);
       scene.tweens.add({ targets: g, scaleX: 1.15, duration: 90, yoyo: true });
       // A short impact ring marks the throw; the real obstacle handles gameplay.
-      const ring = scene.add.circle(x, 115, 20).setStrokeStyle(4, color).setDepth(24);
+      const ring = scene.add.circle(x, GIANT_RELEASE_Y, 20).setStrokeStyle(4, color).setDepth(24);
       scene.tweens.add({
         targets: ring,
         scale: 2.3,

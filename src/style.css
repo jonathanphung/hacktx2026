@@ -168,8 +168,7 @@ body {
   background: #080b14;
 }
 
-.cam-label,
-.cam-status {
+.cam-label {
   padding: 4px 8px;
 }
 
@@ -177,16 +176,8 @@ body {
   font-weight: 700;
 }
 
-.cam-status {
-  color: #ffce85;
-}
-
 .cam[data-ready="true"] {
   border-color: #70e0b1;
-}
-
-.cam[data-ready="true"] .cam-status {
-  color: #70e0b1;
 }
 
 #banner {
@@ -819,8 +810,7 @@ body {
   aspect-ratio: 4 / 3;
   object-fit: cover;
 }
-#facecam .cam-label,
-#facecam .cam-status {
+#facecam .cam-label {
   font-size: clamp(9px, 0.9vw, 12px);
 }
 
@@ -2507,4 +2497,11 @@ body {
 }
 .combat-preview button:focus-visible {
   outline: 2px solid #a4ffe3;
+}
+
+.combat-preview > a {
+  display: inline-block;
+  margin-top: 0.35cqw;
+  color: #a4ffe3;
+  font-weight: bold;
 }

@@ -25,7 +25,6 @@ const EDGES = [
   [18, 19],
   [19, 20],
 ];
-const CAST_COLORS = { ready: "#69f0ae", wait: "#ffd54f", bad: "#ff8a80" };
 export function drawFeedback(
   canvas: HTMLCanvasElement,
   player: PlayerId,
@@ -68,7 +67,7 @@ export function drawFeedback(
       ctx.fill();
     }
   }
-  // Thin role/header and command/footer strips keep the players' faces visible.
+  // Keep the role header; leave the lower camera view free of text and panels.
   const font = Math.max(14, w / 14);
   const pad = font / 2;
   ctx.textBaseline = "top";
@@ -80,31 +79,6 @@ export function drawFeedback(
     player === "runner" ? "LEFT · RUNNER" : "RIGHT · SABOTEUR",
     pad,
     font / 4,
-    w - 2 * pad,
-  );
-  const footer = h - font * 3.1;
-  ctx.fillStyle = "#080d15cc";
-  ctx.fillRect(0, footer, w, h - footer);
-  ctx.fillStyle = view.cast ? CAST_COLORS[view.cast.tone] : color;
-  ctx.font = `bold ${font * 1.15}px system-ui`;
-  ctx.fillText(
-    view.cast
-      ? view.cast.text
-      : view.action
-        ? `SENT: ${view.action}`
-        : player === "runner"
-          ? "SWIPE ← → ↑"
-          : "PALM AIM · FLICK ↑ CARD · FIST CAST",
-    pad,
-    footer + font / 4,
-    w - 2 * pad,
-  );
-  ctx.font = `${font * 0.8}px system-ui`;
-  ctx.fillStyle = "white";
-  ctx.fillText(
-    view.landmarks ? `${view.pose ?? "Tracking"} · ${view.latency.toFixed(0)} ms` : view.status,
-    pad,
-    footer + font * 1.9,
     w - 2 * pad,
   );
   ctx.restore();

@@ -1,4 +1,6 @@
 import type { PowerupKind } from "../../shared/world";
+import type { Lane } from "../../shared/types";
+import { pickItemLane } from "./items";
 import { POWERUPS } from "./config";
 
 export const POWERUP_KINDS: readonly PowerupKind[] = [
@@ -9,9 +11,11 @@ export const POWERUP_KINDS: readonly PowerupKind[] = [
   "giant-slow",
 ];
 
-/** Shuffle bag: every five spawns contain each kind once, without changing the 8s cadence. */
+/** Every cycle includes all five kinds. New pickups lead the opening cycle; repeats cannot straddle cycles. */
 export class PowerupBag {
   private bag: PowerupKind[] = [];
+  private first = true;
+  private last: PowerupKind | undefined;
   constructor(private rng: () => number = Math.random) {}
   next(): PowerupKind {
     if (!this.bag.length) {
@@ -20,8 +24,39 @@ export class PowerupBag {
         const j = Math.floor(this.rng() * (i + 1));
         [this.bag[i], this.bag[j]] = [this.bag[j], this.bag[i]];
       }
+      if (this.first) {
+        const newKinds = (kind: PowerupKind) => kind === "blast" || kind === "giant-slow";
+        this.bag = [...this.bag.filter(newKinds), ...this.bag.filter((kind) => !newKinds(kind))];
+        this.first = false;
+      } else if (this.bag[0] === this.last) {
+        [this.bag[0], this.bag[1]] = [this.bag[1], this.bag[0]];
+      }
     }
-    return this.bag.pop()!;
+    this.last = this.bag.shift()!;
+    return this.last;
+  }
+}
+
+/** Uses play time; delayed frames never create catch-up bursts or consume a blocked pickup. */
+export class PowerupDrops {
+  private nextAt = -1;
+  private bag: PowerupBag;
+  constructor(private rng: () => number = Math.random) {
+    this.bag = new PowerupBag(rng);
+  }
+  next(
+    now: number,
+    obstacles: readonly { lane: Lane; y: number }[],
+  ): { kind: PowerupKind; lane: Lane } | null {
+    if (!Number.isFinite(now)) return null;
+    if (this.nextAt < 0) {
+      this.nextAt = now + POWERUPS.firstMs;
+      return null;
+    }
+    if (now < this.nextAt) return null;
+    const lane = pickItemLane(obstacles, this.rng);
+    this.nextAt = now + (lane === null ? POWERUPS.retryMs : POWERUPS.everyMs);
+    return lane === null ? null : { lane, kind: this.bag.next() };
   }
 }
 

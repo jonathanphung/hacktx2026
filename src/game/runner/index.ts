@@ -3,7 +3,7 @@ import { TalePots, SCORE } from "./score";
 import { acceptsPlayerInput } from "../../shared/match";
 import { type Emitter, untilShutdown } from "../../shared/emitter";
 import { inputBus } from "../../shared/input";
-import { GAME_HEIGHT, GAME_WIDTH, LANES, type Lane } from "../../shared/types";
+import { GAME_HEIGHT, GAME_WIDTH, type Lane } from "../../shared/types";
 import type {
   GameEvents,
   ObstacleSpec,
@@ -15,7 +15,7 @@ import { Snare } from "./snare";
 import { spillLane } from "./spill";
 import { withObstacleCue } from "./obstacle-cue";
 import { POWERUPS, RUNNER } from "./config";
-import { POWERUP_DURATION, POWERUP_KINDS, PowerupState, PowerupBag } from "./powerups";
+import { POWERUP_DURATION, POWERUP_KINDS, PowerupState, PowerupDrops } from "./powerups";
 import { HazardMotion, crossesRunner, hazardSpeed } from "./active-hazards";
 import { detonate } from "./blast";
 import { explosion, jumpReward } from "./combat-fx";
@@ -61,8 +61,6 @@ interface StageItem {
   view: ObstacleView;
 }
 
-const pick = <T>(items: readonly T[]) => items[Math.floor(Math.random() * items.length)];
-
 /** Builds the scrolling three-lane world and the player-1 runner. Returns the World API. */
 export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>): World {
   const laneX = (lane: Lane) => GAME_WIDTH / 2 + (lane - 1) * RUNNER.laneSpacing;
@@ -84,7 +82,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
   const pots = new TalePots();
   let speed = RUNNER.baseSpeed;
   let over = false;
-  let nextPowerupAt = -1;
   const obstacles: Obstacle[] = [];
   const trail = new TrailSpawner();
   const stages = new StageRun();
@@ -210,7 +207,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     if (next) enterStage(next, time);
   };
   const powerups = new PowerupState();
-  const powerupBag = new PowerupBag();
+  const powerupDrops = new PowerupDrops();
   const score = () => pots.score;
 
   const startPowerup = (kind: PowerupKind, time: number) => {
@@ -275,7 +272,6 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
     if (startedAt < 0) {
       startedAt = time;
       enterStage(stages.stage, time, true);
-      nextPowerupAt = time + POWERUPS.everyMs;
     }
     const dt = delta / 1000;
     powerups.expire(time).forEach(endPowerup);
@@ -328,11 +324,13 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
         spawnObstacle(trailHazard(target, Math.random(), tuning.mix));
     }
 
-    if (!preview && time >= nextPowerupAt) {
-      nextPowerupAt = time + POWERUPS.everyMs;
-      const kind = powerupBag.next();
-      const view = createPickupView(scene, laneX(pick(LANES)), -POWERUPS.size, kind);
-      pickups.push({ kind, view });
+    const drop = powerupDrops.next(
+      time,
+      obstacles.map((o) => ({ lane: laneOf(o.view.x), y: o.view.y })),
+    );
+    if (drop) {
+      const view = createPickupView(scene, laneX(drop.lane), -POWERUPS.size, drop.kind);
+      pickups.push({ kind: drop.kind, view });
     }
     for (let i = pickups.length - 1; i >= 0; i--) {
       const p = pickups[i];

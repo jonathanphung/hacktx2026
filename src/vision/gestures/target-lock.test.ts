@@ -25,3 +25,19 @@ it("resumes aiming when the hand opens or is lost", () => {
   lock.push(460, null, false, 1);
   expect(lock.locked).toBe(false);
 });
+
+it("does not latch aim indefinitely after one false fist frame", () => {
+  const lock = new TargetLock();
+  lock.push(0, "Open_Palm", true, 1);
+  lock.push(33, "Closed_Fist", true, 1);
+  for (const t of [66, 99, 132, 165, 198]) lock.push(t, null, true, 2);
+  expect(lock.locked).toBe(false);
+});
+it("releases for a recognized non-fist pose while tolerating brief uncertain frames", () => {
+  const lock = new TargetLock();
+  lock.push(0, "Closed_Fist", true, 1);
+  lock.push(33, null, true, 2);
+  expect(lock.locked).toBe(true);
+  lock.push(66, "Pointing_Up", true, 2);
+  expect(lock.locked).toBe(false);
+});

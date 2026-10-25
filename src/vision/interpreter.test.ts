@@ -288,3 +288,26 @@ describe("hand dropouts during fast motion", () => {
     expect(events.filter((e) => e.action === "aim").at(-1)).toMatchObject({ lane: 0 });
   });
 });
+
+it("emits a 60-fps burst and a rapid dodge-then-jump without alternate-control duplicates", () => {
+  const out: InputEvent[] = [];
+  const interpret = createInterpreter((event) => out.push(event));
+  for (const [t, x, y] of [
+    [0, 0.8, 0.7],
+    [16, 0.65, 0.7],
+    [32, 0.5, 0.7],
+    [64, 0.5, 0.55],
+    [96, 0.5, 0.4],
+    [128, 0.5, 0.25],
+  ])
+    interpret({
+      player: "runner",
+      t,
+      gesture: null,
+      landmarks: Array.from({ length: 21 }, () => ({ x, y })),
+    });
+  expect(out).toEqual([
+    { player: "runner", action: "left" },
+    { player: "runner", action: "jump" },
+  ]);
+});

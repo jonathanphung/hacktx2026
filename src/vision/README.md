@@ -203,10 +203,11 @@ Any instinctive cue works; they all produce the same events.
   zone for ~300 ms. Lean only arms after the hand has rested in the middle, and a swipe
   or point disarms it, so the hand a swipe leaves at the edge never fires twice.
 - Saboteur (`aim`): palm position still aims as before. A quick **swipe** left/right, or
-  **pointing** left/right, also steps the target one lane. After a step the palm position
-  can't drag the target back until the hand has rested and moved a deliberate distance,
-  but it may still carry the target further the way the step went (a long slide).
-  Steps are ignored while the fist is locking the target.
+  **pointing** left/right, also steps the target one lane. A camera-column crossing
+  always updates the target, even after a swipe. A swipe within the same camera column
+  steps the target and keeps it selected while the hand rests in that column. A swipe
+  that already crosses a column does not add an extra step. Steps are ignored while
+  a confirmed fist is locking the target.
 
 ## Swipe detection
 
@@ -266,3 +267,30 @@ can still limit capture or blur the hand. Check the reported/processed fps and
 record actual fast swipes in the lab to validate on the demo laptop. No change to
 stage speed, obstacle timing, collisions, shared contracts or other lanes is part
 of this fix. The pointing/lean alternatives remain available.
+
+## Saboteur position/swipe arbitration fix
+
+The old P2 path mixed absolute palm zones with a forced relative lane, a 300 ms-old
+lane history and a sticky latch that required a 200 ms stop plus additional travel.
+That could suppress camera-column changes or turn a fresh swipe into a no-op.
+`gestures/saboteur-aim.ts` now keeps physical camera zone and selected target separate.
+Physical zone changes always win; a within-zone swipe/point can step the target.
+Motion direction/rest/acceleration separate strokes, preventing a cross-column
+swipe from also jumping a second column. The P2 position quantizer has a 2.5%
+hysteresis margin, and P2 alone uses a 120 ms swipe cooldown without reverse-return
+suppression. P1 retains its exact current detector settings and behavior.
+
+The saboteur-only target lock still protects a fist cast, but it releases on a
+recognized non-fist pose or after 120 ms of uncertain pose observations. Brief
+uncertainty remains tolerated. This prevents a single false fist from freezing aim
+until the classifier eventually produces an explicit open-palm label. After release
+or a long tracking loss, position aiming re-synchronizes with the camera zone.
+
+Regression traces reproduce continuous column crossings after a relative swipe,
+a fresh swipe following an earlier position change, false-fist recovery, rapid
+within-column swipes, no double-step on a cross-column swipe, and stable relative
+aim followed by reacquisition. The first three fail against the prior P2 path.
+P1's interpreter branch and outer frame handling were compared byte-for-byte with
+7136b2a; model/capture/scheduler/shared-detector files and runner game code are
+unchanged. This branch is stacked on `ani/fast-swipe-reliability` so the fix does
+not replace or revert the P1 fast-input version currently being tested.

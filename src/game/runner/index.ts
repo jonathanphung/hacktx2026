@@ -124,6 +124,7 @@ export function installRunner(scene: Phaser.Scene, events: Emitter<GameEvents>):
       trail.holdUntil(time + STAGE_CALM_MS);
     }
     track.setStage(STAGE_TUNING[stage.id], first ? 1 : STAGE_BLEND_MS);
+    track.announce(stage.name);
   };
 
   /** Puts the stage item in a lane where it can be reached, or retries shortly if none is clear. */

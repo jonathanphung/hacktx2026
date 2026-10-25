@@ -419,3 +419,7 @@ retain the full illustration.
 Verification: 254 game tests and 3 backend tests pass, with formatting, typecheck
 and production build passing. Browser review confirms the continuous road repeat
 and restored obstacle advice. Changes are committed locally; no automatic push.
+
+Stage divisions are restored: a scrolling gold-trimmed banner announces the tale
+at the start of the run and each stage transition, while side HUD placement and
+hidden gameplay controls remain unchanged.

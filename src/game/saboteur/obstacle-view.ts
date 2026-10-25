@@ -101,6 +101,55 @@ export function createObstacleView(
   }
   // Released objects begin at the fingertips, rather than popping in above the screen.
   const view = scene.add.container(x, held ? y : GIANT_RELEASE_Y, [g]).setDepth(6);
+  if (!held && kind === "fireball") {
+    const rolling = scene.add.graphics();
+    view.add(rolling);
+    const spin = scene.tweens.addCounter({
+      from: 0,
+      to: 1,
+      duration: 340,
+      repeat: -1,
+      onUpdate: (tween) => {
+        const phase = tween.getValue() ?? 0;
+        rolling.clear();
+        // A revolving hot core with the flame tail still pointing uphill.
+        rolling.lineStyle(3, 0xfff2a3, 0.9);
+        const a = phase * Math.PI * 2;
+        rolling.beginPath();
+        rolling.arc(0, 12, w * 0.45, a, a + Math.PI * 1.4);
+        rolling.strokePath();
+      },
+    });
+    view.once("destroy", () => spin.remove());
+  }
+  if (kind === "fireball" && !held) {
+    const trail = scene.add.graphics();
+    trail.fillStyle(0xff713d, 0.16).fillTriangle(-w * 0.65, -8, 0, -h - 88, w * 0.65, -8);
+    trail.fillStyle(0xffd36d, 0.28).fillTriangle(-w * 0.3, -10, 0, -h - 58, w * 0.3, -10);
+    view.addAt(trail, 0);
+  }
+  if (kind === "hurdle" && !held) {
+    const grain = scene.add.graphics();
+    view.add(grain);
+    let last = -Infinity;
+    const roll = () => {
+      const travelled = view.getWorldTransformMatrix().ty;
+      const phase = Math.floor(travelled / 3);
+      if (phase === last) return;
+      last = phase;
+      grain.clear().lineStyle(2, 0x66432e, 0.8);
+      for (let i = 0; i < 2; i++) {
+        const yy = ((phase + (i * height) / 2) % (height - 6)) - h + 3;
+        grain.lineBetween(-w + 22, yy, w - 22, yy);
+      }
+      grain
+        .lineStyle(2, 0x80552f)
+        .strokeEllipse(-w + 10, 0, 5 + Math.abs(Math.sin(phase / 8)) * 7, height - 10);
+      grain.strokeEllipse(w - 10, 0, 5 + Math.abs(Math.sin(phase / 8)) * 7, height - 10);
+    };
+    scene.events.on("update", roll);
+    view.once("destroy", () => scene.events.off("update", roll));
+  }
   if (kind === "fireball") {
     scene.tweens.add({
       targets: g,

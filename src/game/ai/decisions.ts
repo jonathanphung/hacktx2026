@@ -17,7 +17,10 @@ export function runnerDecision(
   if (rng() < DIFFICULTY[difficulty].mistake) return null;
   const { runner, speed } = snapshot;
   const threats = snapshot.obstacles
-    .map((o) => ({ ...o, eta: (runner.y - o.y - o.height / 2 - 24) / Math.max(1, speed) }))
+    .map((o) => ({
+      ...o,
+      eta: (runner.y - o.y - o.height / 2 - 24) / Math.max(1, o.speed ?? speed),
+    }))
     .filter((o) => o.eta > -0.15 && o.eta < 1.35);
   const imminent = threats.filter((o) => o.lane === runner.lane && o.eta < 0.5 && o.eta > -0.05);
   if (

@@ -6,7 +6,6 @@ import { POWERUP_GUIDE } from "../../shell/game-guide";
 import { RunnerFx } from "./fx";
 import { preloadTrackAssets } from "./track";
 import { jumpHeight } from "./motion";
-import { pickupTexture, preloadPickupAssets } from "./pickup-assets";
 
 const RUN_FRAMES = 16;
 const RUN_VARIANTS = ["", "-left", "-right", "-slow", "-slow-left", "-slow-right"];
@@ -17,8 +16,12 @@ const FIGURE = 48;
 
 export function preloadRunnerAssets(scene: Phaser.Scene) {
   preloadTrackAssets(scene);
-  preloadPickupAssets(scene);
   const base = `${import.meta.env.BASE_URL}assets/runner/`;
+  for (const kind of Object.keys(POWERUP_GUIDE))
+    scene.load.svg(`pickup-${kind}`, `${import.meta.env.BASE_URL}assets/pickups/${kind}.svg`, {
+      width: 64,
+      height: 64,
+    });
   for (const variant of RUN_VARIANTS) {
     scene.load.image(`runner-sheet${variant}`, `${base}jon-run${variant}.png`);
   }
@@ -256,43 +259,29 @@ export class RunnerView {
   }
 }
 
-/** Distinct silhouettes and full names; decorative halo does not change the pickup hitbox. */
+/** Distinct silhouettes; decorative halo does not change the pickup hitbox. */
 export function createPickupView(scene: Phaser.Scene, x: number, y: number, kind: PowerupKind) {
-  const { color, name } = POWERUP_GUIDE[kind];
+  const { color } = POWERUP_GUIDE[kind];
   const r = POWERUPS.size / 2;
-  const glow = scene.add.circle(0, 0, r + 11, color, 0.25);
-  const icon = scene.add.image(0, 0, pickupTexture(scene, kind));
-  const scale = POWERUPS.size / Math.max(icon.width, icon.height);
-  icon.setScale(scale);
-  // Float the artwork only so scrolling and collection stay aligned.
-  scene.tweens.add({
-    targets: icon,
-    y: -4,
-    duration: 850,
-    ease: "Sine.easeInOut",
-    yoyo: true,
-    repeat: -1,
-  });
-  const label = scene.add
-    .text(0, r + 12, name, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "14px",
-      fontStyle: "bold",
-      color: `#${color.toString(16)}`,
-      backgroundColor: "#201a32",
-      padding: { x: 6, y: 3 },
-    })
-    .setOrigin(0.5, 0);
-  const view = scene.add.container(x, y, [glow, icon, label]).setDepth(5);
+  const glow = scene.add.rectangle(0, 0, r * 2 + 12, r * 2 + 12, color, 0.12);
+  // Stepped gold setting echoes the game's pixel-art story panels.
+  const coin = scene.add.graphics();
+  coin.fillStyle(0x29233b).fillRect(-24, -20, 48, 40).fillRect(-20, -24, 40, 48);
+  coin.fillStyle(0xd6af65).fillRect(-22, -18, 44, 36).fillRect(-18, -22, 36, 44);
+  coin.fillStyle(0x3c3449).fillRect(-20, -16, 40, 32).fillRect(-16, -20, 32, 40);
+  coin.fillStyle(0xfff0bc).fillRect(-18, -22, 12, 2).fillRect(-22, -18, 2, 10);
+  scene.textures.get(`pickup-${kind}`).setFilter(Phaser.Textures.FilterMode.NEAREST);
+  const art = scene.add.image(0, 0, `pickup-${kind}`).setDisplaySize(40, 40);
+  const view = scene.add.container(x, y, [glow, coin, art]).setDepth(5);
   scene.tweens.add({
     targets: glow,
     scale: 1.25,
-    alpha: 0.1,
+    alpha: 0.04,
     duration: 650,
     yoyo: true,
     repeat: -1,
   });
-  view.once("destroy", () => scene.tweens.killTweensOf([glow, icon]));
+  view.once("destroy", () => scene.tweens.killTweensOf(glow));
   return view;
 }
 
@@ -375,28 +364,18 @@ function drawStageItem(g: Phaser.GameObjects.Graphics, item: StageItemId) {
   }
 }
 
-/** The stage's key item on the track: halo, bobbing art, and a "GRAB" label. */
+/** The stage's key item on the track: halo and bobbing art. */
 export function createStageItemView(
   scene: Phaser.Scene,
   x: number,
   y: number,
   item: StageItemId,
-  name: string,
+  _name: string,
 ) {
   const halo = scene.add.circle(0, 0, 34, 0xffe08a, 0.35).setStrokeStyle(3, 0xffffff, 0.9);
   const art = scene.add.graphics();
   drawStageItem(art, item);
-  const label = scene.add
-    .text(0, -54, `GRAB THE ${name.toUpperCase()}!`, {
-      fontFamily: "Courier New, monospace",
-      fontSize: "16px",
-      fontStyle: "bold",
-      color: "#ffe08a",
-      backgroundColor: "#2b1f45cc",
-      padding: { x: 6, y: 3 },
-    })
-    .setOrigin(0.5);
-  const view = scene.add.container(x, y, [halo, art, label]).setDepth(6);
+  const view = scene.add.container(x, y, [halo, art]).setDepth(6);
   scene.tweens.add({
     targets: halo,
     scale: 1.25,

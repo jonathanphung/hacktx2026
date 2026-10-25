@@ -126,23 +126,6 @@ describe("shell sound effects", () => {
     stopMusic();
     expect(vi.getTimerCount()).toBe(0);
   });
-  it("mute silences the master output and prevents new cues", async () => {
-    const fixture = audioFixture();
-    const { installShellAudio, playCue } = await import("./audio");
-    installShellAudio();
-    fixture.window.dispatchEvent(new Event("pointerdown"));
-    playCue("pickup");
-    fixture.button.value = "0";
-    fixture.button.dispatchEvent(new Event("input"));
-    playCue("chapter");
-    expect(fixture.tones).toHaveLength(3);
-    expect(fixture.gains[0].gain.setValueAtTime).toHaveBeenLastCalledWith(0, 0);
-    fixture.button.value = "50";
-    fixture.button.dispatchEvent(new Event("input"));
-    expect(fixture.gains[0].gain.setValueAtTime).toHaveBeenLastCalledWith(0.5, 0);
-    playCue("chapter");
-    expect(fixture.tones).toHaveLength(7);
-  });
   it("installs once and rate-limits repeated identical cues", async () => {
     const fixture = audioFixture();
     const { installShellAudio, playCue } = await import("./audio");
@@ -152,28 +135,19 @@ describe("shell sound effects", () => {
     playCue("dodge");
     playCue("dodge");
     expect(fixture.tones).toHaveLength(2);
-    expect(fixture.append).toHaveBeenCalledOnce();
+    expect(fixture.append).not.toHaveBeenCalled();
   });
-  it("supports scrolling volume and M restoring the chosen level", async () => {
+  it("has no volume UI or mute shortcut", async () => {
     const fixture = audioFixture();
-    const { installShellAudio } = await import("./audio");
+    const { installShellAudio, playCue } = await import("./audio");
     installShellAudio();
-    fixture.button.value = "40";
-    fixture.button.dispatchEvent(new Event("input"));
-    const wheel = new Event("wheel", { cancelable: true });
-    Object.defineProperty(wheel, "deltaY", { value: -100 });
-    fixture.button.dispatchEvent(wheel);
-    expect(wheel.defaultPrevented).toBe(true);
-    expect(fixture.button.value).toBe("45");
-    const mute = () => {
-      const event = new Event("keydown");
-      Object.defineProperty(event, "code", { value: "KeyM" });
-      fixture.window.dispatchEvent(event);
-    };
-    mute();
-    expect(fixture.button.value).toBe("0");
-    mute();
-    expect(fixture.button.value).toBe("45");
-    expect(fixture.gains[0].gain.setValueAtTime).toHaveBeenLastCalledWith(0.45, 0);
+    const event = new Event("keydown");
+    Object.defineProperty(event, "code", { value: "KeyM" });
+    fixture.window.dispatchEvent(event);
+    playCue("jump");
+    expect(fixture.append).not.toHaveBeenCalled();
+    expect(fixture.gains[0].gain.value).toBe(0.8);
+    expect(fixture.gains[0].gain.setValueAtTime).not.toHaveBeenCalled();
+    expect(fixture.tones).toHaveLength(3);
   });
 });

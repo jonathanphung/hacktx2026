@@ -39,14 +39,16 @@ export interface World {
 }
 
 /** Runner powerups. Shield absorbs one hit; slowmo slows the track; double doubles score. */
-export type PowerupKind = "shield" | "slowmo" | "double";
+export type PowerupKind = "shield" | "slowmo" | "double" | "blast" | "giant-slow";
 
 /** Events within one game run. A fresh emitter is created per run (see GameScene). */
 export interface GameEvents {
   "runner-action": { action: "left" | "right" | "jump" };
-  score: { score: number };
+  /** `score` = points banked so far; `pot` = what the current tale is still worth (it drains). */
+  score: { score: number; pot?: number };
   "runner-hit": { kind: string; effect: ObstacleEffect; blocked?: boolean; shieldBroken?: boolean };
   "obstacle-spawned": { kind: string; lane: Lane };
+  "runner-slowed": { durationMs: number };
   /** `stage` = index into STAGES (src/shared/stages.ts) of the stage the run ended in. */
   "game-over": {
     score: number;

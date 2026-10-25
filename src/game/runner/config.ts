@@ -36,18 +36,22 @@ export const RUNNER = {
   /** Speed lines start fading in above this track speed (px/s). */
   streakFromSpeed: 340,
   /** Mud/sap reduce lateral responsiveness, never the world's travel speed. */
-  slowFactor: 0.65,
+  slowFactor: 0.3,
+  snareDodgeGapMs: 550,
   slowMs: 2000,
   blockGraceMs: 400,
 };
 
-/** Powerup tuning. One random powerup spawns in a random lane every `everyMs`. */
+/** Pickups start early, then keep a bounded cadence and prefer clear lanes. */
 export const POWERUPS = {
-  everyMs: 8000,
+  firstMs: 5000,
+  everyMs: 7000,
+  retryMs: 750,
   size: 44,
   /** Shield lasts until it absorbs a hit, or this long. */
   shieldMs: 8000,
   slowmoMs: 4000,
   slowmoFactor: 0.6,
   doubleMs: 6000,
+  giantSlowMs: 8000,
 };

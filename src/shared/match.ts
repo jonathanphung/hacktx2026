@@ -16,7 +16,15 @@ export interface MatchSnapshot {
   runner: { lane: Lane; x: number; y: number; airborne: boolean };
   speed: number;
   stage: number;
-  obstacles: { lane: Lane; y: number; height: number; jumpable: boolean; lethal: boolean }[];
+  obstacles: {
+    lane: Lane;
+    y: number;
+    height: number;
+    jumpable: boolean;
+    lethal: boolean;
+    /** Actual vertical speed in px/s; omitted by older producers to use track speed. */
+    speed?: number;
+  }[];
   treasures: { lane: Lane; y: number }[];
 }
 export interface AiTactics {

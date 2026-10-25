@@ -2,10 +2,6 @@ import type { PlayerId } from "../shared/types";
 import type { VisionHandle } from "../shared/vision";
 
 const PLAYERS = ["runner", "saboteur"] as const;
-const LABELS: Record<PlayerId, string> = {
-  runner: "P1 · Jon · Left",
-  saboteur: "P2 · Giant · Right",
-};
 
 /** Camera startup begins in main; keep its presentation here in the shell. */
 const keyboardOnly = new URLSearchParams(location.search).has("novision");
@@ -19,26 +15,16 @@ showBanner(
 export function mountWebcamCorners(
   vision: Pick<VisionHandle, "previews"> & Partial<Pick<VisionHandle, "onFrame">>,
 ): void {
-  const statuses = new Map<PlayerId, HTMLElement>();
   const visible = new Map<PlayerId, boolean>();
   for (const player of PLAYERS) {
     const corner = document.getElementById(`cam-${player}`);
     if (!corner) continue;
-    const label = document.createElement("div");
-    label.className = "cam-label";
-    label.textContent = LABELS[player];
-    const status = document.createElement("div");
-    status.className = "cam-status";
-    status.setAttribute("role", "status");
-    status.textContent = vision.onFrame
-      ? "Raise one hand in your half"
-      : "Layout preview · Camera off";
-    corner.replaceChildren(label, vision.previews[player], status);
+    corner.replaceChildren(vision.previews[player]);
     corner.dataset.ready = "false";
-    statuses.set(player, status);
     visible.set(player, false);
   }
-  setupCameraDock();
+  const dock = document.getElementById("facecam");
+  if (dock) dock.hidden = false;
   if (!vision.onFrame) {
     showBanner("Camera layout preview · Camera and gesture input are off");
     return;
@@ -49,9 +35,6 @@ export function mountWebcamCorners(
     const detected = !!frame.landmarks?.length;
     if (visible.get(frame.player) === detected) return;
     visible.set(frame.player, detected);
-    const status = statuses.get(frame.player);
-    if (status)
-      status.textContent = detected ? "Hand detected · Ready" : "Hand missing · Raise one hand";
     const corner = document.getElementById(`cam-${frame.player}`);
     if (corner) corner.dataset.ready = String(detected);
     const banner = document.getElementById("banner");
@@ -80,37 +63,6 @@ export function showBanner(text: string): void {
     keyboard.textContent = "Keyboard mode";
     banner.append(" ", retry, " ", keyboard);
   }
-}
-
-function setupCameraDock(): void {
-  const dock = document.getElementById("facecam");
-  const body = document.getElementById("facecam-body");
-  const toggle = document.getElementById("facecam-toggle");
-  const size = document.getElementById("facecam-size");
-  if (!dock || !body || !toggle || !size) return;
-  dock.hidden = false;
-  for (const control of [toggle, size]) {
-    control.onkeydown = (event) => {
-      // Activating dock buttons with a keyboard must not also start a run or fire an attack.
-      if (event.key === "Enter" || event.key === " ") event.stopPropagation();
-    };
-  }
-  toggle.onclick = () => {
-    body.hidden = !body.hidden;
-    toggle.setAttribute("aria-expanded", String(!body.hidden));
-    const label = body.hidden ? "Show player cameras" : "Collapse player cameras";
-    toggle.setAttribute("aria-label", label);
-    toggle.title = label;
-    toggle.textContent = body.hidden ? "+" : "−";
-  };
-  size.onclick = () => {
-    const expanded = dock.classList.toggle("expanded");
-    size.setAttribute("aria-pressed", String(expanded));
-    const label = expanded ? "Shrink player cameras" : "Enlarge player cameras";
-    size.setAttribute("aria-label", label);
-    size.title = label;
-    size.textContent = expanded ? "↙" : "↗";
-  };
 }
 
 /** Camera-free layout check; placeholders never emit game input or pretend to be inference. */

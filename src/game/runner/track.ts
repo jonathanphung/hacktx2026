@@ -13,12 +13,19 @@ export function lerpColor(a: number, b: number, t: number): number {
 }
 
 const STEM_FILE_KEY = "beanstalk-stem";
+const STEM_LOOP_FRAME = "vertical-repeat";
+// Matching spiral phases, measured in the supplied loop source. Repeat a complete
+// turn, not the full illustration whose top/bottom edges have different widths.
+const STEM_LOOP = { top: 972, height: 290 };
 /** The tile is drawn at 2x for crispness; shown at half size. */
 const STEM_TILE_SCALE = 0.5;
 
 /** Loads the pixel-art beanstalk tile; createTrack falls back to drawn stems if it is missing. */
 export function preloadTrackAssets(scene: Phaser.Scene) {
-  scene.load.image(STEM_FILE_KEY, `${import.meta.env.BASE_URL}assets/beanstalk/player-stem.png`);
+  scene.load.image(
+    STEM_FILE_KEY,
+    `${import.meta.env.BASE_URL}assets/beanstalk/player-stem-loop-source.png`,
+  );
 }
 
 /** Three living stems. Lane centers, collisions, and scrolling remain unchanged. */
@@ -60,8 +67,14 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
   }
   const hasArt = scene.textures.exists(STEM_FILE_KEY);
   const key = hasArt ? STEM_FILE_KEY : "enchanted-stem";
-  if (hasArt) scene.textures.get(key).setFilter(Phaser.Textures.FilterMode.NEAREST);
-  else if (!scene.textures.exists(key)) {
+  if (hasArt) {
+    const texture = scene.textures.get(key);
+    texture.setFilter(Phaser.Textures.FilterMode.NEAREST);
+    if (!texture.has(STEM_LOOP_FRAME)) {
+      const source = texture.getSourceImage() as HTMLImageElement;
+      texture.add(STEM_LOOP_FRAME, 0, 0, STEM_LOOP.top, source.width, STEM_LOOP.height);
+    }
+  } else if (!scene.textures.exists(key)) {
     const g = scene.make.graphics({}, false);
     const width = RUNNER.laneSpacing;
     const cx = width / 2;
@@ -98,7 +111,14 @@ export function createTrack(scene: Phaser.Scene, laneX: (lane: Lane) => number) 
   }
   const stems = LANES.map((lane) =>
     scene.add
-      .tileSprite(laneX(lane), GAME_HEIGHT / 2, RUNNER.laneSpacing, GAME_HEIGHT, key)
+      .tileSprite(
+        laneX(lane),
+        GAME_HEIGHT / 2,
+        RUNNER.laneSpacing,
+        GAME_HEIGHT,
+        key,
+        hasArt ? STEM_LOOP_FRAME : undefined,
+      )
       .setTileScale(hasArt ? STEM_TILE_SCALE : 1)
       .setDepth(0),
   );

@@ -42,6 +42,14 @@ body {
 #facecam[hidden] {
   display: none;
 }
+#stage:not(.run-active) #facecam {
+  display: none;
+}
+/* Single-player games show the human's preview, never an empty AI camera. */
+#stage[data-match-mode="jon"] #cam-saboteur,
+#stage[data-match-mode="giant"] #cam-runner {
+  display: none;
+}
 #facecam.expanded {
   width: 34%;
   max-width: 460px;
@@ -160,8 +168,7 @@ body {
   background: #080b14;
 }
 
-.cam-label,
-.cam-status {
+.cam-label {
   padding: 4px 8px;
 }
 
@@ -169,16 +176,8 @@ body {
   font-weight: 700;
 }
 
-.cam-status {
-  color: #ffce85;
-}
-
 .cam[data-ready="true"] {
   border-color: #70e0b1;
-}
-
-.cam[data-ready="true"] .cam-status {
-  color: #70e0b1;
 }
 
 #banner {
@@ -788,7 +787,8 @@ body {
 #facecam .cam {
   position: absolute;
   top: 9%;
-  width: 29%;
+  width: 24%;
+  box-sizing: border-box;
   max-width: none;
   border: 2px solid #ffffff55;
   border-radius: 8px;
@@ -796,7 +796,7 @@ body {
   box-shadow: 0 6px 20px #0008;
 }
 #facecam.expanded .cam {
-  width: 31%;
+  width: 26%;
 }
 #facecam .cam.left {
   left: 1%;
@@ -810,8 +810,7 @@ body {
   aspect-ratio: 4 / 3;
   object-fit: cover;
 }
-#facecam .cam-label,
-#facecam .cam-status {
+#facecam .cam-label {
   font-size: clamp(9px, 0.9vw, 12px);
 }
 
@@ -952,11 +951,11 @@ body {
   }
 }
 .hud-level {
-  position: absolute;
-  top: 12%;
-  left: 50%;
-  translate: -50% 0;
-  width: 37%;
+  position: relative;
+  top: auto;
+  left: auto;
+  translate: none;
+  width: 100%;
   background: #2e2949ee;
   border: 1px solid #d4bc8a;
   padding: 0.5cqw 0.8cqw;
@@ -1341,8 +1340,8 @@ body {
   font-size: 1.8cqw;
 }
 .story-hud .hud-level {
-  top: 1.5%;
-  width: 30%;
+  top: auto;
+  width: 100%;
   border: 0;
   border-radius: 0.6cqw;
   background: #211b36e8;
@@ -2217,5 +2216,298 @@ body {
 .beanstalk-vine {
   background-size: 300% auto;
   background-position: center top;
+  image-rendering: pixelated;
+}
+
+/* Run layout: two quiet side columns and a clear central climb. */
+.run-horizon {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 23%;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(180deg, #e5edfbed 0%, #e5edfb88 38%, #e5edfb00 100%);
+}
+.run-sidebar {
+  position: absolute;
+  top: 7%;
+  width: 21%;
+  display: grid;
+  gap: 0.9cqw;
+  align-content: start;
+  z-index: 4;
+  pointer-events: none;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  /* Lane artwork starts beyond 30% on either side. Never paint HUD into it. */
+  max-width: 27%;
+  overflow-x: clip;
+}
+.run-left {
+  left: 2.5%;
+}
+.run-right {
+  right: 2.5%;
+}
+#stage.run-active .run-sidebar > * {
+  position: static;
+  inset: auto;
+  transform: none;
+  translate: none;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+  box-shadow: none;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+#stage.run-active .run-sidebar * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+#stage.run-active .run-sidebar .hud-feedback,
+#stage.run-active .run-sidebar .hud-discovery,
+#stage.run-active .run-sidebar .giant-rotation {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+#stage.run-active .run-sidebar .hud-score,
+#stage.run-active .run-sidebar .hud-level,
+#stage.run-active .run-sidebar .hud-giant,
+#stage.run-active .run-sidebar .hud-jon,
+#stage.run-active .run-sidebar .giant-rotation {
+  padding: 1cqw 1.2cqw;
+  border: 1px solid #d5c9dc44;
+  border-radius: 0.7cqw;
+  background: #25223bd9;
+  color: #f9edce;
+  text-align: left;
+}
+#stage.run-active .run-sidebar .hud-score span {
+  display: block;
+  font-size: 0.8cqw;
+  color: #c7b8d4;
+  letter-spacing: 0.14em;
+  margin: 0 0 0.5cqw;
+}
+#stage.run-active .run-sidebar .hud-score strong {
+  font-size: 3.2cqw;
+  line-height: 1;
+}
+#stage.run-active .run-sidebar .hud-level strong {
+  display: block;
+  font-size: 1.15cqw;
+  white-space: normal;
+}
+#stage.run-active .run-sidebar .hud-level > span {
+  float: none;
+  display: block;
+  font-size: 0.95cqw;
+  color: #c9bbd7;
+  margin: 0.5cqw 0 1cqw;
+}
+#stage.run-active .run-sidebar .spell-word {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  justify-content: flex-start;
+  margin: 0.5cqw 0 0;
+}
+#stage.run-active .run-sidebar .spell-letter {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  height: 2.3cqw;
+  font-size: 1.3cqw;
+  float: none;
+}
+#stage.run-active .run-sidebar .hud-relics {
+  font-size: 0.8cqw;
+  margin-top: 0.7cqw;
+}
+#stage.run-active .run-sidebar h2 {
+  font-size: 1cqw;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+#stage.run-active .run-sidebar .cooldown-label {
+  font-size: 1.1cqw;
+  color: #a8d9ca;
+  margin: 0.6cqw 0 0;
+}
+#stage.run-active .run-sidebar .hud-discovery {
+  text-align: left;
+  border-color: #e2ca89;
+  padding: 0.9cqw;
+  background: #3e354fe8;
+}
+#stage.run-active .run-sidebar .hud-discovery span {
+  float: none;
+}
+#stage.run-active .run-sidebar .hud-feedback {
+  font-size: 0.95cqw;
+  padding: 0.8cqw;
+  border-radius: 0.5cqw;
+  border-width: 1px;
+}
+#stage.run-active .run-sidebar .hud-jon {
+  display: none;
+}
+#stage.run-active .run-sidebar .hud-giant {
+  display: none;
+}
+#stage.run-active .run-sidebar .hud-jon:has(.powerup-badge),
+#stage.run-active .run-sidebar .hud-jon:has(.hud-snare:not([hidden])) {
+  display: block;
+}
+#stage.run-active .run-sidebar .hud-jon > h2 {
+  display: none;
+}
+#stage.run-active .run-sidebar .hud-snare {
+  color: #ffd294;
+  font-size: 1.1cqw;
+  font-weight: bold;
+  margin: 0.5cqw 0;
+}
+#stage.run-active #pause-toggle,
+#stage.run-active #banner {
+  display: none !important;
+}
+#stage.run-active .run-sidebar .ai-status {
+  background: none;
+  border: none;
+  color: #b1dacc;
+  padding: 0.3cqw;
+  font-size: 0.85cqw;
+}
+#stage.run-active .run-sidebar .giant-rotation h3 {
+  font-size: 0.8cqw;
+  letter-spacing: 0.12em;
+  color: #c7b8d4;
+}
+#stage.run-active .run-sidebar .giant-rotation li {
+  padding: 0.7cqw;
+  border-radius: 0.4cqw;
+}
+#stage.run-active .run-sidebar .giant-rotation strong {
+  font-size: 1.1cqw;
+}
+#stage.run-active .run-sidebar .giant-rotation small {
+  font-size: 0.75cqw;
+}
+/* Keep the original two camera corners; place status below them when visible. */
+#stage.run-active #facecam .facecam-header {
+  left: 1%;
+  top: 1%;
+  transform: none;
+  max-width: 27%;
+  box-sizing: border-box;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-sidebar {
+  top: 48%;
+  bottom: 3%;
+  width: 24%;
+  gap: 0.5cqw;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  pointer-events: auto;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-left {
+  left: 1%;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-right {
+  right: 1%;
+}
+#stage.run-active:has(#facecam.expanded:not([hidden])) .run-sidebar {
+  width: 26%;
+}
+#stage.run-active:has(#facecam:not([hidden])) .run-sidebar .hud-score strong {
+  font-size: 2cqw;
+}
+/* Bottom panels: just the player names, large; no lane or control text. */
+.story-hud .hud-jon h2,
+.story-hud .hud-giant h2 {
+  margin: 0;
+  font-size: 2.4cqw;
+  letter-spacing: 0.08em;
+}
+.story-hud .hud-total {
+  display: block;
+  font-size: 0.8cqw;
+  letter-spacing: 0.12em;
+  opacity: 0.85;
+}
+
+.giant-debuff {
+  color: #d9bdff;
+  font-weight: bold;
+  font-size: 0.85cqw;
+}
+.giant-debuff[hidden] {
+  display: none;
+}
+
+.powerup-badge > b img {
+  display: block;
+  width: 2.2cqw;
+  height: 2.2cqw;
+}
+.practice-guide b img {
+  width: 1.6cqw;
+  height: 1.6cqw;
+  vertical-align: middle;
+}
+.practice-guide {
+  max-height: 43%;
+  overflow: auto;
+}
+
+.combat-preview {
+  position: absolute;
+  z-index: 6;
+  left: 25%;
+  right: 25%;
+  top: 1%;
+  padding: 0.6cqw;
+  background: #211b36ed;
+  border: 1px solid #ffe3a5;
+  color: #fff0d2;
+  font:
+    0.8cqw "Courier New",
+    monospace;
+}
+.combat-preview strong,
+.combat-preview span {
+  display: block;
+  margin-bottom: 0.3cqw;
+}
+.combat-preview div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3cqw;
+}
+.combat-preview button {
+  background: #49345f;
+  border: 1px solid #ab90c3;
+  color: #fff0d2;
+  padding: 0.4cqw;
+  font: inherit;
+  cursor: pointer;
+}
+.combat-preview button:focus-visible {
+  outline: 2px solid #a4ffe3;
+}
+
+.combat-preview > a {
+  display: inline-block;
+  margin-top: 0.35cqw;
+  color: #a4ffe3;
+  font-weight: bold;
+}
+
+/* Keep the same pixel-art symbols crisp in the HUD and practice guide. */
+.powerup-badge > b img,
+.practice-guide b img {
   image-rendering: pixelated;
 }

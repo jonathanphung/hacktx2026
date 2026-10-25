@@ -376,3 +376,117 @@ validation, rate limits and fallback errors. Live Gemini returned validated
 plans. Browser checks exercised both roles, mode switching, difficulty selection,
 AI Jon collecting a stage item, AI Giant casting, and the supplied beanstalk.
 Changes are local only; do not push until the user asks.
+
+## Latest run UI and stronger snare
+
+The latest supplied beanstalk (2).png is preserved as player-stem-v3-source.png;
+player-stem-v3.png is its transparent-background game adaptation. The road, menu
+vines and cinematic use this version, with earlier versions retained for comparison.
+
+The run HUD now uses two side columns: score, tale objective, letters, powers and
+clue/status popups on the left; opponent status, aiming and the next obstacle on
+the right. A soft mist fades the upper edge of the climb. There are no volume
+controls or M shortcut; audio unlocks at a fixed mix level after interaction.
+Keyboard/control banners, visible Pause control, obstacle advice, item instruction
+labels and scrolling stage gates are removed from active gameplay. Esc still
+pauses and opens the pause screen. Menus/practice retain their instructions.
+
+Mud and sap now cause a real snare: lane movement uses 30% spring responsiveness
+and accepted dodges must be at least 550ms apart for the effect's duration. Jumps
+remain available, and road speed remains unchanged. The Cinderella reward still
+shortens the effect. A left-side SNARED countdown shows when normal movement will
+return; expiry immediately restores normal consecutive dodges. Tests cover the
+cooldown boundary and expiry. Changes remain local until the user requests a push.
+
+Verification for this pass: 253 game tests plus 3 backend tests pass, as do
+formatting, typecheck and production build. Browser review confirms no volume
+control, no active-run control prompts, separated side columns, the top fog fade
+and the latest supplied beanstalk. The webcam dock is constrained to the left
+column during play, even if it was expanded before the run.
+
+## Obstacle advice and aligned beanstalk repeat
+
+JUMP / DODGE labels are restored above natural and giant-deployed obstacles;
+other active-run control prompts remain hidden. A regression test checks both
+labels and preserves the obstacle release position.
+
+The scrolling road uses player-stem-loop-source.png, an adaptation of the supplied
+pixel artwork. Its vertical-repeat texture frame selects one full spiral turn
+(rows 972 through 1261), aligning the spiral and stem width at each join instead
+of repeating the mismatched edges of the full illustration. Menu/cinematic vines
+retain the full illustration.
+
+Verification: 254 game tests and 3 backend tests pass, with formatting, typecheck
+and production build passing. Browser review confirms the continuous road repeat
+and restored obstacle advice. Changes are committed locally; no automatic push.
+
+Stage divisions are restored: a scrolling gold-trimmed banner announces the tale
+at the start of the run and each stage transition, while side HUD placement and
+hidden gameplay controls remain unchanged.
+
+Integration with origin/main preserves the teammate's countdown score per tale
+and banked total alongside the side-column HUD, snare, latest art and stage gates.
+Resolved duplicate-history conflicts from the earlier squash merge. Verification:
+261 game tests plus 3 API tests, formatting, typecheck and production build pass;
+browser smoke check confirms the adventure loads and tale countdown renders.
+
+HUD follow-up: constrain side-column grid items and wrap tale titles; use six
+bounded columns for HACKTX clue boxes. Restore the original split camera corners,
+expanded camera sizing and camera header. When cameras are visible, status panels
+sit below them rather than overlapping their video.
+
+During a run, Esc opens Resume and Home screen actions; returning home also
+cancels any resume countdown. After a camera-mode death, replay is disabled for
+two seconds with a visible countdown before keyboard, click or hand input arms.
+Keyboard-only replay and victory timing stay unchanged. Split cameras are now
+24% of the stage width (26% expanded), with status panels below them.
+
+Gameplay HUD columns are capped at 27% of the stage and clipped horizontally;
+all nested badges/cards fit their column and long feedback wraps. This keeps
+status, clues and controls outside the three central beanstalk lanes, including
+when split cameras are expanded. Story/pause overlays and scrolling tale gates
+retain their intentional full-screen/on-track presentation.
+
+Camera alignment: camera-mode HUD panels now share the camera's 1% outer inset
+and 24% width (26% expanded). Camera borders use border-box sizing so score,
+tale/clues and feedback align exactly with the video edges without resizing it.
+
+Camera previews now appear only during gameplay, including its pause menu, and
+hide on title, opening cinematic and results screens. Removed the camera toolbar
+and its collapse/resize handlers; both previews keep their fixed aligned size.
+
+Fireballs and hurdle logs now roll downhill at 125% of road speed, advancing
+relative to the beanstalk. The AI snapshot reports their actual velocity so dodge
+timing follows the same movement as collisions. Animated log grain and a revolving
+fireball core show rolling without rotating their JUMP/DODGE advice. Held attacks
+stay still; rolling animation pauses with the game and is removed on destruction.
+
+Pulled active-hazard updates and resolved integration conflicts. Preserved freeze,
+swept collisions, clean-jump rewards, Blast/Giant Slow and the latest motion-based
+AI timing. Rolling attacks now start at 1.25x (fireball) / 1.15x (log) road speed
+and accelerate to 1.75x / 1.45x, retaining the shared minimum warning-time cap.
+Latest travel-driven log grain replaces the older timer animation; the fireball
+keeps its revolving core alongside the new flame trail.
+
+Oil and mud now slide Jon smoothly into one neighboring lane on an unblocked
+hit, following lateral momentum in the center and always pushing inward at the
+edges. Steering can immediately counter the slide; the existing brief snare still
+limits rapid dodge spam. Each spill pushes once, shields block it, and oil remains
+jumpable. Natural sap retains its snare without a lane push. The HUD warns
+SLIPPING! STEER BACK! Tests cover edge safety and both center-lane directions.
+
+Single-player camera presentation now shows only the human's preview: Jon's left
+camera when playing Jon, or the giant's right camera when playing the giant.
+Two-player games retain both previews; camera gesture tracking is unchanged.
+
+Both camera previews now show vertical thirds in their role color. The giant's
+lines still follow its calibrated aim range; Jon's lines are visual guides only,
+so runner swipes keep their existing relative-motion behavior.
+
+Removed the tale panel's obsolete absolute centering and half-width translation.
+It now uses its sidebar's full width at the base style as well as the run layout,
+preventing clipped titles and missing clue boxes when layout styles update.
+
+Removed the Giant Aim panel from the run HUD. Single-player camera visibility now
+uses explicit match-mode state on the stage, cleared on shutdown, instead of a
+nested selector. Published together with the tale panel centering fix.
